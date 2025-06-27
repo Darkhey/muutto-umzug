@@ -1,6 +1,7 @@
 -- Add invitation_code column and functions
-ALTER TABLE public.households 
-  ADD COLUMN IF NOT EXISTS invitation_code TEXT UNIQUE;
+ALTER TABLE public.households
+  ADD COLUMN IF NOT EXISTS invitation_code TEXT UNIQUE
+  CHECK (length(invitation_code) = 12);
 
 -- Function to generate secure 12-character invitation codes
 CREATE OR REPLACE FUNCTION generate_invitation_code()
@@ -8,20 +9,42 @@ RETURNS TEXT
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  chars TEXT := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  chars CONSTANT TEXT := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   result TEXT := '';
   i INTEGER;
 BEGIN
   FOR i IN 1..12 LOOP
-    result := result || substr(chars, floor(random() * length(chars) + 1)::integer, 1);
+    result := result || substr(
+      chars,
+      (get_byte(gen_random_bytes(1), 0) % length(chars)) + 1,
+      1
+    );
   END LOOP;
   RETURN result;
 END;
 $$;
 
+-- Helper to ensure uniqueness against existing rows
+CREATE OR REPLACE FUNCTION generate_unique_invitation_code()
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  code TEXT;
+BEGIN
+  LOOP
+    code := generate_invitation_code();
+    EXIT WHEN NOT EXISTS (
+      SELECT 1 FROM public.households WHERE invitation_code = code
+    );
+  END LOOP;
+  RETURN code;
+END;
+$$;
+
 -- Populate existing households
 UPDATE public.households
-SET invitation_code = generate_invitation_code()
+SET invitation_code = generate_unique_invitation_code()
 WHERE invitation_code IS NULL;
 
 -- Set NOT NULL constraint
@@ -35,7 +58,13 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   IF NEW.invitation_code IS NULL THEN
-    NEW.invitation_code := generate_invitation_code();
+    NEW.invitation_code := generate_unique_invitation_code();
+  ELSE
+    IF EXISTS (
+      SELECT 1 FROM public.households WHERE invitation_code = NEW.invitation_code
+    ) THEN
+      RAISE EXCEPTION 'Invitation code already exists';
+    END IF;
   END IF;
   RETURN NEW;
 END;
@@ -61,6 +90,7 @@ AS $$
 DECLARE
   household_id_result UUID;
 BEGIN
+  PERFORM set_config('search_path', 'public', true);
   SELECT id INTO household_id_result
   FROM public.households
   WHERE invitation_code = p_invitation_code;
