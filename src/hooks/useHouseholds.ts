@@ -111,6 +111,27 @@ export function useHouseholds() {
     }
   }
 
+  const updateHousehold = async (
+    householdId: string,
+    updates: Database['public']['Tables']['households']['Update']
+  ) => {
+    try {
+      const { data, error } = await supabase
+        .from('households')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', householdId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      await fetchHouseholds()
+      return data
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Fehler beim Aktualisieren des Haushalts')
+    }
+  }
+
   useEffect(() => {
     fetchHouseholds()
   }, [user])
@@ -121,6 +142,7 @@ export function useHouseholds() {
     error,
     createHousehold,
     addMembers,
+    updateHousehold,
     refetch: fetchHouseholds
   }
 }
