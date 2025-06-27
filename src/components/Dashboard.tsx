@@ -8,19 +8,22 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Users, CheckCircle, Calendar, Plus, Home, LogOut } from 'lucide-react'
 import { OnboardingFlow } from './onboarding/OnboardingFlow'
-import { TaskList } from './TaskList'
+import { HouseholdOverview } from './household/HouseholdOverview'
+import { MemberManagement } from './household/MemberManagement'
 import { AuthPage } from './auth/AuthPage'
 import { useToast } from '@/hooks/use-toast'
 import { ExtendedHousehold } from '@/types/household'
 import { APP_CONFIG, getRandomTip } from '@/config/app'
 import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
 
+type ViewMode = 'dashboard' | 'household-overview' | 'member-management' | 'onboarding'
+
 export const Dashboard = () => {
   const { user, signOut, loading: authLoading } = useAuth()
   const { households, loading, createHousehold, addMembers } = useHouseholds()
   const { toast } = useToast()
   
-  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('dashboard')
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [dailyTip] = useState(getRandomTip())
 
@@ -61,8 +64,7 @@ export const Dashboard = () => {
         }
       }
 
-      setShowOnboarding(false)
-      setActiveHousehold(household)
+      setViewMode('dashboard')
       
       toast({
         title: "Haushalt erfolgreich erstellt!",
@@ -81,21 +83,68 @@ export const Dashboard = () => {
     await signOut()
   }
 
-  if (showOnboarding) {
+  const openHousehold = (household: ExtendedHousehold) => {
+    setActiveHousehold(household)
+    setViewMode('household-overview')
+  }
+
+  const showMemberManagement = () => {
+    setViewMode('member-management')
+  }
+
+  const backToDashboard = () => {
+    setViewMode('dashboard')
+    setActiveHousehold(null)
+  }
+
+  // Render different views
+  if (viewMode === 'onboarding') {
     return (
       <OnboardingFlow 
         onComplete={handleOnboardingComplete}
-        onSkip={() => setShowOnboarding(false)}
+        onSkip={() => setViewMode('dashboard')}
       />
     )
   }
 
-  if (activeHousehold) {
+  if (viewMode === 'household-overview' && activeHousehold) {
     return (
-      <TaskList 
-        household={activeHousehold} 
-        onBack={() => setActiveHousehold(null)} 
-      />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center mb-6">
+            <Button variant="ghost" onClick={backToDashboard} className="mr-4">
+              ← Zurück zum Dashboard
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900">Haushalt verwalten</h1>
+          </div>
+          
+          <HouseholdOverview 
+            household={activeHousehold}
+            onManageMembers={showMemberManagement}
+            onEditHousehold={() => {/* TODO: Edit household */}}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (viewMode === 'member-management' && activeHousehold) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center mb-6">
+            <Button variant="ghost" onClick={() => setViewMode('household-overview')} className="mr-4">
+              ← Zurück zur Übersicht
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900">Mitglieder verwalten</h1>
+          </div>
+          
+          <MemberManagement 
+            householdId={activeHousehold.id}
+            isOwner={activeHousehold.created_by === user?.id}
+          />
+        </div>
+      </div>
     )
   }
 
@@ -179,7 +228,7 @@ export const Dashboard = () => {
                 {APP_CONFIG.tagline} - Erstelle deinen ersten Haushalt und lass uns gemeinsam deinen Umzug planen.
               </p>
               <Button 
-                onClick={() => setShowOnboarding(true)} 
+                onClick={() => setViewMode('onboarding')} 
                 size="lg" 
                 className="bg-blue-600 hover:bg-blue-700"
               >
@@ -193,7 +242,7 @@ export const Dashboard = () => {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Deine Haushalte</h2>
               <Button 
-                onClick={() => setShowOnboarding(true)} 
+                onClick={() => setViewMode('onboarding')} 
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -240,7 +289,7 @@ export const Dashboard = () => {
                           </div>
                           <Button 
                             size="sm" 
-                            onClick={() => setActiveHousehold(household)}
+                            onClick={() => openHousehold(household)}
                             className="bg-blue-600 hover:bg-blue-700"
                           >
                             Öffnen
