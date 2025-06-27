@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Home, Mail, Lock, User } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
 
 export const AuthPage = () => {
   const { signUp, signIn } = useAuth()
@@ -22,6 +23,7 @@ export const AuthPage = () => {
   const [signupEmail, setSignupEmail] = useState('')
   const [signupPassword, setSignupPassword] = useState('')
   const [signupName, setSignupName] = useState('')
+  const [signupInviteCode, setSignupInviteCode] = useState('')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,7 +46,25 @@ export const AuthPage = () => {
     e.preventDefault()
     setLoading(true)
 
-    const { error } = await signUp(signupEmail, signupPassword, signupName)
+    const { error, data } = await signUp(signupEmail, signupPassword, signupName)
+
+    if (!error && signupInviteCode.trim() && data?.user) {
+      try {
+        await supabase.rpc('join_household_by_code', {
+          p_invitation_code: signupInviteCode.trim(),
+          p_user_id: data.user.id,
+          p_user_name: signupName,
+          p_user_email: signupEmail
+        })
+        toast({ title: 'Haushalt beigetreten' })
+      } catch (joinError) {
+        toast({
+          title: 'Einladung ungültig',
+          description: joinError instanceof Error ? joinError.message : 'Code konnte nicht eingelöst werden',
+          variant: 'destructive'
+        })
+      }
+    }
     
     if (error) {
       toast({
@@ -187,6 +207,16 @@ export const AuthPage = () => {
                         required
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-code">Einladungscode (optional)</Label>
+                    <Input
+                      id="signup-code"
+                      value={signupInviteCode}
+                      onChange={(e) => setSignupInviteCode(e.target.value)}
+                      placeholder="ABC123DEF456"
+                    />
                   </div>
 
                   <Button 

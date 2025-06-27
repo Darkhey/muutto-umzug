@@ -65,6 +65,7 @@ export type Database = {
           id: string
           move_date: string
           name: string
+          invitation_code: string
           pets_count: number
           postal_code: string | null
           property_type: Database["public"]["Enums"]["property_type"]
@@ -78,6 +79,7 @@ export type Database = {
           id?: string
           move_date: string
           name: string
+          invitation_code?: string
           pets_count?: number
           postal_code?: string | null
           property_type: Database["public"]["Enums"]["property_type"]
@@ -91,6 +93,7 @@ export type Database = {
           id?: string
           move_date?: string
           name?: string
+          invitation_code?: string
           pets_count?: number
           postal_code?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]

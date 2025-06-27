@@ -12,6 +12,7 @@ export interface Database {
           pets_count: number
           property_type: 'miete' | 'eigentum'
           postal_code: string | null
+          invitation_code: string
           created_by: string
           created_at: string
           updated_at: string
@@ -25,6 +26,7 @@ export interface Database {
           pets_count?: number
           property_type: 'miete' | 'eigentum'
           postal_code?: string | null
+          invitation_code?: string
           created_by: string
           created_at?: string
           updated_at?: string
@@ -38,6 +40,7 @@ export interface Database {
           pets_count?: number
           property_type?: 'miete' | 'eigentum'
           postal_code?: string | null
+          invitation_code?: string
           created_by?: string
           created_at?: string
           updated_at?: string
