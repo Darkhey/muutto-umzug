@@ -92,6 +92,26 @@ export const HouseholdOverview = ({
                 </div>
               </div>
             )}
+
+            {household.new_address && (
+              <div className="flex items-center space-x-2">
+                <MapPin className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Neue Adresse</p>
+                  <p className="font-semibold">{household.new_address}</p>
+                </div>
+              </div>
+            )}
+
+            {household.living_space && (
+              <div className="flex items-center space-x-2">
+                <span className="text-xl">📐</span>
+                <div>
+                  <p className="text-sm text-gray-600">Wohnfläche</p>
+                  <p className="font-semibold">{household.living_space} m²</p>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
