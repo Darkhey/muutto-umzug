@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress'
 import { ExtendedHousehold } from '@/types/household'
 import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
 import { PROPERTY_TYPES } from '@/config/app'
-import { Users, Calendar, MapPin, Home, Settings } from 'lucide-react'
+import { Users, Calendar, MapPin, Home, Settings, Square } from 'lucide-react'
 
 interface HouseholdOverviewProps {
   household: ExtendedHousehold
@@ -89,6 +89,26 @@ export const HouseholdOverview = ({
                 <div>
                   <p className="text-sm text-gray-600">PLZ</p>
                   <p className="font-semibold">{household.postal_code}</p>
+                </div>
+              </div>
+            )}
+
+            {household.new_address && (
+              <div className="flex items-center space-x-2">
+                <Home className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Neue Adresse</p>
+                  <p className="font-semibold">{household.new_address}</p>
+                </div>
+              </div>
+            )}
+
+            {household.living_space && (
+              <div className="flex items-center space-x-2">
+                <Square className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Wohnfläche</p>
+                  <p className="font-semibold">{household.living_space} m²</p>
                 </div>
               </div>
             )}
