@@ -69,7 +69,12 @@ export const Dashboard = () => {
         children_count: data.childrenCount,
         pets_count: data.petsCount,
         property_type: data.propertyType,
-        postal_code: data.postalCode
+        postal_code: data.postalCode,
+        old_address: data.oldAddress,
+        new_address: data.newAddress,
+        living_space: data.livingSpace,
+        rooms: data.rooms,
+        furniture_volume: data.furnitureVolume
       })
 
       // Add members if any
