@@ -1,10 +1,11 @@
-# ---
-# title: Umzugs-Modul – Fachkonzept
-# status: Draft
-# authors: [Darkhey]
-# created: 2025-06-10
-# revised: 2025-06-27
-# ---
+---
+title: "Umzugs-Modul – Fachkonzept"
+status: Draft
+authors:
+  - Darkhey
+created: 2025-06-10
+revised: 2025-06-27
+---
 
 # Plan: Umzugs-Modul
 
