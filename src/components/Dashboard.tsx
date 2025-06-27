@@ -10,6 +10,8 @@ import { Users, CheckCircle, Calendar, Plus, Home, LogOut } from 'lucide-react'
 import { OnboardingFlow } from './onboarding/OnboardingFlow'
 import { HouseholdOverview } from './household/HouseholdOverview'
 import { MemberManagement } from './household/MemberManagement'
+import { EditHouseholdForm } from './household/EditHouseholdForm'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AuthPage } from './auth/AuthPage'
 import { useToast } from '@/hooks/use-toast'
 import { ExtendedHousehold } from '@/types/household'
@@ -20,12 +22,13 @@ type ViewMode = 'dashboard' | 'household-overview' | 'member-management' | 'onbo
 
 export const Dashboard = () => {
   const { user, signOut, loading: authLoading } = useAuth()
-  const { households, loading, createHousehold, addMembers } = useHouseholds()
+  const { households, loading, createHousehold, addMembers, updateHousehold } = useHouseholds()
   const { toast } = useToast()
   
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard')
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [dailyTip] = useState(getRandomTip())
+  const [showEditDialog, setShowEditDialog] = useState(false)
 
   // Show auth page if not logged in
   if (!authLoading && !user) {
@@ -83,6 +86,26 @@ export const Dashboard = () => {
     await signOut()
   }
 
+  const handleHouseholdUpdate = async (updates: any) => {
+    if (!activeHousehold) return
+
+    try {
+      const updated = await updateHousehold(activeHousehold.id, updates)
+      setActiveHousehold({ ...activeHousehold, ...updated })
+      setShowEditDialog(false)
+      toast({
+        title: 'Haushalt aktualisiert',
+        description: 'Die Änderungen wurden gespeichert.'
+      })
+    } catch (error) {
+      toast({
+        title: 'Fehler beim Aktualisieren',
+        description: error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten',
+        variant: 'destructive'
+      })
+    }
+  }
+
   const openHousehold = (household: ExtendedHousehold) => {
     setActiveHousehold(household)
     setViewMode('household-overview')
@@ -118,11 +141,24 @@ export const Dashboard = () => {
             <h1 className="text-2xl font-bold text-gray-900">Haushalt verwalten</h1>
           </div>
           
-          <HouseholdOverview 
+          <HouseholdOverview
             household={activeHousehold}
             onManageMembers={showMemberManagement}
-            onEditHousehold={() => {/* TODO: Edit household */}}
+            onEditHousehold={() => setShowEditDialog(true)}
           />
+
+          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Haushalt bearbeiten</DialogTitle>
+              </DialogHeader>
+              <EditHouseholdForm
+                household={activeHousehold}
+                onSubmit={handleHouseholdUpdate}
+                onCancel={() => setShowEditDialog(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     )
