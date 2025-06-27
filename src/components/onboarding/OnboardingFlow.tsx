@@ -18,6 +18,11 @@ interface OnboardingData {
   petsCount: number
   propertyType: PropertyType | ''
   postalCode: string
+  oldAddress: string
+  newAddress: string
+  livingSpace: number
+  rooms: number
+  furnitureVolume: number
   members: Array<{
     name: string
     email: string
@@ -40,6 +45,11 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
     petsCount: 0,
     propertyType: '',
     postalCode: '',
+    oldAddress: '',
+    newAddress: '',
+    livingSpace: 0,
+    rooms: 0,
+    furnitureVolume: 0,
     members: []
   })
 
@@ -92,7 +102,13 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
       case 2:
         return data.householdSize > 0
       case 3:
-        return data.propertyType && data.postalCode.trim()
+        return (
+          data.propertyType &&
+          data.postalCode.trim() &&
+          data.newAddress.trim() &&
+          data.livingSpace >= 0 &&
+          data.rooms >= 0
+        )
       case 4:
         return true // Members are optional
       case 5:
@@ -259,7 +275,7 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="postalCode">Postleitzahl deiner neuen Adresse</Label>
                   <Input
@@ -272,6 +288,68 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                   <p className="text-sm text-gray-600 mt-1">
                     Hilft uns dabei, regionale Fristen und Ämter zu finden
                   </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="oldAddress">Aktuelle Adresse (optional)</Label>
+                  <Input
+                    id="oldAddress"
+                    value={data.oldAddress}
+                    onChange={(e) => updateData({ oldAddress: e.target.value })}
+                    placeholder="Straße, Hausnummer, Ort"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="newAddress">Neue Adresse</Label>
+                  <Input
+                    id="newAddress"
+                    value={data.newAddress}
+                    onChange={(e) => updateData({ newAddress: e.target.value })}
+                    placeholder="Straße, Hausnummer, Ort"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="livingSpace">Wohnfläche (m²)</Label>
+                    <Input
+                      id="livingSpace"
+                      type="number"
+                      min={0}
+                      value={data.livingSpace}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value)
+                        updateData({ livingSpace: Number.isNaN(val) ? 0 : val })
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="rooms">Zimmer</Label>
+                    <Input
+                      id="rooms"
+                      type="number"
+                      min={0}
+                      value={data.rooms}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value)
+                        updateData({ rooms: Number.isNaN(val) ? 0 : val })
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="furnitureVolume">Möbelvolumen (m³)</Label>
+                    <Input
+                      id="furnitureVolume"
+                      type="number"
+                      min={0}
+                      value={data.furnitureVolume}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value)
+                        updateData({ furnitureVolume: Number.isNaN(val) ? 0 : val })
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -338,7 +416,7 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
             {currentStep === 5 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Alles bereit für deinen Umzug!</h3>
-                
+
                 <div className="bg-gray-50 p-4 rounded-lg space-y-3">
                   <div><strong>Haushalt:</strong> {data.householdName}</div>
                   <div><strong>Umzugsdatum:</strong> {new Date(data.moveDate).toLocaleDateString('de-DE')}</div>
@@ -347,7 +425,12 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                   {data.petsCount > 0 && <div><strong>Haustiere:</strong> {data.petsCount}</div>}
                   <div><strong>Wohnsituation:</strong> {data.propertyType === 'miete' ? 'Mietwohnung' : 'Eigentum'}</div>
                   <div><strong>PLZ:</strong> {data.postalCode}</div>
-                  
+                  {data.oldAddress && <div><strong>Aktuelle Adresse:</strong> {data.oldAddress}</div>}
+                  <div><strong>Neue Adresse:</strong> {data.newAddress}</div>
+                  <div><strong>Wohnfläche:</strong> {data.livingSpace} m²</div>
+                  <div><strong>Zimmer:</strong> {data.rooms}</div>
+                  <div><strong>Möbelvolumen:</strong> {data.furnitureVolume} m³</div>
+
                   {data.members.length > 0 && (
                     <div>
                       <strong>Mitglieder:</strong>
@@ -370,6 +453,10 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                     <li>• Alle Mitglieder können Aufgaben übernehmen</li>
                     <li>• Du bekommst rechtliche Hinweise für deinen Umzug</li>
                   </ul>
+                </div>
+
+                <div className="text-xs text-gray-600">
+                  Deine Daten werden ausschließlich für die Organisation des Umzugs genutzt und niemals für Werbezwecke verwendet. Wir bemühen uns, sie sicher zu speichern.
                 </div>
               </div>
             )}
