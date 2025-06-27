@@ -132,6 +132,58 @@ export function useHouseholds() {
     }
   }
 
+  const mergeHouseholds = async (
+    sourceIds: string[],
+    newHouseholdData: Omit<HouseholdInsert, 'created_by'>
+  ) => {
+    if (!user) throw new Error('Benutzer ist nicht angemeldet')
+    if (sourceIds.length < 2) throw new Error('Mindestens zwei Haushalte erforderlich')
+
+    try {
+      const allMembers: Array<{ name: string; email: string; role?: string }> = []
+
+      for (const id of sourceIds) {
+        const { data: members, error } = await supabase
+          .from('household_members')
+          .select('name, email, role')
+          .eq('household_id', id)
+
+        if (error) throw error
+
+        members?.forEach(m => {
+          const normalizedEmail = m.email?.trim().toLowerCase() || null
+          if (
+            !allMembers.find(
+              am =>
+                (am.email?.toLowerCase() ?? null) === normalizedEmail &&
+                am.name === m.name
+            )
+          ) {
+            allMembers.push({
+              name: m.name,
+              email: normalizedEmail,
+              role: m.role ?? undefined
+            })
+          }
+        })
+      }
+
+      const newHousehold = await createHousehold(newHouseholdData)
+
+      const membersToAdd = allMembers.filter(
+        m => m.email && m.email !== user.email?.toLowerCase()
+      )
+      if (membersToAdd.length > 0) {
+        await addMembers(newHousehold.id, membersToAdd)
+      }
+
+      await fetchHouseholds()
+      return newHousehold
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Fehler beim Zusammenführen der Haushalte')
+    }
+  }
+
   useEffect(() => {
     fetchHouseholds()
   }, [user])
@@ -143,6 +195,7 @@ export function useHouseholds() {
     createHousehold,
     addMembers,
     updateHousehold,
+    mergeHouseholds,
     refetch: fetchHouseholds
   }
 }
