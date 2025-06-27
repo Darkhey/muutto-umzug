@@ -16,6 +16,11 @@ interface EditHouseholdFormProps {
     pets_count: number
     property_type: 'miete' | 'eigentum'
     postal_code: string | null
+    old_address: string | null
+    new_address: string | null
+    living_space: number | null
+    rooms: number | null
+    furniture_volume: number | null
   }) => void
   onCancel: () => void
 }
@@ -28,7 +33,12 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
     children_count: household.children_count,
     pets_count: household.pets_count,
     property_type: household.property_type,
-    postal_code: household.postal_code || ''
+    postal_code: household.postal_code || '',
+    old_address: household.old_address || '',
+    new_address: household.new_address || '',
+    living_space: household.living_space || 0,
+    rooms: household.rooms || 0,
+    furniture_volume: household.furniture_volume || 0
   })
 
   const updateField = (field: string, value: string) => {
@@ -42,7 +52,12 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
       household_size: Number(form.household_size),
       children_count: Number(form.children_count),
       pets_count: Number(form.pets_count),
-      postal_code: form.postal_code || null
+      postal_code: form.postal_code || null,
+      living_space: Number(form.living_space),
+      rooms: Number(form.rooms),
+      furniture_volume: Number(form.furniture_volume),
+      old_address: form.old_address || null,
+      new_address: form.new_address || null
     })
   }
 
@@ -131,6 +146,57 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
           onChange={(e) => updateField('postal_code', e.target.value)}
           maxLength={5}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="edit-old">Aktuelle Adresse (optional)</Label>
+        <Input
+          id="edit-old"
+          value={form.old_address}
+          onChange={(e) => updateField('old_address', e.target.value)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="edit-new">Neue Adresse</Label>
+        <Input
+          id="edit-new"
+          value={form.new_address}
+          onChange={(e) => updateField('new_address', e.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="edit-living">Wohnfläche (m²)</Label>
+          <Input
+            id="edit-living"
+            type="number"
+            min={0}
+            value={form.living_space}
+            onChange={(e) => updateField('living_space', e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="edit-rooms">Zimmer</Label>
+          <Input
+            id="edit-rooms"
+            type="number"
+            min={0}
+            value={form.rooms}
+            onChange={(e) => updateField('rooms', e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="edit-volume">Möbelvolumen (m³)</Label>
+          <Input
+            id="edit-volume"
+            type="number"
+            min={0}
+            value={form.furniture_volume}
+            onChange={(e) => updateField('furniture_volume', e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
