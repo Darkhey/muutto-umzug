@@ -8,6 +8,8 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Users, CheckCircle, Calendar, Plus, Home, LogOut } from 'lucide-react'
 import { OnboardingFlow } from './onboarding/OnboardingFlow'
+import { InviteOnboarding } from './onboarding/InviteOnboarding'
+import { usePendingInvitations } from '@/hooks/usePendingInvitations'
 import { HouseholdOverview } from './household/HouseholdOverview'
 import { MemberManagement } from './household/MemberManagement'
 import { EditHouseholdForm } from './household/EditHouseholdForm'
@@ -29,6 +31,17 @@ export const Dashboard = () => {
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [dailyTip] = useState(getRandomTip())
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const { invitations, loading: inviteLoading, error: inviteError, refetch: refetchInvites } = usePendingInvitations()
+
+  useEffect(() => {
+    if (inviteError) {
+      toast({
+        title: 'Fehler beim Laden der Einladungen',
+        description: inviteError.message,
+        variant: 'destructive'
+      })
+    }
+  }, [inviteError, toast])
 
   // Show auth page if not logged in
   if (!authLoading && !user) {
@@ -36,7 +49,7 @@ export const Dashboard = () => {
   }
 
   // Loading state
-  if (authLoading || loading) {
+  if (authLoading || loading || inviteLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
@@ -118,6 +131,18 @@ export const Dashboard = () => {
   const backToDashboard = () => {
     setViewMode('dashboard')
     setActiveHousehold(null)
+  }
+
+  if (viewMode === 'dashboard' && invitations.length > 0) {
+    return (
+      <InviteOnboarding
+        invitation={invitations[0]}
+        onComplete={() => {
+          refetchInvites()
+          setViewMode('dashboard')
+        }}
+      />
+    )
   }
 
   // Render different views
