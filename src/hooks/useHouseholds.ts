@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { Database } from '@/types/database'
 import { useAuth } from '@/contexts/AuthContext'
+import { APP_CONFIG } from '@/config/app'
 
 type Household = Database['public']['Tables']['households']['Row']
 type HouseholdInsert = Database['public']['Tables']['households']['Insert']
@@ -35,6 +36,11 @@ export function useHouseholds() {
 
   const createHousehold = async (householdData: Omit<HouseholdInsert, 'created_by'>) => {
     if (!user) throw new Error('Benutzer ist nicht angemeldet')
+
+    // Validate household size limits
+    if (householdData.household_size && householdData.household_size > APP_CONFIG.defaults.maxMembersPerHousehold) {
+      throw new Error(`Haushaltsgröße darf ${APP_CONFIG.defaults.maxMembersPerHousehold} Personen nicht überschreiten`)
+    }
 
     try {
       // Create household
@@ -76,6 +82,17 @@ export function useHouseholds() {
     role?: string
   }>) => {
     try {
+      // Validate member limits
+      const { data: existingMembers } = await supabase
+        .from('household_members')
+        .select('id')
+        .eq('household_id', householdId)
+
+      const currentMemberCount = existingMembers?.length || 0
+      if (currentMemberCount + members.length > APP_CONFIG.defaults.maxMembersPerHousehold) {
+        throw new Error(`Maximale Anzahl von ${APP_CONFIG.defaults.maxMembersPerHousehold} Mitgliedern erreicht`)
+      }
+
       const memberInserts = members.map(member => ({
         household_id: householdId,
         name: member.name,

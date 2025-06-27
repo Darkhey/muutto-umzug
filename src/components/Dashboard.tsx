@@ -6,14 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Users, CheckCircle, Calendar, Plus, Home, User, LogOut } from 'lucide-react'
+import { Users, CheckCircle, Calendar, Plus, Home, LogOut } from 'lucide-react'
 import { OnboardingFlow } from './onboarding/OnboardingFlow'
 import { TaskList } from './TaskList'
 import { AuthPage } from './auth/AuthPage'
 import { useToast } from '@/hooks/use-toast'
-import { Database } from '@/types/database'
-
-type Household = Database['public']['Tables']['households']['Row']
+import { ExtendedHousehold } from '@/types/household'
+import { APP_CONFIG, getRandomTip } from '@/config/app'
+import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
 
 export const Dashboard = () => {
   const { user, signOut, loading: authLoading } = useAuth()
@@ -21,7 +21,8 @@ export const Dashboard = () => {
   const { toast } = useToast()
   
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [activeHousehold, setActiveHousehold] = useState<Household | null>(null)
+  const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
+  const [dailyTip] = useState(getRandomTip())
 
   // Show auth page if not logged in
   if (!authLoading && !user) {
@@ -65,7 +66,7 @@ export const Dashboard = () => {
       
       toast({
         title: "Haushalt erfolgreich erstellt!",
-        description: "Willkommen bei muutto. Lass uns mit der Planung beginnen."
+        description: `Willkommen bei ${APP_CONFIG.name}. Lass uns mit der Planung beginnen.`
       })
     } catch (error) {
       toast({
@@ -98,6 +99,11 @@ export const Dashboard = () => {
     )
   }
 
+  const totalHouseholds = households.length
+  const nextDeadline = households.length > 0 
+    ? calculateHouseholdProgress(households[0].move_date).daysRemaining
+    : 0
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-6xl mx-auto">
@@ -105,7 +111,7 @@ export const Dashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <div className="text-center flex-1">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              muutto<span className="text-blue-600"> Dashboard</span>
+              {APP_CONFIG.name}<span className="text-blue-600"> Dashboard</span>
             </h1>
             <p className="text-gray-600 text-lg">
               Willkommen zurück, {user?.user_metadata?.full_name || user?.email}!
@@ -129,7 +135,7 @@ export const Dashboard = () => {
                 <Home className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{households.length}</div>
+                <div className="text-2xl font-bold text-blue-600">{totalHouseholds}</div>
               </CardContent>
             </Card>
 
@@ -140,36 +146,37 @@ export const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-sm font-bold text-orange-600">
-                  {households.length > 0 
-                    ? `${Math.ceil((new Date(households[0].move_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} Tage`
-                    : 'Keine'
-                  }
+                  {nextDeadline > 0 ? `${nextDeadline} Tage` : 'Überfällig'}
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-white shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Fortschritt</CardTitle>
+                <CardTitle className="text-sm font-medium">Durchschnitt</CardTitle>
                 <CheckCircle className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">25%</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {Math.round(households.reduce((acc, h) => 
+                    acc + calculateHouseholdProgress(h.move_date).overall, 0
+                  ) / (households.length || 1))}%
+                </div>
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* Households Grid */}
+        {/* Households Grid or Welcome */}
         {households.length === 0 ? (
           <Card className="bg-white shadow-lg text-center py-12">
             <CardContent>
               <Home className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Willkommen bei muutto! 🏠
+                Willkommen bei {APP_CONFIG.name}! 🏠
               </h3>
               <p className="text-gray-600 mb-6">
-                Erstelle deinen ersten Haushalt und lass uns gemeinsam deinen Umzug planen.
+                {APP_CONFIG.tagline} - Erstelle deinen ersten Haushalt und lass uns gemeinsam deinen Umzug planen.
               </p>
               <Button 
                 onClick={() => setShowOnboarding(true)} 
@@ -196,20 +203,22 @@ export const Dashboard = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {households.map((household) => {
-                const daysUntilMove = Math.ceil((new Date(household.move_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-                const progress = Math.max(0, Math.min(100, 100 - (daysUntilMove / 90) * 100))
+                const progressMetrics = calculateHouseholdProgress(household.move_date, 0, 4)
+                const progressColor = getProgressColor(progressMetrics.overall)
                 
                 return (
                   <Card key={household.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
                         <span className="text-lg">{household.name}</span>
-                        <Badge variant="secondary">{Math.round(progress)}%</Badge>
+                        <Badge variant="secondary" className={progressColor}>
+                          {progressMetrics.overall}%
+                        </Badge>
                       </CardTitle>
                       <CardDescription>
                         Umzug: {new Date(household.move_date).toLocaleDateString('de-DE')}
-                        {daysUntilMove > 0 && ` (in ${daysUntilMove} Tagen)`}
-                        {daysUntilMove < 0 && ` (vor ${Math.abs(daysUntilMove)} Tagen)`}
+                        {progressMetrics.daysRemaining > 0 && ` (in ${progressMetrics.daysRemaining} Tagen)`}
+                        {progressMetrics.daysRemaining <= 0 && ` (überfällig)`}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -217,9 +226,9 @@ export const Dashboard = () => {
                         <div>
                           <div className="flex justify-between text-sm mb-1">
                             <span>Fortschritt</span>
-                            <span>{Math.round(progress)}%</span>
+                            <span>{progressMetrics.overall}%</span>
                           </div>
-                          <Progress value={progress} className="h-2" />
+                          <Progress value={progressMetrics.overall} className="h-2" />
                         </div>
                         
                         <div className="flex items-center justify-between">
@@ -246,16 +255,13 @@ export const Dashboard = () => {
           </>
         )}
 
-        {/* Quick Tips */}
+        {/* Daily Tip */}
         <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white mt-8">
           <CardHeader>
             <CardTitle className="text-white">💡 Tipp des Tages</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>
-              Beginne mit der Kündigung deines alten Mietvertrags mindestens 3 Monate vor dem geplanten Auszug. 
-              So vermeidest du unnötige Kosten und Stress!
-            </p>
+            <p>{dailyTip}</p>
           </CardContent>
         </Card>
       </div>
