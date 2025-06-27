@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,8 +13,9 @@ import { useHouseholdMembers } from '@/hooks/useHouseholdMembers'
 import { useAuth } from '@/contexts/AuthContext'
 import { HOUSEHOLD_ROLES, getRoleIcon, getRoleColor } from '@/config/roles'
 import { HouseholdRole } from '@/types/household'
-import { Users, UserPlus, Mail, Crown, Clock, CheckCircle, Trash2, Settings } from 'lucide-react'
+import { Users, UserPlus, Mail, Crown, Clock, CheckCircle, Trash2, Settings, Copy } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
 
 interface MemberManagementProps {
   householdId: string
@@ -25,13 +26,28 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
   const { user } = useAuth()
   const { toast } = useToast()
   const { members, loading, inviteMember, updateMemberRole, removeMember } = useHouseholdMembers(householdId)
-  
+
   const [showInviteDialog, setShowInviteDialog] = useState(false)
   const [inviteForm, setInviteForm] = useState({
     name: '',
     email: '',
     role: '' as HouseholdRole | ''
   })
+  const [invitationCode, setInvitationCode] = useState('')
+
+  useEffect(() => {
+    const fetchCode = async () => {
+      const { data } = await supabase
+        .from('households')
+        .select('invitation_code')
+        .eq('id', householdId)
+        .single()
+      if (data?.invitation_code) {
+        setInvitationCode(data.invitation_code)
+      }
+    }
+    if (householdId) fetchCode()
+  }, [householdId])
 
   const handleInvite = async () => {
     if (!inviteForm.name.trim() || !inviteForm.email.trim()) {
@@ -121,6 +137,25 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
           <p className="text-gray-600 mt-1">
             {members.length} {members.length === 1 ? 'Mitglied' : 'Mitglieder'}
           </p>
+          {isOwner && invitationCode && (
+            <div className="flex items-center mt-2 space-x-2">
+              <span className="text-sm text-gray-600">Einladungscode:</span>
+              <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                {invitationCode}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(invitationCode)
+                  toast({ title: 'Code kopiert' })
+                }}
+              >
+                <Copy className="h-3 w-3 mr-1" />
+                Kopieren
+              </Button>
+            </div>
+          )}
         </div>
 
         {isOwner && (

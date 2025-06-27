@@ -1,24 +1,68 @@
-# Welcome to your Lovable project
+# muutto
+
+**muutto** is a modular relocation assistant for the German market. It helps households organise every step of moving house with shared tasks, reminders and checklists. The app is built with React, TypeScript and Vite on the frontend and uses Supabase for authentication and data storage.
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/5408f1d3-0599-4d20-b60a-e9dc3f50050e
 
+## Prerequisites
+
+- Node.js 18 or later
+- npm
+- A Supabase project for storing user data
+
+## Environment variables
+
+The application requires access to your Supabase instance. Create a `.env.local` file in the project root and provide your credentials:
+
+```bash
+VITE_SUPABASE_URL=<your-supabase-url>
+VITE_SUPABASE_ANON_KEY=<your-anon-key>
+```
+
+These variables are read by the Supabase client in `src/integrations/supabase/client.ts`. Alternatively you can edit that file directly with your credentials.
+
+## Available scripts
+
+`package.json` exposes several npm scripts that help during development:
+
+- `npm run dev` – start the Vite development server
+- `npm run build` – create a production build
+- `npm run build:dev` – build with development mode
+- `npm run preview` – preview a production build locally
+- `npm run lint` – run ESLint over the project
+
+## Running the dev server
+
+Install the dependencies and start the server:
+
+```bash
+npm install
+npm run dev
+```
+
+## Linting
+
+To check the codebase with ESLint run:
+
+```bash
+npm run lint
+```
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
+### Use Lovable
 
 Simply visit the [Lovable Project](https://lovable.dev/projects/5408f1d3-0599-4d20-b60a-e9dc3f50050e) and start prompting.
 
 Changes made via Lovable will be committed automatically to this repo.
 
-**Use your preferred IDE**
+### Use your preferred IDE
 
 If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
 Follow these steps:
 
@@ -27,22 +71,22 @@ Follow these steps:
 git clone <YOUR_GIT_URL>
 
 # Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+cd muutto-umzug
 
 # Step 3: Install the necessary dependencies.
-npm i
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Start the development server.
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Edit a file directly in GitHub
 
 - Navigate to the desired file(s).
 - Click the "Edit" button (pencil icon) at the top right of the file view.
 - Make your changes and commit the changes.
 
-**Use GitHub Codespaces**
+### Use GitHub Codespaces
 
 - Navigate to the main page of your repository.
 - Click on the "Code" button (green button) near the top right.
@@ -72,6 +116,7 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
+
 ## Environment variables
 
 Create a `.env` file based on `.env.example` and provide the Supabase credentials:
@@ -82,3 +127,4 @@ VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 ```
 
 These variables are required for the app to connect to Supabase at runtime.
+=======
