@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Calendar, Users, Home, MapPin, CreditCard, ArrowRight, ArrowLeft, CheckCircle, Star, Sparkles, Mail, User, Building, Ruler, DoorOpen, Package2, AlertTriangle } from 'lucide-react'
+import { Calendar, Users, Home, MapPin, CreditCard, ArrowRight, ArrowLeft, CheckCircle, Star, Sparkles, Mail, User, Building, Ruler, DoorOpen, Package2, AlertTriangle, Save } from 'lucide-react'
 import { PropertyType, HouseholdRole } from '@/types/database'
 import { HOUSEHOLD_ROLES } from '@/config/roles'
 import { PROPERTY_TYPES } from '@/config/app'
@@ -35,12 +35,23 @@ interface OnboardingData {
 }
 
 interface OnboardingFlowProps {
-  onComplete: (data: OnboardingData) => void
-  onSkip: () => void
+  initialData?: Partial<OnboardingData> | null;
+  initialStep?: number;
+  onComplete: (data: OnboardingData) => void;
+  onSkip: () => void;
+  onSaveDraft?: (data: Partial<OnboardingData>, step: number) => Promise<boolean>;
+  onBackToDrafts?: () => void;
 }
 
-export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
-  const [currentStep, setCurrentStep] = useState(1)
+export const OnboardingFlow = ({ 
+  initialData, 
+  initialStep = 1, 
+  onComplete, 
+  onSkip, 
+  onSaveDraft,
+  onBackToDrafts
+}: OnboardingFlowProps) => {
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [data, setData] = useState<OnboardingData>({
     householdName: '',
     moveDate: '',
@@ -55,13 +66,36 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
     rooms: 0,
     furnitureVolume: 0,
     members: []
-  })
+  });
   const { setOldCoords, setNewCoords, distanceKm, distanceFact } = useDistanceCalculation()
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const totalSteps = 5
   const progress = (currentStep / totalSteps) * 100
+
+  // Initialisiere Daten, wenn initialData vorhanden ist
+  useEffect(() => {
+    if (initialData) {
+      setData(prevData => ({
+        ...prevData,
+        householdName: initialData.householdName || '',
+        moveDate: initialData.moveDate || '',
+        householdSize: initialData.householdSize || 1,
+        childrenCount: initialData.childrenCount || 0,
+        petsCount: initialData.petsCount || 0,
+        propertyType: initialData.propertyType || '',
+        postalCode: initialData.postalCode || '',
+        oldAddress: initialData.oldAddress || '',
+        newAddress: initialData.newAddress || '',
+        livingSpace: initialData.livingSpace || 0,
+        rooms: initialData.rooms || 0,
+        furnitureVolume: initialData.furnitureVolume || 0,
+        members: initialData.members || []
+      }));
+    }
+  }, [initialData]);
 
   const updateData = (updates: Partial<OnboardingData>) => {
     setData(prev => ({ ...prev, ...updates }))
@@ -128,13 +162,13 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
         // Validate household name
         const nameValidation = validateName(data.householdName, 'Haushaltsname')
         if (!nameValidation.isValid) {
-          newErrors.householdName = nameValidation.errors[0]
+          newErrors.householdName = Object.values(nameValidation.errors)[0]
         }
         
         // Validate move date
         const dateValidation = validateFutureDate(data.moveDate, 'Umzugsdatum')
         if (!dateValidation.isValid) {
-          newErrors.moveDate = dateValidation.errors[0]
+          newErrors.moveDate = Object.values(dateValidation.errors)[0]
         }
         break
         
@@ -164,7 +198,7 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
         // Validate postal code
         const postalValidation = validatePostalCode(data.postalCode)
         if (!postalValidation.isValid) {
-          newErrors.postalCode = postalValidation.errors[0]
+          newErrors.postalCode = Object.values(postalValidation.errors)[0]
         }
         
         // Validate new address
@@ -219,9 +253,21 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
     }
   }
 
-  const canProceed = () => {
-    return Object.keys(errors).length === 0
-  }
+  const handleSaveDraft = async () => {
+    if (!onSaveDraft) return;
+    
+    setIsSaving(true);
+    try {
+      const success = await onSaveDraft(data, currentStep);
+      if (!success) {
+        throw new Error('Fehler beim Speichern des Entwurfs');
+      }
+    } catch (error) {
+      console.error('Error saving draft:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleComplete = async () => {
     if (!validateStep(currentStep)) return
@@ -273,6 +319,34 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
       case 5: return 'Fertig!'
       default: return `Schritt ${step}`
     }
+  }
+
+  const handleOldSelect = (coords?: { lat: number; lon: number }) => {
+    if (!coords || Number.isNaN(coords.lat) || Number.isNaN(coords.lon)) {
+      setErrors(prev => ({ ...prev, old_address: 'Ungültige Koordinaten' }))
+      setOldCoords(null)
+      return
+    }
+    setOldCoords(coords)
+    setErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors.old_address
+      return newErrors
+    })
+  }
+
+  const handleNewSelect = (coords?: { lat: number; lon: number }) => {
+    if (!coords || Number.isNaN(coords.lat) || Number.isNaN(coords.lon)) {
+      setErrors(prev => ({ ...prev, new_address: 'Ungültige Koordinaten' }))
+      setNewCoords(null)
+      return
+    }
+    setNewCoords(coords)
+    setErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors.new_address
+      return newErrors
+    })
   }
 
   return (
@@ -628,7 +702,7 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                     <AddressAutocomplete
                       value={data.oldAddress}
                       onChange={(val) => updateData({ oldAddress: val })}
-                      onSelect={setOldCoords}
+                      onSelect={handleOldSelect}
                       placeholder="Straße, Hausnummer, Ort"
                       className="h-12"
                       helpText="Deine aktuelle Wohnadresse"
@@ -643,7 +717,7 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                     <AddressAutocomplete
                       value={data.newAddress}
                       onChange={(val) => updateData({ newAddress: val })}
-                      onSelect={setNewCoords}
+                      onSelect={handleNewSelect}
                       placeholder="Straße, Hausnummer, Ort"
                       className="h-12"
                       error={errors.newAddress}
@@ -1036,15 +1110,42 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
             {/* Navigation */}
             <div className="flex justify-between pt-8 border-t border-gray-200">
               <div className="flex gap-3">
-                {currentStep > 1 && (
+                {currentStep > 1 ? (
                   <Button variant="outline" onClick={prevStep} className="h-12 px-6">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Zurück
                   </Button>
+                ) : onBackToDrafts ? (
+                  <Button variant="outline" onClick={onBackToDrafts} className="h-12 px-6">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Zu den Entwürfen
+                  </Button>
+                ) : (
+                  <Button variant="ghost" onClick={onSkip} className="text-gray-600 h-12 px-6">
+                    Überspringen
+                  </Button>
                 )}
-                <Button variant="ghost" onClick={onSkip} className="text-gray-600 h-12 px-6">
-                  Überspringen
-                </Button>
+                
+                {onSaveDraft && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSaveDraft} 
+                    disabled={isSaving}
+                    className="h-12 px-6"
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="animate-spin h-4 w-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full" />
+                        Speichern...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Entwurf speichern
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
 
               <div>

@@ -10,6 +10,7 @@ import { Users, CheckCircle, Calendar, Plus, Home, LogOut, Clock, AlertCircle, B
 import { OnboardingFlow } from './onboarding/OnboardingFlow'
 import { OnboardingSuccess } from './onboarding/OnboardingSuccess'
 import { InviteOnboarding } from './onboarding/InviteOnboarding'
+import { OnboardingFlowWithDrafts } from './onboarding/OnboardingFlowWithDrafts'
 import { usePendingInvitations } from '@/hooks/usePendingInvitations'
 import { HouseholdOverview } from './household/HouseholdOverview'
 import { MemberManagement } from './household/MemberManagement'
@@ -206,7 +207,7 @@ export const Dashboard = () => {
   // Render different views
   if (viewMode === 'onboarding') {
     return (
-      <OnboardingFlow 
+      <OnboardingFlowWithDrafts 
         onComplete={handleOnboardingComplete}
         onSkip={() => setViewMode('dashboard')}
       />
