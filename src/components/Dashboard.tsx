@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Users, CheckCircle, Calendar, Plus, Home, LogOut, Clock, AlertCircle } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Users, CheckCircle, Calendar, Plus, Home, LogOut, Clock, AlertCircle, Bot, TrendingUp, Bell } from 'lucide-react'
 import { OnboardingFlow } from './onboarding/OnboardingFlow'
 import { InviteOnboarding } from './onboarding/InviteOnboarding'
 import { usePendingInvitations } from '@/hooks/usePendingInvitations'
@@ -13,6 +14,9 @@ import { HouseholdOverview } from './household/HouseholdOverview'
 import { MemberManagement } from './household/MemberManagement'
 import { EditHouseholdForm } from './household/EditHouseholdForm'
 import { TaskList } from './TaskList'
+import { AIAssistant } from './ai/AIAssistant'
+import { MovingInsights } from './insights/MovingInsights'
+import { ReminderSystem } from './reminders/ReminderSystem'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AuthPage } from './auth/AuthPage'
 import { useToast } from '@/hooks/use-toast'
@@ -203,12 +207,21 @@ export const Dashboard = () => {
             <h1 className="text-2xl font-bold text-gray-900">Haushalt verwalten</h1>
           </div>
           
-          <HouseholdOverview
-            household={activeHousehold}
-            onManageMembers={showMemberManagement}
-            onEditHousehold={() => setShowEditDialog(true)}
-            onViewTasks={() => openTaskList(activeHousehold)}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <HouseholdOverview
+                household={activeHousehold}
+                onManageMembers={showMemberManagement}
+                onEditHousehold={() => setShowEditDialog(true)}
+                onViewTasks={() => openTaskList(activeHousehold)}
+              />
+            </div>
+            
+            <div className="space-y-6">
+              <MovingInsights household={activeHousehold} />
+              <AIAssistant household={activeHousehold} />
+            </div>
+          </div>
 
           <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
             <DialogContent>
@@ -260,7 +273,7 @@ export const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-center flex-1">
@@ -321,7 +334,7 @@ export const Dashboard = () => {
           </div>
         )}
 
-        {/* Households Grid or Welcome */}
+        {/* Main Content */}
         {households.length === 0 ? (
           <Card className="bg-white shadow-lg text-center py-12">
             <CardContent>
@@ -343,102 +356,117 @@ export const Dashboard = () => {
             </CardContent>
           </Card>
         ) : (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Deine Haushalte</h2>
-              <Button 
-                onClick={() => setViewMode('onboarding')} 
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Neuer Haushalt
-              </Button>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Main Content Area */}
+            <div className="lg:col-span-3 space-y-6">
+              {/* Households Grid */}
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Deine Haushalte</h2>
+                  <Button 
+                    onClick={() => setViewMode('onboarding')} 
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Neuer Haushalt
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {households.map((household) => {
+                    const progressMetrics = calculateHouseholdProgress(household.move_date, 0, 4)
+                    const progressColor = getProgressColor(progressMetrics.overall)
+                    const daysUntilMove = getDaysUntilMove(household.move_date)
+                    
+                    return (
+                      <Card key={household.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
+                        <CardHeader>
+                          <CardTitle className="flex items-center justify-between">
+                            <span className="text-lg">{household.name}</span>
+                            <Badge variant="secondary" className={progressColor}>
+                              {progressMetrics.overall}%
+                            </Badge>
+                          </CardTitle>
+                          <CardDescription className="flex items-center gap-2">
+                            {getUrgencyIcon(daysUntilMove)}
+                            <span>
+                              Umzug: {new Date(household.move_date).toLocaleDateString('de-DE')}
+                              {daysUntilMove > 0 && ` (in ${daysUntilMove} Tagen)`}
+                              {daysUntilMove === 0 && ` (heute!)`}
+                              {daysUntilMove < 0 && ` (überfällig)`}
+                            </span>
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div>
+                              <div className="flex justify-between text-sm mb-1">
+                                <span>Fortschritt</span>
+                                <span>{progressMetrics.overall}%</span>
+                              </div>
+                              <Progress value={progressMetrics.overall} className="h-2" />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Users className="h-4 w-4 mr-1" />
+                                {household.household_size} {household.household_size === 1 ? 'Person' : 'Personen'}
+                                {household.children_count > 0 && `, ${household.children_count} Kinder`}
+                                {household.pets_count > 0 && `, ${household.pets_count} Haustiere`}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openTaskList(household)}
+                                >
+                                  Aufgaben
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => openHousehold(household)}
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                  Öffnen
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Daily Tip */}
+              <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                <CardHeader>
+                  <CardTitle className="text-white">💡 Tipp des Tages</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>{dailyTip}</p>
+                </CardContent>
+              </Card>
+
+              {/* Modules Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <WorkInProgressCard title="Verträge" icon="💳" />
+                <WorkInProgressCard title="Inventar" icon="📦" />
+                <WorkInProgressCard title="Rechtliches" icon="⚖️" />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {households.map((household) => {
-                const progressMetrics = calculateHouseholdProgress(household.move_date, 0, 4)
-                const progressColor = getProgressColor(progressMetrics.overall)
-                const daysUntilMove = getDaysUntilMove(household.move_date)
-                
-                return (
-                  <Card key={household.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <span className="text-lg">{household.name}</span>
-                        <Badge variant="secondary" className={progressColor}>
-                          {progressMetrics.overall}%
-                        </Badge>
-                      </CardTitle>
-                      <CardDescription className="flex items-center gap-2">
-                        {getUrgencyIcon(daysUntilMove)}
-                        <span>
-                          Umzug: {new Date(household.move_date).toLocaleDateString('de-DE')}
-                          {daysUntilMove > 0 && ` (in ${daysUntilMove} Tagen)`}
-                          {daysUntilMove === 0 && ` (heute!)`}
-                          {daysUntilMove < 0 && ` (überfällig)`}
-                        </span>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Fortschritt</span>
-                            <span>{progressMetrics.overall}%</span>
-                          </div>
-                          <Progress value={progressMetrics.overall} className="h-2" />
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Users className="h-4 w-4 mr-1" />
-                            {household.household_size} {household.household_size === 1 ? 'Person' : 'Personen'}
-                            {household.children_count > 0 && `, ${household.children_count} Kinder`}
-                            {household.pets_count > 0 && `, ${household.pets_count} Haustiere`}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openTaskList(household)}
-                            >
-                              Aufgaben
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => openHousehold(household)}
-                              className="bg-blue-600 hover:bg-blue-700"
-                            >
-                              Öffnen
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* AI Assistant */}
+              <AIAssistant household={households[0]} />
+              
+              {/* Reminders */}
+              <ReminderSystem householdId={households[0]?.id} />
             </div>
-          </>
+          </div>
         )}
-
-        {/* Daily Tip */}
-        <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white mt-8">
-          <CardHeader>
-            <CardTitle className="text-white">💡 Tipp des Tages</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{dailyTip}</p>
-          </CardContent>
-        </Card>
-
-        {/* Modules Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          <WorkInProgressCard title="Verträge" icon="💳" />
-          <WorkInProgressCard title="Inventar" icon="📦" />
-          <WorkInProgressCard title="Rechtliches" icon="⚖️" />
-        </div>
       </div>
     </div>
   )
