@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,12 +25,22 @@ export const InviteOnboarding = ({ invitation, onComplete }: InviteOnboardingPro
   const [nameError, setNameError] = useState<string | null>(null)
 
   const handleAccept = async () => {
-    if (!user) return
+    if (!user) {
+      toast({
+        title: 'Fehler',
+        description: 'Sie müssen angemeldet sein, um eine Einladung anzunehmen.',
+        variant: 'destructive'
+      })
+      return
+    }
+
     if (!name.trim()) {
       setNameError('Bitte gib deinen Namen an.')
       return
     }
+
     setSaving(true)
+    
     try {
       const { error } = await supabase.rpc('accept_household_invitation', {
         p_member_id: invitation.id,
@@ -38,11 +49,19 @@ export const InviteOnboarding = ({ invitation, onComplete }: InviteOnboardingPro
         p_role: role || null
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error accepting invitation:', error)
+        throw error
+      }
 
-      toast({ title: 'Einladung angenommen' })
+      toast({ 
+        title: 'Einladung angenommen',
+        description: `Du bist jetzt Mitglied von "${invitation.households.name}".`
+      })
+      
       onComplete()
     } catch (error) {
+      console.error('Error accepting invitation:', error)
       toast({
         title: 'Fehler',
         description: error instanceof Error ? error.message : 'Aktion fehlgeschlagen',
@@ -60,6 +79,10 @@ export const InviteOnboarding = ({ invitation, onComplete }: InviteOnboardingPro
           <CardTitle className="text-lg">Haushaltseinladung</CardTitle>
           <CardDescription>
             Du wurdest zu "{invitation.households.name}" eingeladen
+            <br />
+            <span className="text-sm text-gray-600">
+              Umzug am {new Date(invitation.households.move_date).toLocaleDateString('de-DE')}
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -73,11 +96,13 @@ export const InviteOnboarding = ({ invitation, onComplete }: InviteOnboardingPro
                 if (e.target.value.trim()) setNameError(null)
               }}
               className={nameError ? 'border-red-500' : ''}
+              placeholder="z.B. Max Mustermann"
             />
             {nameError && (
               <p className="text-sm text-red-600 mt-1">{nameError}</p>
             )}
           </div>
+          
           <div>
             <Label htmlFor="role">Rolle (optional)</Label>
             <Select value={role} onValueChange={(v) => setRole(v)}>
@@ -95,6 +120,7 @@ export const InviteOnboarding = ({ invitation, onComplete }: InviteOnboardingPro
               </SelectContent>
             </Select>
           </div>
+          
           <Button
             onClick={handleAccept}
             className="w-full bg-green-600 hover:bg-green-700"

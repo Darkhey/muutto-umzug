@@ -22,7 +22,11 @@ export function useHouseholdMembers(householdId?: string) {
         .eq('household_id', householdId)
         .order('created_at', { ascending: true })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching members:', error)
+        throw error
+      }
+      
       setMembers(data || [])
     } catch (error) {
       console.error('Error fetching members:', error)
@@ -40,20 +44,35 @@ export function useHouseholdMembers(householdId?: string) {
     if (!householdId || !user) return
 
     try {
+      // Check if user is already a member
+      const { data: existingMember } = await supabase
+        .from('household_members')
+        .select('id')
+        .eq('household_id', householdId)
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle()
+
+      if (existingMember) {
+        throw new Error('Diese E-Mail-Adresse ist bereits Mitglied dieses Haushalts')
+      }
+
       const { data, error } = await supabase
         .from('household_members')
         .insert({
           household_id: householdId,
-          name,
-          email,
-          role,
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          role: role || null,
           is_owner: false,
           invited_at: new Date().toISOString()
         })
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error inviting member:', error)
+        throw error
+      }
 
       toast({
         title: "Einladung versendet",
@@ -64,6 +83,11 @@ export function useHouseholdMembers(householdId?: string) {
       return data
     } catch (error) {
       console.error('Error inviting member:', error)
+      toast({
+        title: "Fehler beim Einladen",
+        description: error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten',
+        variant: "destructive"
+      })
       throw error
     }
   }
@@ -85,6 +109,11 @@ export function useHouseholdMembers(householdId?: string) {
       await fetchMembers()
     } catch (error) {
       console.error('Error updating member role:', error)
+      toast({
+        title: "Fehler beim Aktualisieren der Rolle",
+        description: error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten',
+        variant: "destructive"
+      })
       throw error
     }
   }
@@ -106,6 +135,11 @@ export function useHouseholdMembers(householdId?: string) {
       await fetchMembers()
     } catch (error) {
       console.error('Error removing member:', error)
+      toast({
+        title: "Fehler beim Entfernen",
+        description: error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten',
+        variant: "destructive"
+      })
       throw error
     }
   }
@@ -122,9 +156,19 @@ export function useHouseholdMembers(householdId?: string) {
 
       if (error) throw error
 
+      toast({
+        title: "Einladung angenommen",
+        description: "Sie sind jetzt Mitglied dieses Haushalts."
+      })
+
       await fetchMembers()
     } catch (error) {
       console.error('Error accepting invitation:', error)
+      toast({
+        title: "Fehler beim Annehmen der Einladung",
+        description: error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten',
+        variant: "destructive"
+      })
       throw error
     }
   }

@@ -271,6 +271,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_unique_invitation_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       join_household_by_code: {
         Args: {
           p_invitation_code: string
@@ -279,6 +283,14 @@ export type Database = {
           p_user_email: string
         }
         Returns: string
+      }
+      user_is_household_member: {
+        Args: { p_household_id: string }
+        Returns: boolean
+      }
+      user_is_household_owner: {
+        Args: { p_household_id: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -4,13 +4,14 @@ import { supabase } from '@/integrations/supabase/client'
 import { Database } from '@/types/database'
 import { useAuth } from '@/contexts/AuthContext'
 import { APP_CONFIG } from '@/config/app'
+import { useToast } from '@/hooks/use-toast'
 
 type Household = Database['public']['Tables']['households']['Row']
 type HouseholdInsert = Database['public']['Tables']['households']['Insert']
-type HouseholdMember = Database['public']['Tables']['household_members']['Row']
 
 export function useHouseholds() {
   const { user } = useAuth()
+  const { toast } = useToast()
   const [households, setHouseholds] = useState<Household[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -20,6 +21,8 @@ export function useHouseholds() {
 
     try {
       setLoading(true)
+      setError(null)
+      
       const { data, error } = await supabase
         .from('households')
         .select('*')
@@ -28,7 +31,13 @@ export function useHouseholds() {
       if (error) throw error
       setHouseholds(data || [])
     } catch (err) {
+      console.error('Error fetching households:', err)
       setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten')
+      toast({
+        title: "Fehler beim Laden der Haushalte",
+        description: err instanceof Error ? err.message : 'Ein unbekannter Fehler ist aufgetreten',
+        variant: "destructive"
+      })
     } finally {
       setLoading(false)
     }
@@ -62,16 +71,25 @@ export function useHouseholds() {
           household_id: household.id,
           user_id: user.id,
           name: user.user_metadata?.full_name || user.email || 'Unbenannt',
-          email: user.email,
+          email: user.email || '',
           is_owner: true,
           joined_at: new Date().toISOString()
         })
 
-      if (memberError) throw memberError
+      if (memberError) {
+        console.error('Error creating owner member:', memberError)
+        throw memberError
+      }
+
+      toast({
+        title: "Haushalt erstellt",
+        description: `${household.name} wurde erfolgreich erstellt.`
+      })
 
       await fetchHouseholds()
       return household
     } catch (err) {
+      console.error('Error creating household:', err)
       throw err instanceof Error ? err : new Error('Fehler beim Erstellen des Haushalts')
     }
   }
@@ -98,7 +116,8 @@ export function useHouseholds() {
         name: member.name,
         email: member.email,
         role: member.role || null,
-        is_owner: false
+        is_owner: false,
+        invited_at: new Date().toISOString()
       }))
 
       const { error } = await supabase
@@ -106,7 +125,13 @@ export function useHouseholds() {
         .insert(memberInserts)
 
       if (error) throw error
+
+      toast({
+        title: "Mitglieder eingeladen",
+        description: `${members.length} Mitglied(er) wurden erfolgreich eingeladen.`
+      })
     } catch (err) {
+      console.error('Error adding members:', err)
       throw err instanceof Error ? err : new Error('Fehler beim Hinzufügen der Mitglieder')
     }
   }
@@ -125,62 +150,16 @@ export function useHouseholds() {
 
       if (error) throw error
 
+      toast({
+        title: "Haushalt aktualisiert",
+        description: "Die Änderungen wurden erfolgreich gespeichert."
+      })
+
       await fetchHouseholds()
       return data
     } catch (err) {
+      console.error('Error updating household:', err)
       throw err instanceof Error ? err : new Error('Fehler beim Aktualisieren des Haushalts')
-    }
-  }
-
-  const mergeHouseholds = async (
-    sourceIds: string[],
-    newHouseholdData: Omit<HouseholdInsert, 'created_by'>
-  ) => {
-    if (!user) throw new Error('Benutzer ist nicht angemeldet')
-    if (sourceIds.length < 2) throw new Error('Mindestens zwei Haushalte erforderlich')
-
-    if (
-      !newHouseholdData.name?.trim() ||
-      !newHouseholdData.move_date ||
-      !newHouseholdData.property_type
-    ) {
-      throw new Error('Ungültige Daten f\xC3\xBCr den neuen Haushalt')
-    }
-
-    try {
-      const allMembers: Array<{ name: string; email: string; role?: string }> = []
-
-      for (const id of sourceIds) {
-        const { data: members, error } = await supabase
-          .from('household_members')
-          .select('name, email, role')
-          .eq('household_id', id)
-
-        if (error) throw error
-
-        members?.forEach(m => {
-          const email = m.email?.trim().toLowerCase()
-          if (!email) return
-          const exists = allMembers.some(am => am.email === email)
-          if (!exists) {
-            allMembers.push({ name: m.name, email, role: m.role ?? undefined })
-          }
-        })
-      }
-
-      const newHousehold = await createHousehold(newHouseholdData)
-
-      const membersToAdd = allMembers.filter(
-        m => m.email && m.email !== user.email?.toLowerCase()
-      )
-      if (membersToAdd.length > 0) {
-        await addMembers(newHousehold.id, membersToAdd)
-      }
-
-      await fetchHouseholds()
-      return newHousehold
-    } catch (err) {
-      throw err instanceof Error ? err : new Error('Fehler beim Zusammenführen der Haushalte')
     }
   }
 
@@ -195,7 +174,6 @@ export function useHouseholds() {
     createHousehold,
     addMembers,
     updateHousehold,
-    mergeHouseholds,
     refetch: fetchHouseholds
   }
 }
