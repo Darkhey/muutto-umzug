@@ -117,11 +117,7 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
       rooms: parseNumber(form.rooms),
       furniture_volume: parseNumber(form.furniture_volume),
       old_address: form.old_address || null,
-      new_address: form.new_address || null,
-      old_lat: oldCoords?.lat ?? null,
-      old_lon: oldCoords?.lon ?? null,
-      new_lat: newCoords?.lat ?? null,
-      new_lon: newCoords?.lon ?? null
+      new_address: form.new_address || null
     })
   }
 
