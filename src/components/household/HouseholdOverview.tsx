@@ -12,12 +12,14 @@ interface HouseholdOverviewProps {
   household: ExtendedHousehold
   onManageMembers: () => void
   onEditHousehold: () => void
+  onViewTasks: () => void
 }
 
-export const HouseholdOverview = ({ 
-  household, 
-  onManageMembers, 
-  onEditHousehold 
+export const HouseholdOverview = ({
+  household,
+  onManageMembers,
+  onEditHousehold,
+  onViewTasks
 }: HouseholdOverviewProps) => {
   const progressMetrics = calculateHouseholdProgress(household.move_date, 0, 4)
   const progressColor = getProgressColor(progressMetrics.overall)
@@ -169,6 +171,18 @@ export const HouseholdOverview = ({
             </span>
           </div>
           {/* Quick member avatars could be added here */}
+        </CardContent>
+      </Card>
+
+      {/* Tasks */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Aufgaben</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={onViewTasks} className="bg-blue-600 hover:bg-blue-700">
+            Zur Aufgabenliste
+          </Button>
         </CardContent>
       </Card>
     </div>

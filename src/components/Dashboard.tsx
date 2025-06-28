@@ -13,14 +13,21 @@ import { usePendingInvitations } from '@/hooks/usePendingInvitations'
 import { HouseholdOverview } from './household/HouseholdOverview'
 import { MemberManagement } from './household/MemberManagement'
 import { EditHouseholdForm } from './household/EditHouseholdForm'
+import { TaskList } from './TaskList'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AuthPage } from './auth/AuthPage'
 import { useToast } from '@/hooks/use-toast'
 import { ExtendedHousehold } from '@/types/household'
 import { APP_CONFIG, getRandomTip } from '@/config/app'
 import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
+import { WorkInProgressCard } from './WorkInProgressCard'
 
-type ViewMode = 'dashboard' | 'household-overview' | 'member-management' | 'onboarding'
+type ViewMode =
+  | 'dashboard'
+  | 'household-overview'
+  | 'member-management'
+  | 'task-list'
+  | 'onboarding'
 
 export const Dashboard = () => {
   const { user, signOut, loading: authLoading } = useAuth()
@@ -129,6 +136,11 @@ export const Dashboard = () => {
     setViewMode('household-overview')
   }
 
+  const openTaskList = (household: ExtendedHousehold) => {
+    setActiveHousehold(household)
+    setViewMode('task-list')
+  }
+
   const showMemberManagement = () => {
     setViewMode('member-management')
   }
@@ -175,6 +187,7 @@ export const Dashboard = () => {
             household={activeHousehold}
             onManageMembers={showMemberManagement}
             onEditHousehold={() => setShowEditDialog(true)}
+            onViewTasks={() => openTaskList(activeHousehold)}
           />
 
           <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
@@ -211,6 +224,12 @@ export const Dashboard = () => {
           />
         </div>
       </div>
+    )
+  }
+
+  if (viewMode === 'task-list' && activeHousehold) {
+    return (
+      <TaskList household={activeHousehold} onBack={() => setViewMode('household-overview')} />
     )
   }
 
@@ -353,13 +372,22 @@ export const Dashboard = () => {
                             {household.children_count > 0 && `, ${household.children_count} Kinder`}
                             {household.pets_count > 0 && `, ${household.pets_count} Haustiere`}
                           </div>
-                          <Button 
-                            size="sm" 
-                            onClick={() => openHousehold(household)}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            Öffnen
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openTaskList(household)}
+                            >
+                              Aufgaben
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => openHousehold(household)}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              Öffnen
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -379,6 +407,13 @@ export const Dashboard = () => {
             <p>{dailyTip}</p>
           </CardContent>
         </Card>
+
+        {/* Modules Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <WorkInProgressCard title="Verträge" icon="💳" />
+          <WorkInProgressCard title="Inventar" icon="📦" />
+          <WorkInProgressCard title="Rechtliches" icon="⚖️" />
+        </div>
       </div>
     </div>
   )
