@@ -104,7 +104,14 @@ export const AddressAutocomplete = ({
 
   const handleSelect = (s: Suggestion) => {
     onChange(s.display_name)
-    onSelect?.({ lat: parseFloat(s.lat), lon: parseFloat(s.lon) })
+    const lat = parseFloat(s.lat)
+    const lon = parseFloat(s.lon)
+    if (isNaN(lat) || isNaN(lon)) {
+      console.error('Invalid coordinates received:', s.lat, s.lon)
+      setError('Ungültige Koordinaten erhalten')
+      return
+    }
+    onSelect?.({ lat, lon })
     setShow(false)
   }
 
