@@ -79,6 +79,8 @@ export const Dashboard = () => {
     try {
       setOnboardingData(data)
       
+      console.log("Onboarding data received:", data);
+      
       const household = await createHousehold({
         name: data.householdName,
         move_date: data.moveDate,
@@ -94,6 +96,8 @@ export const Dashboard = () => {
         furniture_volume: data.furnitureVolume
       })
 
+      console.log("Household created:", household);
+
       // Add members if any
       if (data.members && data.members.length > 0) {
         const validMembers = data.members.filter((m: any) => m.name.trim() && m.email.trim())
@@ -106,11 +110,13 @@ export const Dashboard = () => {
       setViewMode('onboarding-success')
       
     } catch (error) {
+      console.error("Error in handleOnboardingComplete:", error);
       toast({
         title: "Fehler beim Erstellen",
         description: error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten',
         variant: "destructive"
       })
+      // Stay on onboarding screen
     }
   }
 
@@ -169,8 +175,7 @@ export const Dashboard = () => {
     const today = new Date()
     const move = new Date(moveDate)
     const diffTime = move.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   }
 
   const getUrgencyColor = (daysUntilMove: number) => {

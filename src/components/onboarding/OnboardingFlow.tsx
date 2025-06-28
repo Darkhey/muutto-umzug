@@ -12,6 +12,7 @@ import { Calendar, Users, Home, MapPin, CreditCard, ArrowRight, ArrowLeft, Check
 import { PropertyType, HouseholdRole } from '@/types/database'
 import { HOUSEHOLD_ROLES } from '@/config/roles'
 import { PROPERTY_TYPES } from '@/config/app'
+import { validateName, validateFutureDate, validatePostalCode } from '@/utils/validation'
 
 interface OnboardingData {
   householdName: string
@@ -56,12 +57,26 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
     members: []
   })
   const { setOldCoords, setNewCoords, distanceKm, distanceFact } = useDistanceCalculation()
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const totalSteps = 5
   const progress = (currentStep / totalSteps) * 100
 
   const updateData = (updates: Partial<OnboardingData>) => {
     setData(prev => ({ ...prev, ...updates }))
+    
+    // Clear errors for updated fields
+    const updatedFieldNames = Object.keys(updates)
+    if (updatedFieldNames.length > 0) {
+      setErrors(prev => {
+        const newErrors = { ...prev }
+        updatedFieldNames.forEach(field => {
+          delete newErrors[field]
+        })
+        return newErrors
+      })
+    }
   }
 
   const addMember = () => {
@@ -78,6 +93,13 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
         i === index ? { ...member, [field]: value } : member
       )
     }))
+    
+    // Clear member errors
+    setErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors[`members.${index}.${field}`]
+      return newErrors
+    })
   }
 
   const removeMember = (index: number) => {
@@ -85,11 +107,109 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
       ...prev,
       members: prev.members.filter((_, i) => i !== index)
     }))
+    
+    // Clear member errors
+    setErrors(prev => {
+      const newErrors = { ...prev }
+      Object.keys(newErrors).forEach(key => {
+        if (key.startsWith(`members.${index}.`)) {
+          delete newErrors[key]
+        }
+      })
+      return newErrors
+    })
+  }
+
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {}
+    
+    switch (step) {
+      case 1:
+        // Validate household name
+        const nameValidation = validateName(data.householdName, 'Haushaltsname')
+        if (!nameValidation.isValid) {
+          newErrors.householdName = nameValidation.errors[0]
+        }
+        
+        // Validate move date
+        const dateValidation = validateFutureDate(data.moveDate, 'Umzugsdatum')
+        if (!dateValidation.isValid) {
+          newErrors.moveDate = dateValidation.errors[0]
+        }
+        break
+        
+      case 2:
+        // Validate household size
+        if (data.householdSize < 1) {
+          newErrors.householdSize = 'Haushaltsgröße muss mindestens 1 sein'
+        }
+        
+        // Validate children count
+        if (data.childrenCount < 0) {
+          newErrors.childrenCount = 'Anzahl Kinder kann nicht negativ sein'
+        }
+        
+        // Validate pets count
+        if (data.petsCount < 0) {
+          newErrors.petsCount = 'Anzahl Haustiere kann nicht negativ sein'
+        }
+        break
+        
+      case 3:
+        // Validate property type
+        if (!data.propertyType) {
+          newErrors.propertyType = 'Wohnform ist erforderlich'
+        }
+        
+        // Validate postal code
+        const postalValidation = validatePostalCode(data.postalCode)
+        if (!postalValidation.isValid) {
+          newErrors.postalCode = postalValidation.errors[0]
+        }
+        
+        // Validate new address
+        if (!data.newAddress.trim()) {
+          newErrors.newAddress = 'Neue Adresse ist erforderlich'
+        }
+        
+        // Validate living space
+        if (data.livingSpace < 0) {
+          newErrors.livingSpace = 'Wohnfläche kann nicht negativ sein'
+        }
+        
+        // Validate rooms
+        if (data.rooms < 0) {
+          newErrors.rooms = 'Anzahl Zimmer kann nicht negativ sein'
+        }
+        break
+        
+      case 4:
+        // Validate members if any
+        data.members.forEach((member, index) => {
+          if (member.name.trim() || member.email.trim()) {
+            if (!member.name.trim()) {
+              newErrors[`members.${index}.name`] = 'Name ist erforderlich'
+            }
+            
+            if (!member.email.trim()) {
+              newErrors[`members.${index}.email`] = 'E-Mail ist erforderlich'
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email.trim())) {
+              newErrors[`members.${index}.email`] = 'E-Mail-Format ist ungültig'
+            }
+          }
+        })
+        break
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1)
+    if (validateStep(currentStep)) {
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1)
+      }
     }
   }
 
@@ -100,30 +220,19 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
   }
 
   const canProceed = () => {
-    switch (currentStep) {
-      case 1:
-        return data.householdName.trim() && data.moveDate
-      case 2:
-        return data.householdSize > 0
-      case 3:
-        return (
-          data.propertyType &&
-          data.postalCode.trim() &&
-          data.newAddress.trim() &&
-          data.livingSpace >= 0 &&
-          data.rooms >= 0
-        )
-      case 4:
-        return true // Members are optional
-      case 5:
-        return true // Review step
-      default:
-        return false
-    }
+    return Object.keys(errors).length === 0
   }
 
-  const handleComplete = () => {
-    onComplete(data)
+  const handleComplete = async () => {
+    if (!validateStep(currentStep)) return
+    
+    setIsSubmitting(true)
+    try {
+      await onComplete(data)
+    } catch (error) {
+      console.error('Error completing onboarding:', error)
+      setIsSubmitting(false)
+    }
   }
 
   const getRoleDisplayName = (role: HouseholdRole) => {
@@ -248,8 +357,11 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                     value={data.householdName}
                     onChange={(e) => updateData({ householdName: e.target.value })}
                     placeholder="z.B. Familie Müller Umzug"
-                    className="text-lg h-12 border-2 focus:border-blue-500"
+                    className={`text-lg h-12 border-2 ${errors.householdName ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
                   />
+                  {errors.householdName && (
+                    <p className="text-sm text-red-600">{errors.householdName}</p>
+                  )}
                   <p className="text-sm text-gray-600 flex items-center gap-2">
                     <Star className="h-4 w-4 text-yellow-500" />
                     Wähle einen Namen, der für alle Mitglieder erkennbar ist
@@ -266,8 +378,11 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                     value={data.moveDate}
                     onChange={(e) => updateData({ moveDate: e.target.value })}
                     min={new Date().toISOString().split('T')[0]}
-                    className="text-lg h-12 border-2 focus:border-blue-500"
+                    className={`text-lg h-12 border-2 ${errors.moveDate ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
                   />
+                  {errors.moveDate && (
+                    <p className="text-sm text-red-600">{errors.moveDate}</p>
+                  )}
                   <p className="text-sm text-gray-600 flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-blue-500" />
                     Das Datum hilft uns dabei, alle Fristen richtig zu berechnen
@@ -310,6 +425,9 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                       +
                     </Button>
                   </div>
+                  {errors.householdSize && (
+                    <p className="text-sm text-red-600 mt-2">{errors.householdSize}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -336,6 +454,9 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                         +
                       </Button>
                     </div>
+                    {errors.childrenCount && (
+                      <p className="text-sm text-red-600 mt-2">{errors.childrenCount}</p>
+                    )}
                   </div>
 
                   <div className="text-center">
@@ -361,6 +482,9 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                         +
                       </Button>
                     </div>
+                    {errors.petsCount && (
+                      <p className="text-sm text-red-600 mt-2">{errors.petsCount}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -371,8 +495,11 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
               <div className="space-y-8">
                 <div className="space-y-3">
                   <Label className="text-lg font-medium">Mietwohnung oder Eigentum? 🏠</Label>
-                  <Select value={data.propertyType} onValueChange={(value: PropertyType) => updateData({ propertyType: value })}>
-                    <SelectTrigger className="text-lg h-12 border-2 focus:border-blue-500">
+                  <Select 
+                    value={data.propertyType} 
+                    onValueChange={(value: PropertyType) => updateData({ propertyType: value })}
+                  >
+                    <SelectTrigger className={`text-lg h-12 border-2 ${errors.propertyType ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}>
                       <SelectValue placeholder="Wähle deine Wohnsituation" />
                     </SelectTrigger>
                     <SelectContent>
@@ -383,6 +510,9 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.propertyType && (
+                    <p className="text-sm text-red-600">{errors.propertyType}</p>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -395,8 +525,11 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                     onChange={(e) => updateData({ postalCode: e.target.value })}
                     placeholder="12345"
                     maxLength={5}
-                    className="text-lg h-12 border-2 focus:border-blue-500"
+                    className={`text-lg h-12 border-2 ${errors.postalCode ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
                   />
+                  {errors.postalCode && (
+                    <p className="text-sm text-red-600">{errors.postalCode}</p>
+                  )}
                   <p className="text-sm text-gray-600 flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-blue-500" />
                     Hilft uns dabei, regionale Fristen und Ämter zu finden
@@ -426,8 +559,11 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                       onChange={(val) => updateData({ newAddress: val })}
                       onSelect={setNewCoords}
                       placeholder="Straße, Hausnummer, Ort"
-                      className="h-12 border-2 focus:border-blue-500"
+                      className={`h-12 border-2 ${errors.newAddress ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
                     />
+                    {errors.newAddress && (
+                      <p className="text-sm text-red-600">{errors.newAddress}</p>
+                    )}
                     {distanceKm != null && (
                       <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                         <p className="text-sm text-green-700 flex items-center gap-2">
@@ -452,8 +588,11 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                         updateData({ livingSpace: Number.isNaN(val) ? 0 : val })
                       }}
                       placeholder="80"
-                      className="h-12 border-2 focus:border-blue-500"
+                      className={`h-12 border-2 ${errors.livingSpace ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
                     />
+                    {errors.livingSpace && (
+                      <p className="text-sm text-red-600">{errors.livingSpace}</p>
+                    )}
                   </div>
                   <div className="space-y-3">
                     <Label htmlFor="rooms" className="text-lg font-medium">Zimmer</Label>
@@ -467,8 +606,11 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                         updateData({ rooms: Number.isNaN(val) ? 0 : val })
                       }}
                       placeholder="3"
-                      className="h-12 border-2 focus:border-blue-500"
+                      className={`h-12 border-2 ${errors.rooms ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
                     />
+                    {errors.rooms && (
+                      <p className="text-sm text-red-600">{errors.rooms}</p>
+                    )}
                   </div>
                   <div className="space-y-3">
                     <Label htmlFor="furnitureVolume" className="text-lg font-medium">Möbelvolumen (m³)</Label>
@@ -510,8 +652,11 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                           placeholder="Max Mustermann"
                           value={member.name}
                           onChange={(e) => updateMember(index, 'name', e.target.value)}
-                          className="mt-1 h-10"
+                          className={`mt-1 h-10 ${errors[`members.${index}.name`] ? 'border-red-500 focus:border-red-500' : ''}`}
                         />
+                        {errors[`members.${index}.name`] && (
+                          <p className="text-sm text-red-600">{errors[`members.${index}.name`]}</p>
+                        )}
                       </div>
                       <div>
                         <Label className="font-medium">E-Mail</Label>
@@ -520,8 +665,11 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                           type="email"
                           value={member.email}
                           onChange={(e) => updateMember(index, 'email', e.target.value)}
-                          className="mt-1 h-10"
+                          className={`mt-1 h-10 ${errors[`members.${index}.email`] ? 'border-red-500 focus:border-red-500' : ''}`}
                         />
+                        {errors[`members.${index}.email`] && (
+                          <p className="text-sm text-red-600">{errors[`members.${index}.email`]}</p>
+                        )}
                       </div>
                       <div>
                         <Label className="font-medium">Rolle (optional)</Label>
@@ -709,7 +857,6 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                 {currentStep < totalSteps ? (
                   <Button 
                     onClick={nextStep} 
-                    disabled={!canProceed()}
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 h-12 px-8 text-lg"
                   >
                     Weiter
@@ -719,10 +866,19 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                   <Button 
                     onClick={handleComplete}
                     className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-12 px-8 text-lg"
-                    disabled={!canProceed()}
+                    disabled={isSubmitting}
                   >
-                    <Sparkles className="mr-2 h-5 w-5" />
-                    Haushalt erstellen
+                    {isSubmitting ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Wird erstellt...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-5 w-5" />
+                        Haushalt erstellen
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
