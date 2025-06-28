@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHouseholds } from '@/hooks/useHouseholds'
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Users, CheckCircle, Calendar, Plus, Home, LogOut } from 'lucide-react'
+import { Users, CheckCircle, Calendar, Plus, Home, LogOut, Clock, AlertCircle } from 'lucide-react'
 import { OnboardingFlow } from './onboarding/OnboardingFlow'
 import { InviteOnboarding } from './onboarding/InviteOnboarding'
 import { usePendingInvitations } from '@/hooks/usePendingInvitations'
@@ -95,7 +94,7 @@ export const Dashboard = () => {
       setViewMode('dashboard')
       
       toast({
-        title: "Haushalt erfolgreich erstellt!",
+        title: "Haushalt erfolgreich erstellt! 🎉",
         description: `Willkommen bei ${APP_CONFIG.name}. Lass uns mit der Planung beginnen.`
       })
     } catch (error) {
@@ -148,6 +147,27 @@ export const Dashboard = () => {
   const backToDashboard = () => {
     setViewMode('dashboard')
     setActiveHousehold(null)
+  }
+
+  const getDaysUntilMove = (moveDate: string) => {
+    const today = new Date()
+    const move = new Date(moveDate)
+    const diffTime = move.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
+  }
+
+  const getUrgencyColor = (daysUntilMove: number) => {
+    if (daysUntilMove < 0) return 'text-red-600'
+    if (daysUntilMove <= 7) return 'text-orange-600'
+    if (daysUntilMove <= 30) return 'text-yellow-600'
+    return 'text-green-600'
+  }
+
+  const getUrgencyIcon = (daysUntilMove: number) => {
+    if (daysUntilMove < 0) return <AlertCircle className="h-4 w-4" />
+    if (daysUntilMove <= 7) return <Clock className="h-4 w-4" />
+    return <Calendar className="h-4 w-4" />
   }
 
   if (viewMode === 'dashboard' && invitations.length > 0) {
@@ -235,7 +255,7 @@ export const Dashboard = () => {
 
   const totalHouseholds = households.length
   const nextDeadline = households.length > 0 
-    ? calculateHouseholdProgress(households[0].move_date).daysRemaining
+    ? getDaysUntilMove(households[0].move_date)
     : 0
 
   return (
@@ -275,12 +295,12 @@ export const Dashboard = () => {
 
             <Card className="bg-white shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Nächste Frist</CardTitle>
-                <Calendar className="h-4 w-4 text-orange-600" />
+                <CardTitle className="text-sm font-medium">Nächster Umzug</CardTitle>
+                {getUrgencyIcon(nextDeadline)}
               </CardHeader>
               <CardContent>
-                <div className="text-sm font-bold text-orange-600">
-                  {nextDeadline > 0 ? `${nextDeadline} Tage` : 'Überfällig'}
+                <div className={`text-sm font-bold ${getUrgencyColor(nextDeadline)}`}>
+                  {nextDeadline > 0 ? `in ${nextDeadline} Tagen` : nextDeadline === 0 ? 'Heute!' : 'Überfällig'}
                 </div>
               </CardContent>
             </Card>
@@ -339,6 +359,7 @@ export const Dashboard = () => {
               {households.map((household) => {
                 const progressMetrics = calculateHouseholdProgress(household.move_date, 0, 4)
                 const progressColor = getProgressColor(progressMetrics.overall)
+                const daysUntilMove = getDaysUntilMove(household.move_date)
                 
                 return (
                   <Card key={household.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
@@ -349,10 +370,14 @@ export const Dashboard = () => {
                           {progressMetrics.overall}%
                         </Badge>
                       </CardTitle>
-                      <CardDescription>
-                        Umzug: {new Date(household.move_date).toLocaleDateString('de-DE')}
-                        {progressMetrics.daysRemaining > 0 && ` (in ${progressMetrics.daysRemaining} Tagen)`}
-                        {progressMetrics.daysRemaining <= 0 && ` (überfällig)`}
+                      <CardDescription className="flex items-center gap-2">
+                        {getUrgencyIcon(daysUntilMove)}
+                        <span>
+                          Umzug: {new Date(household.move_date).toLocaleDateString('de-DE')}
+                          {daysUntilMove > 0 && ` (in ${daysUntilMove} Tagen)`}
+                          {daysUntilMove === 0 && ` (heute!)`}
+                          {daysUntilMove < 0 && ` (überfällig)`}
+                        </span>
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
