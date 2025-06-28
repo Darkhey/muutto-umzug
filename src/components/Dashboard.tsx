@@ -5,9 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Users, CheckCircle, Calendar, Plus, Home, LogOut, Clock, AlertCircle, Bot, TrendingUp, Bell } from 'lucide-react'
 import { OnboardingFlow } from './onboarding/OnboardingFlow'
+import { OnboardingSuccess } from './onboarding/OnboardingSuccess'
 import { InviteOnboarding } from './onboarding/InviteOnboarding'
 import { usePendingInvitations } from '@/hooks/usePendingInvitations'
 import { HouseholdOverview } from './household/HouseholdOverview'
@@ -31,6 +31,7 @@ type ViewMode =
   | 'member-management'
   | 'task-list'
   | 'onboarding'
+  | 'onboarding-success'
 
 export const Dashboard = () => {
   const { user, signOut, loading: authLoading } = useAuth()
@@ -41,6 +42,7 @@ export const Dashboard = () => {
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [dailyTip] = useState(getRandomTip())
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [onboardingData, setOnboardingData] = useState<any>(null)
   const { invitations, loading: inviteLoading, error: inviteError, refetch: refetchInvites } = usePendingInvitations()
 
   useEffect(() => {
@@ -72,6 +74,8 @@ export const Dashboard = () => {
 
   const handleOnboardingComplete = async (data: any) => {
     try {
+      setOnboardingData(data)
+      
       const household = await createHousehold({
         name: data.householdName,
         move_date: data.moveDate,
@@ -95,12 +99,9 @@ export const Dashboard = () => {
         }
       }
 
-      setViewMode('dashboard')
+      // Show success screen
+      setViewMode('onboarding-success')
       
-      toast({
-        title: "Haushalt erfolgreich erstellt! 🎉",
-        description: `Willkommen bei ${APP_CONFIG.name}. Lass uns mit der Planung beginnen.`
-      })
     } catch (error) {
       toast({
         title: "Fehler beim Erstellen",
@@ -108,6 +109,14 @@ export const Dashboard = () => {
         variant: "destructive"
       })
     }
+  }
+
+  const handleOnboardingSuccessComplete = () => {
+    setViewMode('dashboard')
+    toast({
+      title: "Willkommen bei muutto! 🎉",
+      description: `Dein Haushalt "${onboardingData?.householdName}" ist bereit. Lass uns mit der Planung beginnen!`
+    })
   }
 
   const handleSignOut = async () => {
@@ -192,6 +201,16 @@ export const Dashboard = () => {
       <OnboardingFlow 
         onComplete={handleOnboardingComplete}
         onSkip={() => setViewMode('dashboard')}
+      />
+    )
+  }
+
+  if (viewMode === 'onboarding-success' && onboardingData) {
+    return (
+      <OnboardingSuccess
+        householdName={onboardingData.householdName}
+        moveDate={onboardingData.moveDate}
+        onContinue={handleOnboardingSuccessComplete}
       />
     )
   }

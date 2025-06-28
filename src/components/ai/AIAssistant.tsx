@@ -6,8 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
-import { Bot, User, Send, Loader2, Lightbulb, Calendar, AlertTriangle } from 'lucide-react'
+import { Bot, User, Send, Loader2, Lightbulb, Calendar, AlertTriangle, Sparkles } from 'lucide-react'
 import { ExtendedHousehold } from '@/types/household'
+import { supabase } from '@/integrations/supabase/client'
 
 interface Message {
   id: string
@@ -25,27 +26,44 @@ interface AIAssistantProps {
 export const AIAssistant = ({ household, className }: AIAssistantProps) => {
   const { user } = useAuth()
   const { toast } = useToast()
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: `Hallo! 👋 Ich bin dein muutto-Assistent und helfe dir bei deinem Umzug. ${
-        household 
-          ? `Ich sehe, dass dein Umzug "${household.name}" am ${new Date(household.move_date).toLocaleDateString('de-DE')} geplant ist.` 
-          : 'Wie kann ich dir heute helfen?'
-      }`,
-      timestamp: new Date(),
-      suggestions: [
-        'Was muss ich als erstes tun?',
-        'Welche Fristen sind wichtig?',
-        'Wie organisiere ich den Umzugstag?',
-        'Was kostet ein Umzug?'
-      ]
-    }
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  // Initialize with welcome message
+  useEffect(() => {
+    if (!isInitialized) {
+      const welcomeMessage: Message = {
+        id: '1',
+        role: 'assistant',
+        content: `Hallo! 👋 Ich bin dein muutto KI-Assistent und helfe dir bei deinem Umzug. ${
+          household 
+            ? `Ich sehe, dass dein Umzug "${household.name}" am ${new Date(household.move_date).toLocaleDateString('de-DE')} geplant ist.` 
+            : 'Wie kann ich dir heute helfen?'
+        }
+
+Ich kann dir bei folgenden Themen helfen:
+• **Fristen & Deadlines** - Wann muss was erledigt werden?
+• **Kosten & Budget** - Was kostet ein Umzug?
+• **Organisation** - Wie plane ich den Umzugstag?
+• **Rechtliches** - Welche Ummeldungen sind nötig?
+
+Stelle mir gerne deine erste Frage! 😊`,
+        timestamp: new Date(),
+        suggestions: [
+          'Was muss ich als erstes tun?',
+          'Welche Fristen sind wichtig?',
+          'Wie organisiere ich den Umzugstag?',
+          'Was kostet ein Umzug?'
+        ]
+      }
+      
+      setMessages([welcomeMessage])
+      setIsInitialized(true)
+    }
+  }, [household, isInitialized])
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -53,68 +71,54 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
     }
   }, [messages])
 
-  const generateResponse = async (userMessage: string): Promise<string> => {
-    // Simulate AI response based on context
-    const lowerMessage = userMessage.toLowerCase()
-    
-    if (lowerMessage.includes('frist') || lowerMessage.includes('deadline')) {
-      return `📅 **Wichtige Fristen für deinen Umzug:**
+  const getDaysUntilMove = () => {
+    if (!household) return null
+    const today = new Date()
+    const moveDate = new Date(household.move_date)
+    const diffTime = moveDate.getTime() - today.getTime()
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  }
 
-• **3 Monate vorher:** Mietvertrag kündigen
-• **6-8 Wochen vorher:** Umzugsunternehmen buchen
-• **4 Wochen vorher:** Strom, Gas, Internet ummelden
-• **2 Wochen vorher:** Nachsendeauftrag bei der Post
-• **Nach dem Umzug:** Binnen 14 Tagen beim Einwohnermeldeamt anmelden
+  const callAIAssistant = async (userMessage: string): Promise<string> => {
+    try {
+      const householdContext = household ? {
+        name: household.name,
+        moveDate: household.move_date,
+        householdSize: household.household_size,
+        childrenCount: household.children_count,
+        petsCount: household.pets_count,
+        propertyType: household.property_type,
+        daysUntilMove: getDaysUntilMove() || 0
+      } : undefined
 
-${household ? `Für deinen Umzug am ${new Date(household.move_date).toLocaleDateString('de-DE')} habe ich bereits eine personalisierte Checkliste erstellt!` : ''}`
+      const chatMessages = [
+        ...messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        {
+          role: 'user' as const,
+          content: userMessage
+        }
+      ]
+
+      const { data, error } = await supabase.functions.invoke('ai-assistant', {
+        body: {
+          messages: chatMessages,
+          householdContext
+        }
+      })
+
+      if (error) {
+        console.error('Supabase function error:', error)
+        throw error
+      }
+
+      return data.message || 'Entschuldigung, ich konnte keine Antwort generieren.'
+    } catch (error) {
+      console.error('AI Assistant error:', error)
+      throw error
     }
-    
-    if (lowerMessage.includes('kosten') || lowerMessage.includes('preis')) {
-      return `💰 **Umzugskosten im Überblick:**
-
-• **Umzugsunternehmen:** 800-2000€ (je nach Entfernung)
-• **Kartons & Material:** 50-150€
-• **Renovierung:** 200-800€
-• **Ummeldungen:** meist kostenlos
-• **Kaution neue Wohnung:** 2-3 Monatsmieten
-
-**Spartipp:** Vergleiche mehrere Angebote und plane rechtzeitig!`
-    }
-    
-    if (lowerMessage.includes('umzugstag') || lowerMessage.includes('organisation')) {
-      return `📦 **Umzugstag perfekt organisieren:**
-
-1. **Früh starten:** Um 7-8 Uhr beginnen
-2. **Team koordinieren:** Helfer einteilen und briefen
-3. **Verpflegung:** Snacks und Getränke bereitstellen
-4. **Notfall-Karton:** Wichtigste Sachen griffbereit
-5. **Übergabe:** Protokolle für alte und neue Wohnung
-
-**Pro-Tipp:** Erstelle einen Zeitplan und teile ihn mit allen Helfern!`
-    }
-    
-    if (lowerMessage.includes('anfang') || lowerMessage.includes('erste')) {
-      return `🚀 **Deine ersten Schritte:**
-
-1. **Umzugstermin festlegen** ✅
-2. **Checkliste erstellen** (mache ich für dich!)
-3. **Budget planen** (800-2000€ einkalkulieren)
-4. **Umzugsunternehmen kontaktieren**
-5. **Kündigungsfristen prüfen**
-
-Soll ich dir bei einem dieser Punkte konkret helfen?`
-    }
-    
-    // Default response
-    return `Ich verstehe deine Frage zu "${userMessage}". Als dein Umzugs-Assistent kann ich dir bei folgenden Themen helfen:
-
-• **Fristen & Deadlines** - Wann muss was erledigt werden?
-• **Kosten & Budget** - Was kostet ein Umzug?
-• **Organisation** - Wie plane ich den Umzugstag?
-• **Rechtliches** - Welche Ummeldungen sind nötig?
-• **Tipps & Tricks** - Wie wird der Umzug stressfrei?
-
-Stelle mir gerne eine konkretere Frage! 😊`
   }
 
   const handleSend = async () => {
@@ -132,10 +136,7 @@ Stelle mir gerne eine konkretere Frage! 😊`
     setIsLoading(true)
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000))
-      
-      const response = await generateResponse(userMessage.content)
+      const response = await callAIAssistant(userMessage.content)
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -151,10 +152,36 @@ Stelle mir gerne eine konkretere Frage! 😊`
 
       setMessages(prev => [...prev, assistantMessage])
     } catch (error) {
+      console.error('Error calling AI assistant:', error)
+      
+      // Fallback message
+      const fallbackMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `Entschuldigung, ich bin momentan nicht verfügbar. Hier sind einige wichtige Umzugstipps:
+
+📅 **Wichtige Fristen:**
+• 3 Monate vorher: Mietvertrag kündigen
+• 6-8 Wochen vorher: Umzugsunternehmen buchen
+• 4 Wochen vorher: Verträge ummelden
+• 2 Wochen vorher: Nachsendeauftrag
+
+💡 **Sofort-Tipps:**
+• Erstelle eine Checkliste
+• Hole mehrere Umzugsangebote ein
+• Sammle wichtige Dokumente
+• Plane ein Umzugsbudget (800-2000€)
+
+Versuche es gleich nochmal - ich bin normalerweise sofort da! 😊`,
+        timestamp: new Date()
+      }
+      
+      setMessages(prev => [...prev, fallbackMessage])
+      
       toast({
-        title: 'Fehler',
-        description: 'Der KI-Assistent ist momentan nicht verfügbar.',
-        variant: 'destructive'
+        title: 'KI-Assistent temporär nicht verfügbar',
+        description: 'Ich habe dir trotzdem einige wichtige Tipps zusammengestellt.',
+        variant: 'default'
       })
     } finally {
       setIsLoading(false)
@@ -176,10 +203,13 @@ Stelle mir gerne eine konkretere Frage! 😊`
     <Card className={`h-[600px] flex flex-col ${className}`}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-indigo-600" />
+          <div className="relative">
+            <Bot className="h-5 w-5 text-indigo-600" />
+            <Sparkles className="h-3 w-3 text-yellow-500 absolute -top-1 -right-1" />
+          </div>
           muutto KI-Assistent
           <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
-            Beta
+            Powered by GPT-4
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -280,6 +310,9 @@ Stelle mir gerne eine konkretere Frage! 😊`
               )}
             </Button>
           </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Powered by OpenAI GPT-4 • Antworten können Fehler enthalten
+          </p>
         </div>
       </CardContent>
     </Card>
