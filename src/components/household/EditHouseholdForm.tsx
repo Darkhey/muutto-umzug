@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
+import { AddressAutocomplete } from '@/components/AddressAutocomplete'
+import { haversineDistance } from '@/lib/distance'
+import { getDistanceFunFact } from '@/lib/funfacts'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -53,6 +56,8 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
         ? String(household.furniture_volume)
         : ''
   })
+  const [oldCoords, setOldCoords] = useState<{ lat: number; lon: number } | null>(null)
+  const [newCoords, setNewCoords] = useState<{ lat: number; lon: number } | null>(null)
 
   const updateField = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -63,6 +68,19 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
     const num = Number(value)
     return Number.isNaN(num) ? null : num
   }
+
+  const distanceKm =
+    oldCoords && newCoords
+      ? Math.round(
+          haversineDistance(
+            oldCoords.lat,
+            oldCoords.lon,
+            newCoords.lat,
+            newCoords.lon
+          )
+        )
+      : null
+  const distanceFact = distanceKm != null ? getDistanceFunFact(distanceKm) : null
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -169,20 +187,25 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
 
       <div className="space-y-2">
         <Label htmlFor="edit-old">Aktuelle Adresse (optional)</Label>
-        <Input
-          id="edit-old"
+        <AddressAutocomplete
           value={form.old_address}
-          onChange={(e) => updateField('old_address', e.target.value)}
+          onChange={(val) => updateField('old_address', val)}
+          onSelect={setOldCoords}
         />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="edit-new">Neue Adresse</Label>
-        <Input
-          id="edit-new"
+        <AddressAutocomplete
           value={form.new_address}
-          onChange={(e) => updateField('new_address', e.target.value)}
+          onChange={(val) => updateField('new_address', val)}
+          onSelect={setNewCoords}
         />
+        {distanceKm != null && (
+          <p className="text-sm text-gray-600 mt-1">
+            Entfernung ca. {distanceKm} km – {distanceFact}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
