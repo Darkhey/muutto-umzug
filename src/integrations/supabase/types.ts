@@ -110,6 +110,11 @@ export type Database = {
           name: string
           pets_count: number
           postal_code: string | null
+          old_address: string | null
+          new_address: string | null
+          living_space: number | null
+          rooms: number | null
+          furniture_volume: number | null
           property_type: Database["public"]["Enums"]["property_type"]
           updated_at: string
         }
@@ -124,6 +129,11 @@ export type Database = {
           name: string
           pets_count?: number
           postal_code?: string | null
+          old_address?: string | null
+          new_address?: string | null
+          living_space?: number | null
+          rooms?: number | null
+          furniture_volume?: number | null
           property_type: Database["public"]["Enums"]["property_type"]
           updated_at?: string
         }
@@ -138,6 +148,11 @@ export type Database = {
           name?: string
           pets_count?: number
           postal_code?: string | null
+          old_address?: string | null
+          new_address?: string | null
+          living_space?: number | null
+          rooms?: number | null
+          furniture_volume?: number | null
           property_type?: Database["public"]["Enums"]["property_type"]
           updated_at?: string
         }
