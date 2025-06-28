@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { Users, CheckCircle, Calendar, Plus, Home, LogOut, Clock, AlertCircle, Bot, TrendingUp, Bell } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Users, CheckCircle, Calendar, Plus, Home, LogOut, Clock, AlertCircle, Bot, TrendingUp, Bell, Bug } from 'lucide-react'
 import { OnboardingFlow } from './onboarding/OnboardingFlow'
 import { OnboardingSuccess } from './onboarding/OnboardingSuccess'
 import { InviteOnboarding } from './onboarding/InviteOnboarding'
@@ -17,6 +18,7 @@ import { TaskList } from './TaskList'
 import { AIAssistant } from './ai/AIAssistant'
 import { MovingInsights } from './insights/MovingInsights'
 import { ReminderSystem } from './reminders/ReminderSystem'
+import { TestRunner } from './testing/TestRunner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AuthPage } from './auth/AuthPage'
 import { useToast } from '@/hooks/use-toast'
@@ -32,6 +34,7 @@ type ViewMode =
   | 'task-list'
   | 'onboarding'
   | 'onboarding-success'
+  | 'testing'
 
 export const Dashboard = () => {
   const { user, signOut, loading: authLoading } = useAuth()
@@ -215,6 +218,23 @@ export const Dashboard = () => {
     )
   }
 
+  if (viewMode === 'testing') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center mb-6">
+            <Button variant="ghost" onClick={backToDashboard} className="mr-4">
+              ← Zurück zum Dashboard
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900">Test Suite</h1>
+          </div>
+          
+          <TestRunner />
+        </div>
+      </div>
+    )
+  }
+
   if (viewMode === 'household-overview' && activeHousehold) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -305,6 +325,15 @@ export const Dashboard = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setViewMode('testing')}
+              className="text-purple-600 hover:text-purple-700"
+            >
+              <Bug className="h-4 w-4 mr-2" />
+              Tests
+            </Button>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Abmelden
@@ -375,116 +404,127 @@ export const Dashboard = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Main Content Area */}
-            <div className="lg:col-span-3 space-y-6">
-              {/* Households Grid */}
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Deine Haushalte</h2>
-                  <Button 
-                    onClick={() => setViewMode('onboarding')} 
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Neuer Haushalt
-                  </Button>
+          <Tabs defaultValue="households" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 bg-white">
+              <TabsTrigger value="households">Haushalte</TabsTrigger>
+              <TabsTrigger value="overview">Übersicht</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="households" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {/* Main Content Area */}
+                <div className="lg:col-span-3 space-y-6">
+                  {/* Households Grid */}
+                  <div>
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-bold text-gray-900">Deine Haushalte</h2>
+                      <Button 
+                        onClick={() => setViewMode('onboarding')} 
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Neuer Haushalt
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {households.map((household) => {
+                        const progressMetrics = calculateHouseholdProgress(household.move_date, 0, 4)
+                        const progressColor = getProgressColor(progressMetrics.overall)
+                        const daysUntilMove = getDaysUntilMove(household.move_date)
+                        
+                        return (
+                          <Card key={household.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
+                            <CardHeader>
+                              <CardTitle className="flex items-center justify-between">
+                                <span className="text-lg">{household.name}</span>
+                                <Badge variant="secondary" className={progressColor}>
+                                  {progressMetrics.overall}%
+                                </Badge>
+                              </CardTitle>
+                              <CardDescription className="flex items-center gap-2">
+                                {getUrgencyIcon(daysUntilMove)}
+                                <span>
+                                  Umzug: {new Date(household.move_date).toLocaleDateString('de-DE')}
+                                  {daysUntilMove > 0 && ` (in ${daysUntilMove} Tagen)`}
+                                  {daysUntilMove === 0 && ` (heute!)`}
+                                  {daysUntilMove < 0 && ` (überfällig)`}
+                                </span>
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-4">
+                                <div>
+                                  <div className="flex justify-between text-sm mb-1">
+                                    <span>Fortschritt</span>
+                                    <span>{progressMetrics.overall}%</span>
+                                  </div>
+                                  <Progress value={progressMetrics.overall} className="h-2" />
+                                </div>
+                                
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center text-sm text-gray-600">
+                                    <Users className="h-4 w-4 mr-1" />
+                                    {household.household_size} {household.household_size === 1 ? 'Person' : 'Personen'}
+                                    {household.children_count > 0 && `, ${household.children_count} Kinder`}
+                                    {household.pets_count > 0 && `, ${household.pets_count} Haustiere`}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => openTaskList(household)}
+                                    >
+                                      Aufgaben
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => openHousehold(household)}
+                                      className="bg-blue-600 hover:bg-blue-700"
+                                    >
+                                      Öffnen
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Daily Tip */}
+                  <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+                    <CardHeader>
+                      <CardTitle className="text-white">💡 Tipp des Tages</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p>{dailyTip}</p>
+                    </CardContent>
+                  </Card>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {households.map((household) => {
-                    const progressMetrics = calculateHouseholdProgress(household.move_date, 0, 4)
-                    const progressColor = getProgressColor(progressMetrics.overall)
-                    const daysUntilMove = getDaysUntilMove(household.move_date)
-                    
-                    return (
-                      <Card key={household.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-                        <CardHeader>
-                          <CardTitle className="flex items-center justify-between">
-                            <span className="text-lg">{household.name}</span>
-                            <Badge variant="secondary" className={progressColor}>
-                              {progressMetrics.overall}%
-                            </Badge>
-                          </CardTitle>
-                          <CardDescription className="flex items-center gap-2">
-                            {getUrgencyIcon(daysUntilMove)}
-                            <span>
-                              Umzug: {new Date(household.move_date).toLocaleDateString('de-DE')}
-                              {daysUntilMove > 0 && ` (in ${daysUntilMove} Tagen)`}
-                              {daysUntilMove === 0 && ` (heute!)`}
-                              {daysUntilMove < 0 && ` (überfällig)`}
-                            </span>
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div>
-                              <div className="flex justify-between text-sm mb-1">
-                                <span>Fortschritt</span>
-                                <span>{progressMetrics.overall}%</span>
-                              </div>
-                              <Progress value={progressMetrics.overall} className="h-2" />
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Users className="h-4 w-4 mr-1" />
-                                {household.household_size} {household.household_size === 1 ? 'Person' : 'Personen'}
-                                {household.children_count > 0 && `, ${household.children_count} Kinder`}
-                                {household.pets_count > 0 && `, ${household.pets_count} Haustiere`}
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => openTaskList(household)}
-                                >
-                                  Aufgaben
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => openHousehold(household)}
-                                  className="bg-blue-600 hover:bg-blue-700"
-                                >
-                                  Öffnen
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
+                {/* Sidebar */}
+                <div className="space-y-6">
+                  {/* AI Assistant */}
+                  <AIAssistant household={households[0]} />
+                  
+                  {/* Reminders */}
+                  <ReminderSystem householdId={households[0]?.id} />
                 </div>
               </div>
+            </TabsContent>
 
-              {/* Daily Tip */}
-              <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-                <CardHeader>
-                  <CardTitle className="text-white">💡 Tipp des Tages</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>{dailyTip}</p>
-                </CardContent>
-              </Card>
-
+            <TabsContent value="overview" className="space-y-6">
               {/* Modules Overview */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <WorkInProgressCard title="Verträge" icon="💳" />
                 <WorkInProgressCard title="Inventar" icon="📦" />
                 <WorkInProgressCard title="Rechtliches" icon="⚖️" />
               </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* AI Assistant */}
-              <AIAssistant household={households[0]} />
-              
-              {/* Reminders */}
-              <ReminderSystem householdId={households[0]?.id} />
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>

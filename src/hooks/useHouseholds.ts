@@ -8,6 +8,27 @@ import { useToast } from '@/hooks/use-toast'
 type Household = Database['public']['Tables']['households']['Row']
 type HouseholdInsert = Database['public']['Tables']['households']['Insert']
 
+export interface CreateHouseholdData {
+  name: string
+  move_date: string
+  household_size: number
+  children_count: number
+  pets_count: number
+  property_type: 'miete' | 'eigentum'
+  postal_code?: string | null
+  old_address?: string | null
+  new_address?: string | null
+  living_space?: number | null
+  rooms?: number | null
+  furniture_volume?: number | null
+}
+
+export interface HouseholdMember {
+  name: string
+  email: string
+  role?: string
+}
+
 export function useHouseholds() {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -16,7 +37,10 @@ export function useHouseholds() {
   const [error, setError] = useState<string | null>(null)
 
   const fetchHouseholds = async () => {
-    if (!user) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)
@@ -42,12 +66,73 @@ export function useHouseholds() {
     }
   }
 
-  const createHousehold = async (householdData: Omit<HouseholdInsert, 'created_by' | 'invitation_code'>) => {
+  const validateHouseholdData = (data: CreateHouseholdData): string[] => {
+    const errors: string[] = []
+
+    // Required fields
+    if (!data.name?.trim()) {
+      errors.push('Haushaltsname ist erforderlich')
+    }
+    if (!data.move_date) {
+      errors.push('Umzugsdatum ist erforderlich')
+    }
+    if (!data.property_type) {
+      errors.push('Wohnform ist erforderlich')
+    }
+
+    // Validate move date is in the future
+    if (data.move_date) {
+      const moveDate = new Date(data.move_date)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
+      if (moveDate < today) {
+        errors.push('Umzugsdatum muss in der Zukunft liegen')
+      }
+    }
+
+    // Validate household size
+    if (data.household_size < 1) {
+      errors.push('Haushaltsgröße muss mindestens 1 sein')
+    }
+    if (data.household_size > APP_CONFIG.defaults.maxMembersPerHousehold) {
+      errors.push(`Haushaltsgröße darf ${APP_CONFIG.defaults.maxMembersPerHousehold} nicht überschreiten`)
+    }
+
+    // Validate counts
+    if (data.children_count < 0) {
+      errors.push('Anzahl Kinder kann nicht negativ sein')
+    }
+    if (data.pets_count < 0) {
+      errors.push('Anzahl Haustiere kann nicht negativ sein')
+    }
+
+    // Validate postal code format (German)
+    if (data.postal_code && !/^\d{5}$/.test(data.postal_code)) {
+      errors.push('Postleitzahl muss 5 Ziffern haben')
+    }
+
+    // Validate numeric fields
+    if (data.living_space !== null && data.living_space !== undefined && data.living_space < 0) {
+      errors.push('Wohnfläche kann nicht negativ sein')
+    }
+    if (data.rooms !== null && data.rooms !== undefined && data.rooms < 0) {
+      errors.push('Anzahl Zimmer kann nicht negativ sein')
+    }
+    if (data.furniture_volume !== null && data.furniture_volume !== undefined && data.furniture_volume < 0) {
+      errors.push('Möbelvolumen kann nicht negativ sein')
+    }
+
+    return errors
+  }
+
+  const createHousehold = async (householdData: CreateHouseholdData) => {
     if (!user) throw new Error('Benutzer ist nicht angemeldet')
 
-    // Validate household size limits
-    if (householdData.household_size && householdData.household_size > APP_CONFIG.defaults.maxMembersPerHousehold) {
-      throw new Error(`Haushaltsgröße darf ${APP_CONFIG.defaults.maxMembersPerHousehold} Personen nicht überschreiten`)
+    // Validate input data
+    const validationErrors = validateHouseholdData(householdData)
+    if (validationErrors.length > 0) {
+      throw new Error(validationErrors.join(', '))
     }
 
     try {
@@ -78,6 +163,8 @@ export function useHouseholds() {
 
       if (memberError) {
         console.error('Error creating owner member:', memberError)
+        // Try to clean up the household if member creation fails
+        await supabase.from('households').delete().eq('id', household.id)
         throw memberError
       }
 
@@ -99,8 +186,8 @@ export function useHouseholds() {
       }
 
       toast({
-        title: "Haushalt erstellt",
-        description: `${household.name} wurde erfolgreich erstellt.`
+        title: "Haushalt erfolgreich erstellt! 🎉",
+        description: `${household.name} wurde erstellt und ist bereit für die Planung.`
       })
 
       await fetchHouseholds()
@@ -111,11 +198,9 @@ export function useHouseholds() {
     }
   }
 
-  const addMembers = async (householdId: string, members: Array<{
-    name: string
-    email: string
-    role?: string
-  }>) => {
+  const addMembers = async (householdId: string, members: HouseholdMember[]) => {
+    if (!members || members.length === 0) return
+
     try {
       // Validate member limits
       const { data: existingMembers } = await supabase
@@ -128,10 +213,41 @@ export function useHouseholds() {
         throw new Error(`Maximale Anzahl von ${APP_CONFIG.defaults.maxMembersPerHousehold} Mitgliedern erreicht`)
       }
 
-      const memberInserts = members.map(member => ({
+      // Validate member data
+      const validMembers = members.filter(member => {
+        if (!member.name?.trim()) return false
+        if (!member.email?.trim()) return false
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email)) return false
+        return true
+      })
+
+      if (validMembers.length === 0) {
+        throw new Error('Keine gültigen Mitglieder zum Hinzufügen')
+      }
+
+      // Check for duplicate emails
+      const emails = validMembers.map(m => m.email.toLowerCase())
+      const uniqueEmails = [...new Set(emails)]
+      if (emails.length !== uniqueEmails.length) {
+        throw new Error('Doppelte E-Mail-Adressen sind nicht erlaubt')
+      }
+
+      // Check if any email already exists in this household
+      const { data: existingEmailMembers } = await supabase
+        .from('household_members')
+        .select('email')
+        .eq('household_id', householdId)
+        .in('email', uniqueEmails)
+
+      if (existingEmailMembers && existingEmailMembers.length > 0) {
+        const duplicateEmails = existingEmailMembers.map(m => m.email).join(', ')
+        throw new Error(`Diese E-Mail-Adressen sind bereits Mitglieder: ${duplicateEmails}`)
+      }
+
+      const memberInserts = validMembers.map(member => ({
         household_id: householdId,
-        name: member.name,
-        email: member.email,
+        name: member.name.trim(),
+        email: member.email.trim().toLowerCase(),
         role: member.role || null,
         is_owner: false,
         invited_at: new Date().toISOString()
@@ -144,8 +260,8 @@ export function useHouseholds() {
       if (error) throw error
 
       toast({
-        title: "Mitglieder eingeladen",
-        description: `${members.length} Mitglied(er) wurden erfolgreich eingeladen.`
+        title: "Mitglieder erfolgreich eingeladen! 📧",
+        description: `${validMembers.length} Mitglied(er) wurden eingeladen und erhalten eine E-Mail.`
       })
     } catch (err) {
       console.error('Error adding members:', err)
@@ -155,9 +271,23 @@ export function useHouseholds() {
 
   const updateHousehold = async (
     householdId: string,
-    updates: Database['public']['Tables']['households']['Update']
+    updates: Partial<CreateHouseholdData>
   ) => {
     try {
+      // Validate updates if provided
+      if (Object.keys(updates).length > 0) {
+        const currentHousehold = households.find(h => h.id === householdId)
+        if (!currentHousehold) {
+          throw new Error('Haushalt nicht gefunden')
+        }
+
+        const updatedData = { ...currentHousehold, ...updates }
+        const validationErrors = validateHouseholdData(updatedData as CreateHouseholdData)
+        if (validationErrors.length > 0) {
+          throw new Error(validationErrors.join(', '))
+        }
+      }
+
       const { data, error } = await supabase
         .from('households')
         .update({ ...updates, updated_at: new Date().toISOString() })
@@ -168,7 +298,7 @@ export function useHouseholds() {
       if (error) throw error
 
       toast({
-        title: "Haushalt aktualisiert",
+        title: "Haushalt aktualisiert ✅",
         description: "Die Änderungen wurden erfolgreich gespeichert."
       })
 
@@ -177,6 +307,27 @@ export function useHouseholds() {
     } catch (err) {
       console.error('Error updating household:', err)
       throw err instanceof Error ? err : new Error('Fehler beim Aktualisieren des Haushalts')
+    }
+  }
+
+  const deleteHousehold = async (householdId: string) => {
+    try {
+      const { error } = await supabase
+        .from('households')
+        .delete()
+        .eq('id', householdId)
+
+      if (error) throw error
+
+      toast({
+        title: "Haushalt gelöscht",
+        description: "Der Haushalt wurde erfolgreich entfernt."
+      })
+
+      await fetchHouseholds()
+    } catch (err) {
+      console.error('Error deleting household:', err)
+      throw err instanceof Error ? err : new Error('Fehler beim Löschen des Haushalts')
     }
   }
 
@@ -191,6 +342,7 @@ export function useHouseholds() {
     createHousehold,
     addMembers,
     updateHousehold,
+    deleteHousehold,
     refetch: fetchHouseholds
   }
 }
