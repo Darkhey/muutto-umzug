@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,7 +19,7 @@ export const InviteOnboarding = ({ invitation, onComplete }: InviteOnboardingPro
   const { user } = useAuth()
   const { toast } = useToast()
   const [name, setName] = useState(invitation.name || user?.user_metadata?.full_name || '')
-  const [role, setRole] = useState<string>(invitation.role || '')
+  const [role, setRole] = useState<string>(invitation.role || 'null')
   const [saving, setSaving] = useState(false)
   const [nameError, setNameError] = useState<string | null>(null)
 
@@ -46,7 +45,7 @@ export const InviteOnboarding = ({ invitation, onComplete }: InviteOnboardingPro
         p_member_id: invitation.id,
         p_user_id: user.id,
         p_name: name.trim(),
-        p_role: role || null
+        p_role: role === 'null' ? null : role
       })
 
       if (error) {
@@ -110,7 +109,7 @@ export const InviteOnboarding = ({ invitation, onComplete }: InviteOnboardingPro
                 <SelectValue placeholder="Rolle auswählen" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Keine Rolle</SelectItem>
+                <SelectItem value="null">Keine Rolle</SelectItem>
                 {HOUSEHOLD_ROLES.map((r) => (
                   <SelectItem key={r.key} value={r.key}>
                     <span className="mr-1">{r.icon}</span>

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Calendar, Users, Home, MapPin, CreditCard, ArrowRight, ArrowLeft, CheckCircle, Star, Sparkles, Mail, User, Building, Ruler, DoorOpen, Package2 } from 'lucide-react'
+import { Calendar, Users, Home, MapPin, CreditCard, ArrowRight, ArrowLeft, CheckCircle, Star, Sparkles, Mail, User, Building, Ruler, DoorOpen, Package2, AlertTriangle } from 'lucide-react'
 import { PropertyType, HouseholdRole } from '@/types/database'
 import { HOUSEHOLD_ROLES } from '@/config/roles'
 import { PROPERTY_TYPES } from '@/config/app'
@@ -30,7 +30,7 @@ interface OnboardingData {
   members: Array<{
     name: string
     email: string
-    role: HouseholdRole | ''
+    role: string
   }>
 }
 
@@ -82,7 +82,7 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
   const addMember = () => {
     setData(prev => ({
       ...prev,
-      members: [...prev.members, { name: '', email: '', role: '' }]
+      members: [...prev.members, { name: '', email: '', role: 'null' }]
     }))
   }
 
@@ -228,14 +228,23 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
     
     setIsSubmitting(true)
     try {
-      await onComplete(data)
+      // Convert 'null' string values back to actual null values for the API
+      const processedData = {
+        ...data,
+        members: data.members.map(member => ({
+          ...member,
+          role: member.role === 'null' ? '' : member.role
+        }))
+      }
+      await onComplete(processedData)
     } catch (error) {
       console.error('Error completing onboarding:', error)
       setIsSubmitting(false)
     }
   }
 
-  const getRoleDisplayName = (role: HouseholdRole) => {
+  const getRoleDisplayName = (role: string) => {
+    if (role === 'null') return ''
     const roleConfig = HOUSEHOLD_ROLES.find(r => r.key === role)
     return roleConfig ? `${roleConfig.icon} ${roleConfig.name}` : role
   }
@@ -824,13 +833,13 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                         </Label>
                         <Select 
                           value={member.role} 
-                          onValueChange={(value: HouseholdRole) => updateMember(index, 'role', value)}
+                          onValueChange={(value: string) => updateMember(index, 'role', value)}
                         >
                           <SelectTrigger className="mt-1 h-10">
                             <SelectValue placeholder="Rolle wählen" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Keine Rolle</SelectItem>
+                            <SelectItem value="null">Keine Rolle</SelectItem>
                             {HOUSEHOLD_ROLES.map((role) => (
                               <SelectItem key={role.key} value={role.key}>
                                 {role.icon} {role.name}
@@ -982,7 +991,7 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                       <div className="flex flex-wrap gap-3 mt-3">
                         {data.members.filter(m => m.name.trim()).map((member, index) => (
                           <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800 px-3 py-1 text-sm">
-                            {member.name} {member.role && `(${getRoleDisplayName(member.role as HouseholdRole)})`}
+                            {member.name} {member.role && member.role !== 'null' && `(${getRoleDisplayName(member.role)})`}
                           </Badge>
                         ))}
                       </div>

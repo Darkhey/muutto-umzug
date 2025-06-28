@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -31,7 +30,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
   const [inviteForm, setInviteForm] = useState({
     name: '',
     email: '',
-    role: '' as HouseholdRole | ''
+    role: 'null' as string
   })
   const [invitationCode, setInvitationCode] = useState('')
 
@@ -63,10 +62,10 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
       await inviteMember(
         inviteForm.email.trim(),
         inviteForm.name.trim(),
-        inviteForm.role || undefined
+        inviteForm.role === 'null' ? undefined : inviteForm.role as HouseholdRole
       )
       
-      setInviteForm({ name: '', email: '', role: '' })
+      setInviteForm({ name: '', email: '', role: 'null' })
       setShowInviteDialog(false)
     } catch (error) {
       toast({
@@ -79,7 +78,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
 
   const handleRoleChange = async (memberId: string, newRole: string) => {
     try {
-      await updateMemberRole(memberId, newRole as HouseholdRole || null)
+      await updateMemberRole(memberId, newRole === 'null' ? null : newRole as HouseholdRole)
     } catch (error) {
       toast({
         title: "Fehler beim Ändern der Rolle",
@@ -200,13 +199,13 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                   <Label htmlFor="invite-role">Rolle (optional)</Label>
                   <Select 
                     value={inviteForm.role} 
-                    onValueChange={(value) => setInviteForm({ ...inviteForm, role: value as HouseholdRole })}
+                    onValueChange={(value) => setInviteForm({ ...inviteForm, role: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Rolle auswählen" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Keine Rolle</SelectItem>
+                      <SelectItem value="null">Keine Rolle</SelectItem>
                       {HOUSEHOLD_ROLES.map((role) => (
                         <SelectItem key={role.key} value={role.key}>
                           <div className="flex items-center">
@@ -270,7 +269,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                 {isOwner && !member.is_owner && (
                   <div className="flex items-center space-x-2">
                     <Select
-                      value={member.role || ''}
+                      value={member.role || 'null'}
                       onValueChange={(value) => handleRoleChange(member.id, value)}
                     >
                       <SelectTrigger className="w-[180px]">
@@ -278,7 +277,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                         <SelectValue placeholder="Rolle ändern" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Keine Rolle</SelectItem>
+                        <SelectItem value="null">Keine Rolle</SelectItem>
                         {HOUSEHOLD_ROLES.map((role) => (
                           <SelectItem key={role.key} value={role.key}>
                             <div className="flex items-center">
