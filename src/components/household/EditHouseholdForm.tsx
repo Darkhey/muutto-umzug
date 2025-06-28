@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
+import { AddressAutocomplete } from '@/components/AddressAutocomplete'
+import { useDistanceCalculation } from '@/hooks/useDistanceCalculation'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -53,9 +55,27 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
         ? String(household.furniture_volume)
         : ''
   })
+  const {
+    oldCoords,
+    newCoords,
+    setOldCoords,
+    setNewCoords,
+    distanceKm,
+    distanceFact
+  } = useDistanceCalculation()
+  const [oldAddressError, setOldAddressError] = useState<string | null>(null)
+  const [newAddressError, setNewAddressError] = useState<string | null>(null)
 
   const updateField = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }))
+    if (field === 'old_address') {
+      setOldCoords(null)
+      setOldAddressError(null)
+    }
+    if (field === 'new_address') {
+      setNewCoords(null)
+      setNewAddressError(null)
+    }
   }
 
   const parseNumber = (value: string): number | null => {
@@ -64,20 +84,47 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
     return Number.isNaN(num) ? null : num
   }
 
+  const handleOldSelect = (coords?: { lat: number; lon: number }) => {
+    if (!coords || Number.isNaN(coords.lat) || Number.isNaN(coords.lon)) {
+      setOldAddressError('Ungültige Koordinaten')
+      setOldCoords(null)
+      return
+    }
+    setOldCoords(coords)
+    setOldAddressError(null)
+  }
+
+  const handleNewSelect = (coords?: { lat: number; lon: number }) => {
+    if (!coords || Number.isNaN(coords.lat) || Number.isNaN(coords.lon)) {
+      setNewAddressError('Ungültige Koordinaten')
+      setNewCoords(null)
+      return
+    }
+    setNewCoords(coords)
+    setNewAddressError(null)
+  }
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-      onSubmit({
-        ...form,
-        household_size: parseNumber(form.household_size),
-        children_count: parseNumber(form.children_count),
-        pets_count: parseNumber(form.pets_count),
-        postal_code: form.postal_code.trim() ? form.postal_code : null,
-        living_space: parseNumber(form.living_space),
-        rooms: parseNumber(form.rooms),
-        furniture_volume: parseNumber(form.furniture_volume),
-        old_address: form.old_address || null,
-      new_address: form.new_address || null
-    })
+  onSubmit: (updates: {
+    name: string
+    move_date: string
+    household_size: number
+    children_count: number
+    pets_count: number
+    property_type: 'miete' | 'eigentum'
+    postal_code: string | null
+    old_address: string | null
+    new_address: string | null
++   old_lat: number | null
++   old_lon: number | null
++   new_lat: number | null
++   new_lon: number | null
+    living_space: number | null
+    rooms: number | null
+    furniture_volume: number | null
+  }) => void
   }
 
   return (
@@ -169,20 +216,35 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
 
       <div className="space-y-2">
         <Label htmlFor="edit-old">Aktuelle Adresse (optional)</Label>
-        <Input
-          id="edit-old"
+        <AddressAutocomplete
           value={form.old_address}
-          onChange={(e) => updateField('old_address', e.target.value)}
+          onChange={(val) => updateField('old_address', val)}
+          onSelect={handleOldSelect}
         />
+        {oldAddressError && (
+          <p className="text-sm text-red-500" role="alert">{oldAddressError}</p>
+        )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="edit-new">Neue Adresse</Label>
-        <Input
-          id="edit-new"
+        <AddressAutocomplete
           value={form.new_address}
-          onChange={(e) => updateField('new_address', e.target.value)}
+          onChange={(val) => updateField('new_address', val)}
+          onSelect={handleNewSelect}
         />
+        {newAddressError && (
+          <p className="text-sm text-red-500" role="alert">{newAddressError}</p>
+        )}
+        {distanceKm != null && distanceFact != null && (
+          <p
+            className="text-sm text-gray-600 mt-1"
+            role="status"
+            aria-live="polite"
+          >
+            Entfernung ca. {distanceKm} km – {distanceFact}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
