@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Calendar, Users, Home, MapPin, CreditCard, ArrowRight, ArrowLeft, CheckCircle, Star, Sparkles } from 'lucide-react'
+import { Calendar, Users, Home, MapPin, CreditCard, ArrowRight, ArrowLeft, CheckCircle, Star, Sparkles, Mail, User, Building, Ruler, DoorOpen, Package2 } from 'lucide-react'
 import { PropertyType, HouseholdRole } from '@/types/database'
 import { HOUSEHOLD_ROLES } from '@/config/roles'
 import { PROPERTY_TYPES } from '@/config/app'
@@ -349,44 +349,80 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
             {currentStep === 1 && (
               <div className="space-y-8">
                 <div className="space-y-3">
-                  <Label htmlFor="householdName" className="text-lg font-medium">
-                    Wie soll dein Haushalt heißen? ✨
+                  <Label htmlFor="householdName" className="text-lg font-medium flex items-center gap-2">
+                    <Home className="h-5 w-5 text-blue-600" />
+                    Wie soll dein Haushalt heißen? <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="householdName"
-                    value={data.householdName}
-                    onChange={(e) => updateData({ householdName: e.target.value })}
-                    placeholder="z.B. Familie Müller Umzug"
-                    className={`text-lg h-12 border-2 ${errors.householdName ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
-                  />
-                  {errors.householdName && (
-                    <p className="text-sm text-red-600">{errors.householdName}</p>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      <Building className="h-5 w-5" />
+                    </div>
+                    <Input
+                      id="householdName"
+                      value={data.householdName}
+                      onChange={(e) => updateData({ householdName: e.target.value })}
+                      placeholder="z.B. Familie Müller Umzug"
+                      className={`text-lg h-12 pl-10 border-2 ${errors.householdName ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                      required
+                      aria-invalid={!!errors.householdName}
+                      aria-describedby={errors.householdName ? "name-error" : "name-hint"}
+                    />
+                    {data.householdName && !errors.householdName && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      </div>
+                    )}
+                  </div>
+                  {errors.householdName ? (
+                    <p id="name-error" className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {errors.householdName}
+                    </p>
+                  ) : (
+                    <p id="name-hint" className="text-sm text-gray-600 flex items-center gap-2">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      Wähle einen Namen, der für alle Mitglieder erkennbar ist
+                    </p>
                   )}
-                  <p className="text-sm text-gray-600 flex items-center gap-2">
-                    <Star className="h-4 w-4 text-yellow-500" />
-                    Wähle einen Namen, der für alle Mitglieder erkennbar ist
-                  </p>
                 </div>
                 
                 <div className="space-y-3">
-                  <Label htmlFor="moveDate" className="text-lg font-medium">
-                    Wann ist dein geplanter Umzugstermin? 📅
+                  <Label htmlFor="moveDate" className="text-lg font-medium flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-blue-600" />
+                    Wann ist dein geplanter Umzugstermin? <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="moveDate"
-                    type="date"
-                    value={data.moveDate}
-                    onChange={(e) => updateData({ moveDate: e.target.value })}
-                    min={new Date().toISOString().split('T')[0]}
-                    className={`text-lg h-12 border-2 ${errors.moveDate ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
-                  />
-                  {errors.moveDate && (
-                    <p className="text-sm text-red-600">{errors.moveDate}</p>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      <Calendar className="h-5 w-5" />
+                    </div>
+                    <Input
+                      id="moveDate"
+                      type="date"
+                      value={data.moveDate}
+                      onChange={(e) => updateData({ moveDate: e.target.value })}
+                      min={new Date().toISOString().split('T')[0]}
+                      className={`text-lg h-12 pl-10 border-2 ${errors.moveDate ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                      required
+                      aria-invalid={!!errors.moveDate}
+                      aria-describedby={errors.moveDate ? "date-error" : "date-hint"}
+                    />
+                    {data.moveDate && !errors.moveDate && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      </div>
+                    )}
+                  </div>
+                  {errors.moveDate ? (
+                    <p id="date-error" className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {errors.moveDate}
+                    </p>
+                  ) : (
+                    <p id="date-hint" className="text-sm text-gray-600 flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-blue-500" />
+                      Das Datum hilft uns dabei, alle Fristen richtig zu berechnen
+                    </p>
                   )}
-                  <p className="text-sm text-gray-600 flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-blue-500" />
-                    Das Datum hilft uns dabei, alle Fristen richtig zu berechnen
-                  </p>
                 </div>
               </div>
             )}
@@ -395,8 +431,9 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
             {currentStep === 2 && (
               <div className="space-y-10">
                 <div className="text-center">
-                  <Label className="text-xl font-medium mb-6 block">
-                    Wie viele Personen leben in deinem Haushalt? 👥
+                  <Label className="text-xl font-medium mb-6 block flex items-center justify-center gap-2">
+                    <Users className="h-6 w-6 text-blue-600" />
+                    Wie viele Personen leben in deinem Haushalt? <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex items-center justify-center gap-8 mt-6">
                     <Button
@@ -426,13 +463,18 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                     </Button>
                   </div>
                   {errors.householdSize && (
-                    <p className="text-sm text-red-600 mt-2">{errors.householdSize}</p>
+                    <p className="text-sm text-red-600 mt-2 flex items-center justify-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {errors.householdSize}
+                    </p>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="text-center">
-                    <Label className="text-lg font-medium mb-4 block">Anzahl Kinder 👶</Label>
+                    <Label className="text-lg font-medium mb-4 block flex items-center justify-center gap-2">
+                      <span className="text-2xl">👶</span> Anzahl Kinder
+                    </Label>
                     <div className="flex items-center justify-center gap-4">
                       <Button
                         variant="outline"
@@ -455,12 +497,17 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                       </Button>
                     </div>
                     {errors.childrenCount && (
-                      <p className="text-sm text-red-600 mt-2">{errors.childrenCount}</p>
+                      <p className="text-sm text-red-600 mt-2 flex items-center justify-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {errors.childrenCount}
+                      </p>
                     )}
                   </div>
 
                   <div className="text-center">
-                    <Label className="text-lg font-medium mb-4 block">Anzahl Haustiere 🐾</Label>
+                    <Label className="text-lg font-medium mb-4 block flex items-center justify-center gap-2">
+                      <span className="text-2xl">🐾</span> Anzahl Haustiere
+                    </Label>
                     <div className="flex items-center justify-center gap-4">
                       <Button
                         variant="outline"
@@ -483,7 +530,10 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                       </Button>
                     </div>
                     {errors.petsCount && (
-                      <p className="text-sm text-red-600 mt-2">{errors.petsCount}</p>
+                      <p className="text-sm text-red-600 mt-2 flex items-center justify-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {errors.petsCount}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -494,7 +544,10 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
             {currentStep === 3 && (
               <div className="space-y-8">
                 <div className="space-y-3">
-                  <Label className="text-lg font-medium">Mietwohnung oder Eigentum? 🏠</Label>
+                  <Label className="text-lg font-medium flex items-center gap-2">
+                    <Home className="h-5 w-5 text-blue-600" />
+                    Mietwohnung oder Eigentum? <span className="text-red-500">*</span>
+                  </Label>
                   <Select 
                     value={data.propertyType} 
                     onValueChange={(value: PropertyType) => updateData({ propertyType: value })}
@@ -511,59 +564,83 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                     </SelectContent>
                   </Select>
                   {errors.propertyType && (
-                    <p className="text-sm text-red-600">{errors.propertyType}</p>
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {errors.propertyType}
+                    </p>
                   )}
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="postalCode" className="text-lg font-medium">
-                    Postleitzahl deiner neuen Adresse 📮
+                  <Label htmlFor="postalCode" className="text-lg font-medium flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-blue-600" />
+                    Postleitzahl deiner neuen Adresse <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="postalCode"
-                    value={data.postalCode}
-                    onChange={(e) => updateData({ postalCode: e.target.value })}
-                    placeholder="12345"
-                    maxLength={5}
-                    className={`text-lg h-12 border-2 ${errors.postalCode ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
-                  />
-                  {errors.postalCode && (
-                    <p className="text-sm text-red-600">{errors.postalCode}</p>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <Input
+                      id="postalCode"
+                      value={data.postalCode}
+                      onChange={(e) => updateData({ postalCode: e.target.value })}
+                      placeholder="12345"
+                      maxLength={5}
+                      className={`text-lg h-12 pl-10 border-2 ${errors.postalCode ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                      required
+                      aria-invalid={!!errors.postalCode}
+                      aria-describedby={errors.postalCode ? "postal-error" : "postal-hint"}
+                    />
+                    {data.postalCode && !errors.postalCode && data.postalCode.length === 5 && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      </div>
+                    )}
+                  </div>
+                  {errors.postalCode ? (
+                    <p id="postal-error" className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {errors.postalCode}
+                    </p>
+                  ) : (
+                    <p id="postal-hint" className="text-sm text-gray-600 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-blue-500" />
+                      Hilft uns dabei, regionale Fristen und Ämter zu finden
+                    </p>
                   )}
-                  <p className="text-sm text-gray-600 flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-blue-500" />
-                    Hilft uns dabei, regionale Fristen und Ämter zu finden
-                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
-                    <Label htmlFor="oldAddress" className="text-lg font-medium">
-                      Aktuelle Adresse (optional) 📍
+                    <Label htmlFor="oldAddress" className="text-lg font-medium flex items-center gap-2">
+                      <Home className="h-5 w-5 text-blue-600" />
+                      Aktuelle Adresse (optional)
                     </Label>
                     <AddressAutocomplete
                       value={data.oldAddress}
                       onChange={(val) => updateData({ oldAddress: val })}
                       onSelect={setOldCoords}
                       placeholder="Straße, Hausnummer, Ort"
-                      className="h-12 border-2 focus:border-blue-500"
+                      className="h-12"
+                      helpText="Deine aktuelle Wohnadresse"
                     />
                   </div>
 
                   <div className="space-y-3">
-                    <Label htmlFor="newAddress" className="text-lg font-medium">
-                      Neue Adresse ✨
+                    <Label htmlFor="newAddress" className="text-lg font-medium flex items-center gap-2">
+                      <Home className="h-5 w-5 text-green-600" />
+                      Neue Adresse <span className="text-red-500">*</span>
                     </Label>
                     <AddressAutocomplete
                       value={data.newAddress}
                       onChange={(val) => updateData({ newAddress: val })}
                       onSelect={setNewCoords}
                       placeholder="Straße, Hausnummer, Ort"
-                      className={`h-12 border-2 ${errors.newAddress ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                      className="h-12"
+                      error={errors.newAddress}
+                      required
+                      helpText="Deine zukünftige Wohnadresse"
                     />
-                    {errors.newAddress && (
-                      <p className="text-sm text-red-600">{errors.newAddress}</p>
-                    )}
                     {distanceKm != null && (
                       <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                         <p className="text-sm text-green-700 flex items-center gap-2">
@@ -577,55 +654,99 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-3">
-                    <Label htmlFor="livingSpace" className="text-lg font-medium">Wohnfläche (m²)</Label>
-                    <Input
-                      id="livingSpace"
-                      type="number"
-                      min={0}
-                      value={data.livingSpace || ''}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value)
-                        updateData({ livingSpace: Number.isNaN(val) ? 0 : val })
-                      }}
-                      placeholder="80"
-                      className={`h-12 border-2 ${errors.livingSpace ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
-                    />
+                    <Label htmlFor="livingSpace" className="text-lg font-medium flex items-center gap-2">
+                      <Ruler className="h-5 w-5 text-blue-600" />
+                      Wohnfläche (m²)
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        <Ruler className="h-5 w-5" />
+                      </div>
+                      <Input
+                        id="livingSpace"
+                        type="number"
+                        min={0}
+                        value={data.livingSpace || ''}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value)
+                          updateData({ livingSpace: Number.isNaN(val) ? 0 : val })
+                        }}
+                        placeholder="80"
+                        className={`h-12 pl-10 border-2 ${errors.livingSpace ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                        aria-invalid={!!errors.livingSpace}
+                        aria-describedby={errors.livingSpace ? "space-error" : undefined}
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        m²
+                      </div>
+                    </div>
                     {errors.livingSpace && (
-                      <p className="text-sm text-red-600">{errors.livingSpace}</p>
+                      <p id="space-error" className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {errors.livingSpace}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-3">
-                    <Label htmlFor="rooms" className="text-lg font-medium">Zimmer</Label>
-                    <Input
-                      id="rooms"
-                      type="number"
-                      min={0}
-                      value={data.rooms || ''}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value)
-                        updateData({ rooms: Number.isNaN(val) ? 0 : val })
-                      }}
-                      placeholder="3"
-                      className={`h-12 border-2 ${errors.rooms ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
-                    />
+                    <Label htmlFor="rooms" className="text-lg font-medium flex items-center gap-2">
+                      <DoorOpen className="h-5 w-5 text-blue-600" />
+                      Zimmer
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        <DoorOpen className="h-5 w-5" />
+                      </div>
+                      <Input
+                        id="rooms"
+                        type="number"
+                        min={0}
+                        value={data.rooms || ''}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value)
+                          updateData({ rooms: Number.isNaN(val) ? 0 : val })
+                        }}
+                        placeholder="3"
+                        className={`h-12 pl-10 border-2 ${errors.rooms ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'}`}
+                        aria-invalid={!!errors.rooms}
+                        aria-describedby={errors.rooms ? "rooms-error" : undefined}
+                      />
+                    </div>
                     {errors.rooms && (
-                      <p className="text-sm text-red-600">{errors.rooms}</p>
+                      <p id="rooms-error" className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {errors.rooms}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-3">
-                    <Label htmlFor="furnitureVolume" className="text-lg font-medium">Möbelvolumen (m³)</Label>
-                    <Input
-                      id="furnitureVolume"
-                      type="number"
-                      min={0}
-                      value={data.furnitureVolume || ''}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value)
-                        updateData({ furnitureVolume: Number.isNaN(val) ? 0 : val })
-                      }}
-                      placeholder="25"
-                      className="h-12 border-2 focus:border-blue-500"
-                    />
+                    <Label htmlFor="furnitureVolume" className="text-lg font-medium flex items-center gap-2">
+                      <Package2 className="h-5 w-5 text-blue-600" />
+                      Möbelvolumen (m³)
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        <Package2 className="h-5 w-5" />
+                      </div>
+                      <Input
+                        id="furnitureVolume"
+                        type="number"
+                        min={0}
+                        value={data.furnitureVolume || ''}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value)
+                          updateData({ furnitureVolume: Number.isNaN(val) ? 0 : val })
+                        }}
+                        placeholder="25"
+                        className="h-12 pl-10 border-2 focus:border-blue-500"
+                        aria-describedby="volume-hint"
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        m³
+                      </div>
+                    </div>
+                    <p id="volume-hint" className="text-sm text-gray-600">
+                      Hilft bei der Planung des Transportvolumens
+                    </p>
                   </div>
                 </div>
               </div>
@@ -635,8 +756,9 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
             {currentStep === 4 && (
               <div className="space-y-8">
                 <div className="text-center">
-                  <Label className="text-xl font-medium mb-4 block">
-                    Mitglieder deines Haushalts (optional) 👥
+                  <Label className="text-xl font-medium mb-4 block flex items-center justify-center gap-2">
+                    <Users className="h-6 w-6 text-purple-600" />
+                    Mitglieder deines Haushalts (optional)
                   </Label>
                   <p className="text-gray-600 text-lg">
                     Lade Familie oder Mitbewohner ein, um Aufgaben gemeinsam zu verwalten
@@ -647,32 +769,59 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                   <Card key={index} className="p-6 bg-gradient-to-r from-gray-50 to-blue-50 border-2 border-dashed border-gray-300">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div>
-                        <Label className="font-medium">Name</Label>
-                        <Input
-                          placeholder="Max Mustermann"
-                          value={member.name}
-                          onChange={(e) => updateMember(index, 'name', e.target.value)}
-                          className={`mt-1 h-10 ${errors[`members.${index}.name`] ? 'border-red-500 focus:border-red-500' : ''}`}
-                        />
+                        <Label className="font-medium flex items-center gap-2">
+                          <User className="h-4 w-4 text-blue-600" />
+                          Name
+                        </Label>
+                        <div className="relative mt-1">
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                            <User className="h-4 w-4" />
+                          </div>
+                          <Input
+                            placeholder="Max Mustermann"
+                            value={member.name}
+                            onChange={(e) => updateMember(index, 'name', e.target.value)}
+                            className={`pl-9 h-10 ${errors[`members.${index}.name`] ? 'border-red-500 focus:border-red-500' : ''}`}
+                            aria-invalid={!!errors[`members.${index}.name`]}
+                          />
+                        </div>
                         {errors[`members.${index}.name`] && (
-                          <p className="text-sm text-red-600">{errors[`members.${index}.name`]}</p>
+                          <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            {errors[`members.${index}.name`]}
+                          </p>
                         )}
                       </div>
                       <div>
-                        <Label className="font-medium">E-Mail</Label>
-                        <Input
-                          placeholder="max@beispiel.de"
-                          type="email"
-                          value={member.email}
-                          onChange={(e) => updateMember(index, 'email', e.target.value)}
-                          className={`mt-1 h-10 ${errors[`members.${index}.email`] ? 'border-red-500 focus:border-red-500' : ''}`}
-                        />
+                        <Label className="font-medium flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-blue-600" />
+                          E-Mail
+                        </Label>
+                        <div className="relative mt-1">
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                            <Mail className="h-4 w-4" />
+                          </div>
+                          <Input
+                            placeholder="max@beispiel.de"
+                            type="email"
+                            value={member.email}
+                            onChange={(e) => updateMember(index, 'email', e.target.value)}
+                            className={`pl-9 h-10 ${errors[`members.${index}.email`] ? 'border-red-500 focus:border-red-500' : ''}`}
+                            aria-invalid={!!errors[`members.${index}.email`]}
+                          />
+                        </div>
                         {errors[`members.${index}.email`] && (
-                          <p className="text-sm text-red-600">{errors[`members.${index}.email`]}</p>
+                          <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            {errors[`members.${index}.email`]}
+                          </p>
                         )}
                       </div>
                       <div>
-                        <Label className="font-medium">Rolle (optional)</Label>
+                        <Label className="font-medium flex items-center gap-2">
+                          <Star className="h-4 w-4 text-blue-600" />
+                          Rolle (optional)
+                        </Label>
                         <Select 
                           value={member.role} 
                           onValueChange={(value: HouseholdRole) => updateMember(index, 'role', value)}
@@ -734,58 +883,91 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
                 <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-8 rounded-2xl border-2 border-blue-200">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1">
-                      <strong className="text-blue-900 text-lg">🏠 Haushalt:</strong>
+                      <strong className="text-blue-900 text-lg flex items-center gap-2">
+                        <Home className="h-5 w-5 text-blue-700" />
+                        Haushalt:
+                      </strong>
                       <p className="text-blue-800 text-lg">{data.householdName}</p>
                     </div>
                     <div className="space-y-1">
-                      <strong className="text-blue-900 text-lg">📅 Umzugsdatum:</strong>
+                      <strong className="text-blue-900 text-lg flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-blue-700" />
+                        Umzugsdatum:
+                      </strong>
                       <p className="text-blue-800 text-lg">{new Date(data.moveDate).toLocaleDateString('de-DE')}</p>
                     </div>
                     <div className="space-y-1">
-                      <strong className="text-blue-900 text-lg">👥 Haushaltsgröße:</strong>
+                      <strong className="text-blue-900 text-lg flex items-center gap-2">
+                        <Users className="h-5 w-5 text-blue-700" />
+                        Haushaltsgröße:
+                      </strong>
                       <p className="text-blue-800 text-lg">{data.householdSize} Personen</p>
                     </div>
                     {data.childrenCount > 0 && (
                       <div className="space-y-1">
-                        <strong className="text-blue-900 text-lg">👶 Kinder:</strong>
+                        <strong className="text-blue-900 text-lg flex items-center gap-2">
+                          <span className="text-xl">👶</span>
+                          Kinder:
+                        </strong>
                         <p className="text-blue-800 text-lg">{data.childrenCount}</p>
                       </div>
                     )}
                     {data.petsCount > 0 && (
                       <div className="space-y-1">
-                        <strong className="text-blue-900 text-lg">🐾 Haustiere:</strong>
+                        <strong className="text-blue-900 text-lg flex items-center gap-2">
+                          <span className="text-xl">🐾</span>
+                          Haustiere:
+                        </strong>
                         <p className="text-blue-800 text-lg">{data.petsCount}</p>
                       </div>
                     )}
                     <div className="space-y-1">
-                      <strong className="text-blue-900 text-lg">🏠 Wohnform:</strong>
+                      <strong className="text-blue-900 text-lg flex items-center gap-2">
+                        <Home className="h-5 w-5 text-blue-700" />
+                        Wohnform:
+                      </strong>
                       <p className="text-blue-800 text-lg">
                         {PROPERTY_TYPES.find(pt => pt.key === data.propertyType)?.label}
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <strong className="text-blue-900 text-lg">📮 PLZ:</strong>
+                      <strong className="text-blue-900 text-lg flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-blue-700" />
+                        PLZ:
+                      </strong>
                       <p className="text-blue-800 text-lg">{data.postalCode}</p>
                     </div>
                     {data.oldAddress && (
                       <div className="md:col-span-2 space-y-1">
-                        <strong className="text-blue-900 text-lg">📍 Aktuelle Adresse:</strong>
+                        <strong className="text-blue-900 text-lg flex items-center gap-2">
+                          <MapPin className="h-5 w-5 text-blue-700" />
+                          Aktuelle Adresse:
+                        </strong>
                         <p className="text-blue-800 text-lg">{data.oldAddress}</p>
                       </div>
                     )}
                     <div className="md:col-span-2 space-y-1">
-                      <strong className="text-blue-900 text-lg">✨ Neue Adresse:</strong>
+                      <strong className="text-blue-900 text-lg flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-green-700" />
+                        Neue Adresse:
+                      </strong>
                       <p className="text-blue-800 text-lg">{data.newAddress}</p>
                     </div>
                     {data.livingSpace > 0 && (
                       <div className="space-y-1">
-                        <strong className="text-blue-900 text-lg">📐 Wohnfläche:</strong>
+                        <strong className="text-blue-900 text-lg flex items-center gap-2">
+                          <Ruler className="h-5 w-5 text-blue-700" />
+                          Wohnfläche:
+                        </strong>
                         <p className="text-blue-800 text-lg">{data.livingSpace} m²</p>
                       </div>
                     )}
                     {data.rooms > 0 && (
                       <div className="space-y-1">
-                        <strong className="text-blue-900 text-lg">🚪 Zimmer:</strong>
+                        <strong className="text-blue-900 text-lg flex items-center gap-2">
+                          <DoorOpen className="h-5 w-5 text-blue-700" />
+                          Zimmer:
+                        </strong>
                         <p className="text-blue-800 text-lg">{data.rooms}</p>
                       </div>
                     )}
@@ -793,7 +975,10 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
 
                   {data.members.length > 0 && (
                     <div className="mt-6">
-                      <strong className="text-blue-900 text-lg">👥 Mitglieder:</strong>
+                      <strong className="text-blue-900 text-lg flex items-center gap-2">
+                        <Users className="h-5 w-5 text-blue-700" />
+                        Mitglieder:
+                      </strong>
                       <div className="flex flex-wrap gap-3 mt-3">
                         {data.members.filter(m => m.name.trim()).map((member, index) => (
                           <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800 px-3 py-1 text-sm">
