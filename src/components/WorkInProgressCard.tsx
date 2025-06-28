@@ -15,7 +15,7 @@ export const WorkInProgressCard = ({ title, icon }: WorkInProgressCardProps) => 
       </CardTitle>
     </CardHeader>
     <CardContent>
-      <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
+      <div className="flex items-center justify-center p-4 bg-gray-50 bg-opacity-90 rounded" aria-label="Feature under development">
         <Badge variant="secondary">Work in Progress</Badge>
       </div>
     </CardContent>
