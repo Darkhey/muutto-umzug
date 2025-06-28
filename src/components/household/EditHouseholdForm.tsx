@@ -107,22 +107,24 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit({
-      ...form,
-      household_size: parseNumber(form.household_size),
-      children_count: parseNumber(form.children_count),
-      pets_count: parseNumber(form.pets_count),
-      postal_code: form.postal_code.trim() ? form.postal_code : null,
-      living_space: parseNumber(form.living_space),
-      rooms: parseNumber(form.rooms),
-      furniture_volume: parseNumber(form.furniture_volume),
-      old_address: form.old_address || null,
-      new_address: form.new_address || null,
-      old_lat: oldCoords?.lat ?? null,
-      old_lon: oldCoords?.lon ?? null,
-      new_lat: newCoords?.lat ?? null,
-      new_lon: newCoords?.lon ?? null
-    })
+  onSubmit: (updates: {
+    name: string
+    move_date: string
+    household_size: number
+    children_count: number
+    pets_count: number
+    property_type: 'miete' | 'eigentum'
+    postal_code: string | null
+    old_address: string | null
+    new_address: string | null
++   old_lat: number | null
++   old_lon: number | null
++   new_lat: number | null
++   new_lon: number | null
+    living_space: number | null
+    rooms: number | null
+    furniture_volume: number | null
+  }) => void
   }
 
   return (
