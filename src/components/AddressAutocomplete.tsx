@@ -44,7 +44,7 @@ export const AddressAutocomplete = ({
     }
 
     const now = Date.now()
-    if (now - lastFetchRef.current < 1000) {
+    if (now - lastFetchRef.current < 2000) { // Increase to 2 seconds
       return
     }
     lastFetchRef.current = now
