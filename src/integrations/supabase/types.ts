@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      checklist_templates: {
+        Row: {
+          assigned_role: Database["public"]["Enums"]["household_role"] | null
+          category: string | null
+          conditions: Json | null
+          created_at: string
+          days_before_move: number | null
+          description: string | null
+          id: string
+          phase: Database["public"]["Enums"]["task_phase"]
+          priority: Database["public"]["Enums"]["task_priority"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_role?: Database["public"]["Enums"]["household_role"] | null
+          category?: string | null
+          conditions?: Json | null
+          created_at?: string
+          days_before_move?: number | null
+          description?: string | null
+          id?: string
+          phase: Database["public"]["Enums"]["task_phase"]
+          priority?: Database["public"]["Enums"]["task_priority"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_role?: Database["public"]["Enums"]["household_role"] | null
+          category?: string | null
+          conditions?: Json | null
+          created_at?: string
+          days_before_move?: number | null
+          description?: string | null
+          id?: string
+          phase?: Database["public"]["Enums"]["task_phase"]
+          priority?: Database["public"]["Enums"]["task_priority"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       household_members: {
         Row: {
           created_at: string
@@ -63,9 +105,9 @@ export type Database = {
           created_by: string
           household_size: number
           id: string
+          invitation_code: string
           move_date: string
           name: string
-          invitation_code: string
           pets_count: number
           postal_code: string | null
           property_type: Database["public"]["Enums"]["property_type"]
@@ -77,9 +119,9 @@ export type Database = {
           created_by: string
           household_size?: number
           id?: string
+          invitation_code: string
           move_date: string
           name: string
-          invitation_code?: string
           pets_count?: number
           postal_code?: string | null
           property_type: Database["public"]["Enums"]["property_type"]
@@ -91,9 +133,9 @@ export type Database = {
           created_by?: string
           household_size?: number
           id?: string
+          invitation_code?: string
           move_date?: string
           name?: string
-          invitation_code?: string
           pets_count?: number
           postal_code?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
@@ -125,12 +167,119 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          actual_duration: number | null
+          assigned_to: string | null
+          attachments: Json | null
+          category: string | null
+          completed: boolean
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          dependencies: string[] | null
+          description: string | null
+          due_date: string | null
+          estimated_duration: number | null
+          household_id: string
+          id: string
+          notes: string | null
+          phase: Database["public"]["Enums"]["task_phase"]
+          priority: Database["public"]["Enums"]["task_priority"]
+          template_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_duration?: number | null
+          assigned_to?: string | null
+          attachments?: Json | null
+          category?: string | null
+          completed?: boolean
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          dependencies?: string[] | null
+          description?: string | null
+          due_date?: string | null
+          estimated_duration?: number | null
+          household_id: string
+          id?: string
+          notes?: string | null
+          phase: Database["public"]["Enums"]["task_phase"]
+          priority?: Database["public"]["Enums"]["task_priority"]
+          template_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_duration?: number | null
+          assigned_to?: string | null
+          attachments?: Json | null
+          category?: string | null
+          completed?: boolean
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          dependencies?: string[] | null
+          description?: string | null
+          due_date?: string | null
+          estimated_duration?: number | null
+          household_id?: string
+          id?: string
+          notes?: string | null
+          phase?: Database["public"]["Enums"]["task_phase"]
+          priority?: Database["public"]["Enums"]["task_priority"]
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "household_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_initial_tasks: {
+        Args: { p_household_id: string }
+        Returns: number
+      }
+      generate_invitation_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      join_household_by_code: {
+        Args: {
+          p_invitation_code: string
+          p_user_id: string
+          p_user_name: string
+          p_user_email: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       household_role:
@@ -140,6 +289,8 @@ export type Database = {
         | "renovierer"
         | "haustierverantwortliche"
       property_type: "miete" | "eigentum"
+      task_phase: "vor_umzug" | "umzugstag" | "nach_umzug" | "langzeit"
+      task_priority: "niedrig" | "mittel" | "hoch" | "kritisch"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -263,6 +414,8 @@ export const Constants = {
         "haustierverantwortliche",
       ],
       property_type: ["miete", "eigentum"],
+      task_phase: ["vor_umzug", "umzugstag", "nach_umzug", "langzeit"],
+      task_priority: ["niedrig", "mittel", "hoch", "kritisch"],
     },
   },
 } as const

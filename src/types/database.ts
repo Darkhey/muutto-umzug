@@ -1,4 +1,5 @@
 
+
 export interface Database {
   public: {
     Tables: {
@@ -239,3 +240,4 @@ export type HouseholdRole = 'vertragsmanager' | 'packbeauftragte' | 'finanzperso
 export type PropertyType = 'miete' | 'eigentum'
 export type TaskPhase = 'vor_umzug' | 'umzugstag' | 'nach_umzug' | 'langzeit'
 export type TaskPriority = 'niedrig' | 'mittel' | 'hoch' | 'kritisch'
+
