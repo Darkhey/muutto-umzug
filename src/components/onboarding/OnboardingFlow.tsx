@@ -3,6 +3,9 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { AddressAutocomplete } from '@/components/AddressAutocomplete'
+import { haversineDistance } from '@/lib/distance'
+import { getDistanceFunFact } from '@/lib/funfacts'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -52,9 +55,23 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
     furnitureVolume: 0,
     members: []
   })
+  const [oldCoords, setOldCoords] = useState<{ lat: number; lon: number } | null>(null)
+  const [newCoords, setNewCoords] = useState<{ lat: number; lon: number } | null>(null)
 
   const totalSteps = 5
   const progress = (currentStep / totalSteps) * 100
+  const distanceKm =
+    oldCoords && newCoords
+      ? Math.round(
+          haversineDistance(
+            oldCoords.lat,
+            oldCoords.lon,
+            newCoords.lat,
+            newCoords.lon
+          )
+        )
+      : null
+  const distanceFact = distanceKm != null ? getDistanceFunFact(distanceKm) : null
 
   const updateData = (updates: Partial<OnboardingData>) => {
     setData(prev => ({ ...prev, ...updates }))
@@ -292,22 +309,27 @@ export const OnboardingFlow = ({ onComplete, onSkip }: OnboardingFlowProps) => {
 
                 <div>
                   <Label htmlFor="oldAddress">Aktuelle Adresse (optional)</Label>
-                  <Input
-                    id="oldAddress"
+                  <AddressAutocomplete
                     value={data.oldAddress}
-                    onChange={(e) => updateData({ oldAddress: e.target.value })}
+                    onChange={(val) => updateData({ oldAddress: val })}
+                    onSelect={setOldCoords}
                     placeholder="Straße, Hausnummer, Ort"
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="newAddress">Neue Adresse</Label>
-                  <Input
-                    id="newAddress"
+                  <AddressAutocomplete
                     value={data.newAddress}
-                    onChange={(e) => updateData({ newAddress: e.target.value })}
+                    onChange={(val) => updateData({ newAddress: val })}
+                    onSelect={setNewCoords}
                     placeholder="Straße, Hausnummer, Ort"
                   />
+                  {distanceKm != null && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Entfernung ca. {distanceKm} km – {distanceFact}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
