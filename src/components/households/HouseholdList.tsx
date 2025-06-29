@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { useHouseholds } from '@/hooks/useHouseholds'
 import { HouseholdCard } from './HouseholdCard'
 import { ExtendedHousehold } from '@/types/household'
-import { Plus, ArrowDownUp, Calendar, AlphabeticalSortingAscending } from 'lucide-react'
+import { Plus, ArrowDownUp, Calendar, AlignVerticalSpaceBetween as AlphabeticalSortingAscending } from 'lucide-react'
 import { HouseholdMergerButton } from '../dashboard/HouseholdMergerButton'
 import { supabase } from '@/integrations/supabase/client'
 
