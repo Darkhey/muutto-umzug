@@ -25,7 +25,9 @@ export const ModuleCard = ({
     <Card className={`bg-white shadow-lg transition-all duration-300 ${
       !module.enabled ? 'opacity-60' : ''
     } ${
-      isExpanded ? 'fixed inset-4 z-50 overflow-auto' : ''
+      isExpanded
+        ? 'fixed inset-4 z-50 overflow-y-auto max-h-[calc(100dvh-2rem)]'
+        : ''
     }`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
