@@ -742,7 +742,7 @@ export const ModularDashboard = () => {
                 <div
                   className="grid gap-6 auto-rows-min grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
                   style={{
-                    gridAutoRows: 'minmax(300px, auto)'
+                    gridAutoRows: 'max-content'
                   }}
                 >
                   {modules

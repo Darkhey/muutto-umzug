@@ -78,8 +78,8 @@ export const MagneticDraggableModule = ({
       onMouseUp={handleDragEnd}
       onTouchEnd={handleDragEnd}
     >
-      <Collapsible open={open} onOpenChange={setOpen} className="h-full">
-        <Card className="bg-white h-full border-2 border-transparent hover:border-blue-200 transition-colors flex flex-col">
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <Card className="bg-white border-2 border-transparent hover:border-blue-200 transition-colors flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex items-center gap-2">
               <div
