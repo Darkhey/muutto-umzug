@@ -43,7 +43,8 @@ import {
   Package,
   Scale,
   Truck,
-  Sparkles
+  Sparkles,
+  Merge
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHouseholds } from '@/hooks/useHouseholds'
@@ -57,6 +58,9 @@ import { MovingInsights } from '@/components/insights/MovingInsights'
 import { OnboardingFlowWithDrafts } from '@/components/onboarding/OnboardingFlowWithDrafts'
 import { OnboardingSuccess } from '@/components/onboarding/OnboardingSuccess'
 import { useTasks } from '@/hooks/useTasks'
+import { HouseholdMergerButton } from './HouseholdMergerButton'
+import { DashboardStats } from './DashboardStats'
+import { supabase } from '@/integrations/supabase/client'
 
 // Define module types
 export interface DashboardModule {
@@ -140,11 +144,16 @@ export const ModularDashboard = () => {
   const { households, loading, createHousehold, addMembers } = useHouseholds()
   const { toast } = useToast()
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
-  const { tasks } = useTasks(activeHousehold?.id)
   const [modules, setModules] = useState<DashboardModule[]>([])
   const [activeTab, setActiveTab] = useState('dashboard')
   const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success'>('dashboard')
   const [onboardingData, setOnboardingData] = useState<any>(null)
+  
+  // Aggregated statistics state
+  const [totalTasks, setTotalTasks] = useState(0)
+  const [completedTasks, setCompletedTasks] = useState(0)
+  const [averageProgress, setAverageProgress] = useState(0)
+  const [householdProgress, setHouseholdProgress] = useState<Record<string, number>>({})
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -152,6 +161,78 @@ export const ModularDashboard = () => {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   )
+
+  // Fetch all tasks for all households to calculate aggregated statistics
+  useEffect(() => {
+    const fetchAllTasks = async () => {
+      if (households.length === 0) return
+      
+      try {
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('household_id, completed')
+          .in('household_id', households.map(h => h.id))
+        
+        if (error) throw error
+        
+        if (data) {
+          // Calculate total and completed tasks
+          const total = data.length
+          const completed = data.filter(t => t.completed).length
+          
+          setTotalTasks(total)
+          setCompletedTasks(completed)
+          
+          // Calculate progress for each household
+          const progressByHousehold: Record<string, { total: number, completed: number }> = {}
+          
+          data.forEach(task => {
+            if (!progressByHousehold[task.household_id]) {
+              progressByHousehold[task.household_id] = { total: 0, completed: 0 }
+            }
+            
+            progressByHousehold[task.household_id].total++
+            if (task.completed) {
+              progressByHousehold[task.household_id].completed++
+            }
+          })
+          
+          // Calculate progress percentages
+          const progressMap: Record<string, number> = {}
+          let totalProgress = 0
+          
+          households.forEach(household => {
+            const stats = progressByHousehold[household.id]
+            if (stats && stats.total > 0) {
+              const progressMetrics = calculateHouseholdProgress(
+                household.move_date,
+                stats.completed,
+                stats.total
+              )
+              progressMap[household.id] = progressMetrics.overall
+              totalProgress += progressMetrics.overall
+            } else {
+              // If no tasks, calculate based on time only
+              const progressMetrics = calculateHouseholdProgress(
+                household.move_date,
+                0,
+                0
+              )
+              progressMap[household.id] = progressMetrics.overall
+              totalProgress += progressMetrics.overall
+            }
+          })
+          
+          setHouseholdProgress(progressMap)
+          setAverageProgress(Math.round(totalProgress / households.length))
+        }
+      } catch (error) {
+        console.error('Error fetching tasks:', error)
+      }
+    }
+    
+    fetchAllTasks()
+  }, [households])
 
   // Initialize modules based on the first household
   useEffect(() => {
@@ -577,26 +658,6 @@ export const ModularDashboard = () => {
     }
   }
 
-  const getDaysUntilMove = (moveDate: string) => {
-    const today = new Date()
-    const move = new Date(moveDate)
-    const diffTime = move.getTime() - today.getTime()
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  }
-
-  const getUrgencyColor = (daysUntilMove: number) => {
-    if (daysUntilMove < 0) return 'text-red-600'
-    if (daysUntilMove <= 7) return 'text-orange-600'
-    if (daysUntilMove <= 30) return 'text-yellow-600'
-    return 'text-green-600'
-  }
-
-  const getUrgencyIcon = (daysUntilMove: number) => {
-    if (daysUntilMove < 0) return <AlertTriangle className="h-4 w-4" />
-    if (daysUntilMove <= 7) return <Clock className="h-4 w-4" />
-    return <Calendar className="h-4 w-4" />
-  }
-
   if (loading || (households.length > 0 && !activeHousehold)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -655,15 +716,6 @@ export const ModularDashboard = () => {
     )
   }
 
-  const nextDeadline = getDaysUntilMove(activeHousehold.move_date)
-  const completedTasks = tasks.filter(t => t.completed).length
-  const progressMetrics = calculateHouseholdProgress(
-    activeHousehold.move_date,
-    completedTasks,
-    tasks.length
-  )
-  const openTasks = tasks.length - completedTasks
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-7xl mx-auto">
@@ -691,51 +743,12 @@ export const ModularDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-white shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Aktive Umzüge</CardTitle>
-              <Home className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{households.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Nächster Umzug</CardTitle>
-              {getUrgencyIcon(nextDeadline)}
-            </CardHeader>
-            <CardContent>
-              <div className={`text-sm font-bold ${getUrgencyColor(nextDeadline)}`}>
-                {nextDeadline > 0 ? `in ${nextDeadline} Tagen` : nextDeadline === 0 ? 'Heute!' : 'Überfällig'}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Fortschritt</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {progressMetrics.overall}%
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Offene Aufgaben</CardTitle>
-              <CheckCircle className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{openTasks}</div>
-            </CardContent>
-          </Card>
-        </div>
+        <DashboardStats 
+          households={households}
+          totalTasks={totalTasks}
+          completedTasks={completedTasks}
+          averageProgress={averageProgress}
+        />
 
         {/* Main Content */}
         <Tabs defaultValue="dashboard" className="space-y-6" onValueChange={setActiveTab}>
@@ -746,6 +759,29 @@ export const ModularDashboard = () => {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
+            {/* Household Management Actions */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Deine Haushalte</h2>
+              <div className="flex gap-2">
+                <HouseholdMergerButton 
+                  variant="outline"
+                  onMergeComplete={() => {
+                    toast({
+                      title: 'Haushalte zusammengeführt',
+                      description: 'Die Haushalte wurden erfolgreich zusammengeführt.'
+                    })
+                  }}
+                />
+                <Button 
+                  onClick={() => setViewMode('onboarding')} 
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Neuer Haushalt
+                </Button>
+              </div>
+            </div>
+
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
