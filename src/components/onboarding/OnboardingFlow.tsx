@@ -37,7 +37,7 @@ interface OnboardingData {
 interface OnboardingFlowProps {
   initialData?: Partial<OnboardingData> | null;
   initialStep?: number;
-  onComplete: (data: OnboardingData) => void;
+  onComplete: (data: OnboardingData) => Promise<void>;
   onSkip: () => void;
   onSaveDraft?: (data: Partial<OnboardingData>, step: number) => Promise<boolean>;
   onBackToDrafts?: () => void;
