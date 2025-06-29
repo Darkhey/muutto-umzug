@@ -426,6 +426,70 @@ export type Database = {
           },
         ]
       }
+      timeline_preferences: {
+        Row: {
+          household_id: string
+          zoom_level: string | null
+          snap_to_grid: boolean | null
+          show_modules: string[] | null
+        }
+        Insert: {
+          household_id: string
+          zoom_level?: string | null
+          snap_to_grid?: boolean | null
+          show_modules?: string[] | null
+        }
+        Update: {
+          household_id?: string
+          zoom_level?: string | null
+          snap_to_grid?: boolean | null
+          show_modules?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_preferences_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      task_history: {
+        Row: {
+          id: number
+          task_id: string | null
+          changed_by: string | null
+          old_due: string | null
+          new_due: string | null
+          changed_at: string
+        }
+        Insert: {
+          id?: number
+          task_id?: string | null
+          changed_by?: string | null
+          old_due?: string | null
+          new_due?: string | null
+          changed_at?: string
+        }
+        Update: {
+          id?: number
+          task_id?: string | null
+          changed_by?: string | null
+          old_due?: string | null
+          new_due?: string | null
+          changed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_history_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
