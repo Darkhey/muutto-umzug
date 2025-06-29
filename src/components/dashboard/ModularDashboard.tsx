@@ -54,6 +54,8 @@ import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCa
 import { AIAssistant } from '@/components/ai/AIAssistant'
 import { ReminderSystem } from '@/components/reminders/ReminderSystem'
 import { MovingInsights } from '@/components/insights/MovingInsights'
+import { OnboardingFlowWithDrafts } from '@/components/onboarding/OnboardingFlowWithDrafts'
+import { OnboardingSuccess } from '@/components/onboarding/OnboardingSuccess'
 
 // Define module types
 export interface DashboardModule {
@@ -134,11 +136,13 @@ const SortableModule = ({ module, onToggle }: {
 
 export const ModularDashboard = () => {
   const { user, signOut } = useAuth()
-  const { households, loading } = useHouseholds()
+  const { households, loading, createHousehold, addMembers } = useHouseholds()
   const { toast } = useToast()
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [modules, setModules] = useState<DashboardModule[]>([])
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success'>('dashboard')
+  const [onboardingData, setOnboardingData] = useState<any>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -485,8 +489,55 @@ export const ModularDashboard = () => {
       ]
       
       setModules(initialModules)
+    } else {
+      setActiveHousehold(null)
+      setModules([])
     }
   }, [households])
+
+  const handleOnboardingComplete = async (data: any) => {
+    try {
+      setOnboardingData(data)
+
+      const household = await createHousehold({
+        name: data.householdName,
+        move_date: data.moveDate,
+        household_size: data.householdSize,
+        children_count: data.childrenCount,
+        pets_count: data.petsCount,
+        property_type: data.propertyType,
+        postal_code: data.postalCode,
+        old_address: data.oldAddress,
+        new_address: data.newAddress,
+        living_space: data.livingSpace,
+        rooms: data.rooms,
+        furniture_volume: data.furnitureVolume
+      })
+
+      if (data.members && data.members.length > 0) {
+        const validMembers = data.members.filter((m: any) => m.name.trim() && m.email.trim())
+        if (validMembers.length > 0) {
+          await addMembers(household.id, validMembers)
+        }
+      }
+
+      setViewMode('onboarding-success')
+    } catch (error) {
+      toast({
+        title: 'Fehler beim Erstellen',
+        description: error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleOnboardingSuccessComplete = () => {
+    setViewMode('dashboard')
+    toast({
+      title: 'Willkommen bei muutto! 🎉',
+      description: `Dein Haushalt "${onboardingData?.householdName}" ist bereit. Lass uns mit der Planung beginnen!`
+    })
+  }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -544,12 +595,59 @@ export const ModularDashboard = () => {
     return <Calendar className="h-4 w-4" />
   }
 
-  if (loading || !activeHousehold) {
+  if (loading || (households.length > 0 && !activeHousehold)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Lädt Dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (households.length === 0) {
+    if (viewMode === 'onboarding') {
+      return (
+        <OnboardingFlowWithDrafts
+          onComplete={handleOnboardingComplete}
+          onSkip={() => setViewMode('dashboard')}
+        />
+      )
+    }
+
+    if (viewMode === 'onboarding-success' && onboardingData) {
+      return (
+        <OnboardingSuccess
+          householdName={onboardingData.householdName}
+          moveDate={onboardingData.moveDate}
+          onContinue={handleOnboardingSuccessComplete}
+        />
+      )
+    }
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-2xl mx-auto">
+          <Card className="bg-white shadow-lg text-center py-12">
+            <CardContent>
+              <Home className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Willkommen bei {APP_CONFIG.name}! 🏠
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {APP_CONFIG.tagline} - Erstelle deinen ersten Haushalt und lass uns gemeinsam deinen Umzug planen.
+              </p>
+              <Button
+                onClick={() => setViewMode('onboarding')}
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Ersten Haushalt erstellen
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
