@@ -104,7 +104,10 @@ export const MagneticDraggableModule = ({
                 {module.enabled ? 'Aktiv' : 'Inaktiv'}
               </Label>
               <CollapsibleTrigger asChild className="sm:hidden">
-                <button className="p-1 rounded hover:bg-gray-100">
+                <button
+                  className="p-1 rounded hover:bg-gray-100"
+                  aria-label={open ? "Modul einklappen" : "Modul ausklappen"}
+                >
                   {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </button>
               </CollapsibleTrigger>
