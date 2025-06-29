@@ -95,10 +95,10 @@ export const AIConsentDialog = ({ onConsent, className }: AIConsentDialogProps) 
         </div>
 
         <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-          <Checkbox 
-            id="consent" 
-            checked={agreed} 
-            onCheckedChange={setAgreed}
+          <Checkbox
+            id="consent"
+            checked={agreed}
+            onCheckedChange={checked => setAgreed(checked === true)}
           />
           <label htmlFor="consent" className="text-sm text-gray-700 leading-relaxed">
             Ich stimme zu, dass meine Haushaltsdaten zur Personalisierung des KI-Assistenten 
