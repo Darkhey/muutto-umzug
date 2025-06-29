@@ -739,10 +739,9 @@ export const ModularDashboard = () => {
                 items={modules.filter(m => m.enabled).map(m => m.id)}
                 strategy={rectSortingStrategy}
               >
-                <div 
-                  className="grid gap-6 auto-rows-min"
+                <div
+                  className="grid gap-6 auto-rows-min grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
                   style={{
-                    gridTemplateColumns: 'repeat(4, 1fr)',
                     gridAutoRows: 'minmax(300px, auto)'
                   }}
                 >
