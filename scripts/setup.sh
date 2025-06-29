@@ -65,7 +65,8 @@ if command -v supabase >/dev/null 2>&1; then
   echo "Applying Supabase migrations..."
   if [ "$FRESH_DB" -eq 1 ]; then
     echo "WARNING: this will reset your local Supabase database and erase existing data"
-    supabase db reset --no-verify-auth > /dev/null
+-    supabase db reset --no-verify-auth > /dev/null
++    supabase db reset --no-verify-auth --force
   else
     supabase db push > /dev/null
   fi
