@@ -27,6 +27,8 @@ import { ExtendedHousehold } from '@/types/household'
 import { APP_CONFIG, getRandomTip } from '@/config/app'
 import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
 import { WorkInProgressCard } from './WorkInProgressCard'
+import { supabase } from '@/integrations/supabase/client'
+import { useTasks } from '@/hooks/useTasks'
 
 type ViewMode =
   | 'dashboard'
@@ -47,6 +49,7 @@ export const Dashboard = () => {
   const [dailyTip] = useState(getRandomTip())
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [onboardingData, setOnboardingData] = useState<any>(null)
+  const [householdProgress, setHouseholdProgress] = useState<Record<string, number>>({})
   const { invitations, loading: inviteLoading, error: inviteError, refetch: refetchInvites } = usePendingInvitations()
 
   useEffect(() => {
@@ -58,6 +61,30 @@ export const Dashboard = () => {
       })
     }
   }, [inviteError, toast])
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      const progressMap: Record<string, number> = {}
+      for (const h of households) {
+        const { data } = await supabase
+          .from('tasks')
+          .select('completed, id')
+          .eq('household_id', h.id)
+
+        const total = data?.length ?? 0
+        const completed = data?.filter(t => t.completed).length ?? 0
+        progressMap[h.id] = calculateHouseholdProgress(
+          h.move_date,
+          completed,
+          total
+        ).overall
+      }
+      setHouseholdProgress(progressMap)
+    }
+    if (households.length > 0) {
+      fetchProgress()
+    }
+  }, [households])
 
   // Show auth page if not logged in
   if (!authLoading && !user) {
@@ -190,6 +217,76 @@ export const Dashboard = () => {
     if (daysUntilMove < 0) return <AlertCircle className="h-4 w-4" />
     if (daysUntilMove <= 7) return <Clock className="h-4 w-4" />
     return <Calendar className="h-4 w-4" />
+  }
+
+  const HouseholdCard = ({ household }: { household: ExtendedHousehold }) => {
+    const { tasks } = useTasks(household.id)
+    const completedTasks = tasks.filter(t => t.completed).length
+    const progressMetrics = calculateHouseholdProgress(
+      household.move_date,
+      completedTasks,
+      tasks.length
+    )
+    const progressColor = getProgressColor(progressMetrics.overall)
+    const daysUntilMove = getDaysUntilMove(household.move_date)
+
+    return (
+      <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="text-lg">{household.name}</span>
+            <Badge variant="secondary" className={progressColor}>
+              {progressMetrics.overall}%
+            </Badge>
+          </CardTitle>
+          <CardDescription className="flex items-center gap-2">
+            {getUrgencyIcon(daysUntilMove)}
+            <span>
+              Umzug: {new Date(household.move_date).toLocaleDateString('de-DE')}
+              {daysUntilMove > 0 && ` (in ${daysUntilMove} Tagen)`}
+              {daysUntilMove === 0 && ` (heute!)`}
+              {daysUntilMove < 0 && ` (überfällig)`}
+            </span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Fortschritt</span>
+                <span>{progressMetrics.overall}%</span>
+              </div>
+              <Progress value={progressMetrics.overall} className="h-2" />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-sm text-gray-600">
+                <Users className="h-4 w-4 mr-1" />
+                {household.household_size} {household.household_size === 1 ? 'Person' : 'Personen'}
+                {household.children_count > 0 && `, ${household.children_count} Kinder`}
+                {household.pets_count > 0 && `, ${household.pets_count} Haustiere`}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => openTaskList(household)}
+                >
+                  Aufgaben
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => openHousehold(household)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Öffnen
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   if (viewMode === 'dashboard' && invitations.length > 0) {
@@ -379,9 +476,11 @@ export const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  {Math.round(households.reduce((acc, h) => 
-                    acc + calculateHouseholdProgress(h.move_date).overall, 0
-                  ) / (households.length || 1))}%
+                  {households.length > 0 ?
+                    Math.round(
+                      households.reduce((acc, h) => acc + (householdProgress[h.id] || 0), 0) /
+                      households.length
+                    ) : 0}%
                 </div>
               </CardContent>
             </Card>
@@ -434,69 +533,9 @@ export const Dashboard = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {households.map((household) => {
-                        const progressMetrics = calculateHouseholdProgress(household.move_date, 0, 4)
-                        const progressColor = getProgressColor(progressMetrics.overall)
-                        const daysUntilMove = getDaysUntilMove(household.move_date)
-                        
-                        return (
-                          <Card key={household.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-                            <CardHeader>
-                              <CardTitle className="flex items-center justify-between">
-                                <span className="text-lg">{household.name}</span>
-                                <Badge variant="secondary" className={progressColor}>
-                                  {progressMetrics.overall}%
-                                </Badge>
-                              </CardTitle>
-                              <CardDescription className="flex items-center gap-2">
-                                {getUrgencyIcon(daysUntilMove)}
-                                <span>
-                                  Umzug: {new Date(household.move_date).toLocaleDateString('de-DE')}
-                                  {daysUntilMove > 0 && ` (in ${daysUntilMove} Tagen)`}
-                                  {daysUntilMove === 0 && ` (heute!)`}
-                                  {daysUntilMove < 0 && ` (überfällig)`}
-                                </span>
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-4">
-                                <div>
-                                  <div className="flex justify-between text-sm mb-1">
-                                    <span>Fortschritt</span>
-                                    <span>{progressMetrics.overall}%</span>
-                                  </div>
-                                  <Progress value={progressMetrics.overall} className="h-2" />
-                                </div>
-                                
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center text-sm text-gray-600">
-                                    <Users className="h-4 w-4 mr-1" />
-                                    {household.household_size} {household.household_size === 1 ? 'Person' : 'Personen'}
-                                    {household.children_count > 0 && `, ${household.children_count} Kinder`}
-                                    {household.pets_count > 0 && `, ${household.pets_count} Haustiere`}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => openTaskList(household)}
-                                    >
-                                      Aufgaben
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => openHousehold(household)}
-                                      className="bg-blue-600 hover:bg-blue-700"
-                                    >
-                                      Öffnen
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )
-                      })}
+                      {households.map(h => (
+                        <HouseholdCard key={h.id} household={h} />
+                      ))}
                     </div>
                   </div>
 

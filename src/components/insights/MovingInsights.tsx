@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ExtendedHousehold } from '@/types/household'
 import { calculateHouseholdProgress } from '@/utils/progressCalculator'
+import { useTasks } from '@/hooks/useTasks'
 import { 
   TrendingUp, 
   Calendar, 
@@ -20,7 +21,13 @@ interface MovingInsightsProps {
 }
 
 export const MovingInsights = ({ household, className }: MovingInsightsProps) => {
-  const progress = calculateHouseholdProgress(household.move_date, 0, 10)
+  const { tasks } = useTasks(household.id)
+  const completedTasks = tasks.filter(t => t.completed).length
+  const progress = calculateHouseholdProgress(
+    household.move_date,
+    completedTasks,
+    tasks.length
+  )
   
   const getDaysUntilMove = () => {
     const today = new Date()

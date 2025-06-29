@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ExtendedHousehold } from '@/types/household'
 import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
+import { useTasks } from '@/hooks/useTasks'
 import { PROPERTY_TYPES } from '@/config/app'
 import { Users, Calendar, MapPin, Home, Settings, Square } from 'lucide-react'
 
@@ -21,7 +22,13 @@ export const HouseholdOverview = ({
   onEditHousehold,
   onViewTasks
 }: HouseholdOverviewProps) => {
-  const progressMetrics = calculateHouseholdProgress(household.move_date, 0, 4)
+  const { tasks } = useTasks(household.id)
+  const completedTasks = tasks.filter(t => t.completed).length
+  const progressMetrics = calculateHouseholdProgress(
+    household.move_date,
+    completedTasks,
+    tasks.length
+  )
   const progressColor = getProgressColor(progressMetrics.overall)
   const propertyType = PROPERTY_TYPES.find(pt => pt.key === household.property_type)
 

@@ -56,6 +56,7 @@ import { ReminderSystem } from '@/components/reminders/ReminderSystem'
 import { MovingInsights } from '@/components/insights/MovingInsights'
 import { OnboardingFlowWithDrafts } from '@/components/onboarding/OnboardingFlowWithDrafts'
 import { OnboardingSuccess } from '@/components/onboarding/OnboardingSuccess'
+import { useTasks } from '@/hooks/useTasks'
 
 // Define module types
 export interface DashboardModule {
@@ -139,6 +140,7 @@ export const ModularDashboard = () => {
   const { households, loading, createHousehold, addMembers } = useHouseholds()
   const { toast } = useToast()
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
+  const { tasks } = useTasks(activeHousehold?.id)
   const [modules, setModules] = useState<DashboardModule[]>([])
   const [activeTab, setActiveTab] = useState('dashboard')
   const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success'>('dashboard')
@@ -654,6 +656,13 @@ export const ModularDashboard = () => {
   }
 
   const nextDeadline = getDaysUntilMove(activeHousehold.move_date)
+  const completedTasks = tasks.filter(t => t.completed).length
+  const progressMetrics = calculateHouseholdProgress(
+    activeHousehold.move_date,
+    completedTasks,
+    tasks.length
+  )
+  const openTasks = tasks.length - completedTasks
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -712,7 +721,7 @@ export const ModularDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {calculateHouseholdProgress(activeHousehold.move_date).overall}%
+                {progressMetrics.overall}%
               </div>
             </CardContent>
           </Card>
@@ -723,7 +732,7 @@ export const ModularDashboard = () => {
               <CheckCircle className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">12</div>
+              <div className="text-2xl font-bold text-orange-600">{openTasks}</div>
             </CardContent>
           </Card>
         </div>

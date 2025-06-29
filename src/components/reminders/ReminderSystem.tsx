@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { Bell, Calendar, AlertTriangle, CheckCircle, Clock, X, SunSnow as Snooze } from 'lucide-react'
+import { useTasks } from '@/hooks/useTasks'
+import type { TaskPriority } from '@/types/database'
 
 interface Reminder {
   id: string
@@ -24,51 +26,37 @@ interface ReminderSystemProps {
 export const ReminderSystem = ({ householdId, className }: ReminderSystemProps) => {
   const { toast } = useToast()
   const [reminders, setReminders] = useState<Reminder[]>([])
-  const [loading, setLoading] = useState(false)
+  const { tasks, loading: tasksLoading } = useTasks(householdId)
 
-  // Mock data for demonstration
+  const priorityMap: Record<TaskPriority, Reminder['priority']> = {
+    niedrig: 'low',
+    mittel: 'medium',
+    hoch: 'high',
+    kritisch: 'critical'
+  }
+
   useEffect(() => {
-    const mockReminders: Reminder[] = [
-      {
-        id: '1',
-        title: 'Mietvertrag kündigen',
-        description: 'Kündigungsschreiben für die alte Wohnung versenden',
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-        priority: 'critical',
-        category: 'Verträge',
-        completed: false
-      },
-      {
-        id: '2',
-        title: 'Umzugsunternehmen buchen',
-        description: 'Angebote vergleichen und Umzugsfirma beauftragen',
-        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
-        priority: 'high',
-        category: 'Organisation',
-        completed: false
-      },
-      {
-        id: '3',
-        title: 'Strom ummelden',
-        description: 'Stromanbieter über Adressänderung informieren',
-        dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 21 days from now
-        priority: 'medium',
-        category: 'Verträge',
-        completed: false
-      },
-      {
-        id: '4',
-        title: 'Kartons besorgen',
-        description: 'Umzugskartons und Verpackungsmaterial kaufen',
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        priority: 'medium',
-        category: 'Material',
-        completed: false
-      }
-    ]
-    
-    setReminders(mockReminders)
-  }, [householdId])
+    const mapped = tasks
+      .filter((t) => t.due_date)
+      .map((t) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description || '',
+        dueDate: new Date(t.due_date as string),
+        priority: priorityMap[t.priority],
+        category: t.category || '',
+        completed: t.completed
+      }))
+    setReminders(mapped)
+  }, [tasks])
+
+  if (tasksLoading) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <p className="text-center text-gray-600">Erinnerungen werden geladen...</p>
+      </div>
+    )
+  }
 
   const getPriorityColor = (priority: Reminder['priority']) => {
     switch (priority) {
