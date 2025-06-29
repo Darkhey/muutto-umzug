@@ -116,3 +116,15 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
+
+## Environment variables
+
+Create a `.env` file based on `.env.example` and provide the Supabase credentials:
+
+```bash
+VITE_SUPABASE_URL=<your-supabase-url>
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+```
+
+These variables are required for the app to connect to Supabase at runtime.
+=======
