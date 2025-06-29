@@ -23,6 +23,17 @@ VITE_SUPABASE_ANON_KEY=<your-anon-key>
 
 These variables are read by the Supabase client in `src/integrations/supabase/client.ts`. Alternatively you can edit that file directly with your credentials.
 
+## Quick setup
+
+To automatically install dependencies and prepare the local environment, run:
+
+```bash
+./scripts/setup.sh          # install deps and apply migrations
+./scripts/setup.sh --fresh  # additionally reset the local database
+```
+
+The script installs Node.js (via `nvm` if necessary), downloads npm packages, installs the Supabase CLI and creates a `.env.local` file with placeholder values. Pass `--fresh` to wipe and recreate the local Supabase database before applying migrations.
+
 ## Available scripts
 
 `package.json` exposes several npm scripts that help during development:
