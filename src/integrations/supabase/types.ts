@@ -51,6 +51,80 @@ export type Database = {
         }
         Relationships: []
       }
+      household_draft_versions: {
+        Row: {
+          created_at: string
+          data: Json
+          draft_id: string
+          id: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          draft_id: string
+          id?: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          draft_id?: string
+          id?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_draft_versions_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "household_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_drafts: {
+        Row: {
+          completion_percentage: number
+          created_at: string
+          data: Json
+          id: string
+          last_step: number
+          status: string
+          updated_at: string
+          user_id: string
+          validation_errors: Json | null
+          version: number
+        }
+        Insert: {
+          completion_percentage?: number
+          created_at?: string
+          data: Json
+          id: string
+          last_step?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+          validation_errors?: Json | null
+          version?: number
+        }
+        Update: {
+          completion_percentage?: number
+          created_at?: string
+          data?: Json
+          id?: string
+          last_step?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+          validation_errors?: Json | null
+          version?: number
+        }
+        Relationships: []
+      }
       household_members: {
         Row: {
           created_at: string
@@ -103,57 +177,57 @@ export type Database = {
           children_count: number
           created_at: string
           created_by: string
+          furniture_volume: number | null
           household_size: number
           id: string
           invitation_code: string
+          living_space: number | null
           move_date: string
           name: string
+          new_address: string | null
+          old_address: string | null
           pets_count: number
           postal_code: string | null
-          old_address: string | null
-          new_address: string | null
-          living_space: number | null
-          rooms: number | null
-          furniture_volume: number | null
           property_type: Database["public"]["Enums"]["property_type"]
+          rooms: number | null
           updated_at: string
         }
         Insert: {
           children_count?: number
           created_at?: string
           created_by: string
+          furniture_volume?: number | null
           household_size?: number
           id?: string
           invitation_code: string
+          living_space?: number | null
           move_date: string
           name: string
+          new_address?: string | null
+          old_address?: string | null
           pets_count?: number
           postal_code?: string | null
-          old_address?: string | null
-          new_address?: string | null
-          living_space?: number | null
-          rooms?: number | null
-          furniture_volume?: number | null
           property_type: Database["public"]["Enums"]["property_type"]
+          rooms?: number | null
           updated_at?: string
         }
         Update: {
           children_count?: number
           created_at?: string
           created_by?: string
+          furniture_volume?: number | null
           household_size?: number
           id?: string
           invitation_code?: string
+          living_space?: number | null
           move_date?: string
           name?: string
+          new_address?: string | null
+          old_address?: string | null
           pets_count?: number
           postal_code?: string | null
-          old_address?: string | null
-          new_address?: string | null
-          living_space?: number | null
-          rooms?: number | null
-          furniture_volume?: number | null
           property_type?: Database["public"]["Enums"]["property_type"]
+          rooms?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -278,6 +352,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_household_from_draft: {
+        Args: { p_draft_id: string }
+        Returns: string
+      }
       create_initial_tasks: {
         Args: { p_household_id: string }
         Returns: number
