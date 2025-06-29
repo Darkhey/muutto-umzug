@@ -160,6 +160,9 @@ export const Dashboard = () => {
 
       console.log("Household created:", household);
 
+      // Set the newly created household as active so we can show its tasks
+      setActiveHousehold(household)
+
       // Add members if any
       if (data.members && data.members.length > 0) {
         const validMembers = data.members.filter((m: any) => m.name.trim() && m.email.trim())
@@ -183,7 +186,13 @@ export const Dashboard = () => {
   }
 
   const handleOnboardingSuccessComplete = () => {
-    setViewMode('dashboard')
+    if (activeHousehold) {
+      // Jump directly to the task list so the user can review the generated checklist
+      setViewMode('task-list')
+    } else {
+      setViewMode('dashboard')
+    }
+
     toast({
       title: "Willkommen bei muutto! 🎉",
       description: `Dein Haushalt "${onboardingData?.householdName}" ist bereit. Lass uns mit der Planung beginnen!`
