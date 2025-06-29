@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -6,9 +7,12 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
-import { Bot, User, Send, Loader2, Lightbulb, Calendar, AlertTriangle, Sparkles } from 'lucide-react'
+import { Bot, User, Send, Loader2, Sparkles } from 'lucide-react'
 import { ExtendedHousehold } from '@/types/household'
 import { supabase } from '@/integrations/supabase/client'
+import { AIConsentDialog } from './AIConsentDialog'
+import { useUserConsent } from '@/hooks/useUserConsent'
+import { generatePersonalizedWelcomeMessage, buildHouseholdContext } from '@/utils/aiPersonalization'
 
 interface Message {
   id: string
@@ -26,44 +30,64 @@ interface AIAssistantProps {
 export const AIAssistant = ({ household, className }: AIAssistantProps) => {
   const { user } = useAuth()
   const { toast } = useToast()
+  const { hasConsent, isLoading: consentLoading, updateConsent } = useUserConsent()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
-  // Initialize with welcome message
+  // Initialize with personalized welcome message when consent is given
   useEffect(() => {
-    if (!isInitialized) {
-      const welcomeMessage: Message = {
-        id: '1',
-        role: 'assistant',
-        content: `Hallo! 👋 Ich bin dein muutto KI-Assistent und helfe dir bei deinem Umzug. ${
-          household 
-            ? `Ich sehe, dass dein Umzug "${household.name}" am ${new Date(household.move_date).toLocaleDateString('de-DE')} geplant ist.` 
-            : 'Wie kann ich dir heute helfen?'
-        }
+    if (!hasConsent || !household || isInitialized) return
 
-Ich kann dir bei folgenden Themen helfen:
-• **Fristen & Deadlines** - Wann muss was erledigt werden?
-• **Kosten & Budget** - Was kostet ein Umzug?
-• **Organisation** - Wie plane ich den Umzugstag?
-• **Rechtliches** - Welche Ummeldungen sind nötig?
-
-Stelle mir gerne deine erste Frage! 😊`,
-        timestamp: new Date(),
-        suggestions: [
-          'Was muss ich als erstes tun?',
-          'Welche Fristen sind wichtig?',
-          'Wie organisiere ich den Umzugstag?',
-          'Was kostet ein Umzug?'
-        ]
-      }
-      
-      setMessages([welcomeMessage])
-      setIsInitialized(true)
+    const welcomeContent = generatePersonalizedWelcomeMessage(household)
+    
+    const welcomeMessage: Message = {
+      id: '1',
+      role: 'assistant',
+      content: welcomeContent,
+      timestamp: new Date(),
+      suggestions: [
+        'Was muss ich diese Woche erledigen?',
+        'Welche Fristen sind kritisch?',
+        'Tipps für den Umzugstag?',
+        'Wie kann ich Kosten sparen?'
+      ]
     }
-  }, [household, isInitialized])
+    
+    setMessages([welcomeMessage])
+    setIsInitialized(true)
+    
+    // Create or get chat session
+    createChatSession()
+  }, [hasConsent, household, isInitialized])
+
+  const createChatSession = async () => {
+    if (!user || !household) return
+
+    try {
+      const context = buildHouseholdContext(household)
+      
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .insert({
+          household_id: household.id,
+          user_id: user.id,
+          title: `Chat ${new Date().toLocaleDateString('de-DE')}`,
+          context
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setSessionId(data.id)
+    } catch (error) {
+      console.error('Error creating chat session:', error)
+    }
+  }
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -71,25 +95,9 @@ Stelle mir gerne deine erste Frage! 😊`,
     }
   }, [messages])
 
-  const getDaysUntilMove = () => {
-    if (!household) return null
-    const today = new Date()
-    const moveDate = new Date(household.move_date)
-    const diffTime = moveDate.getTime() - today.getTime()
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  }
-
   const callAIAssistant = async (userMessage: string): Promise<string> => {
     try {
-      const householdContext = household ? {
-        name: household.name,
-        moveDate: household.move_date,
-        householdSize: household.household_size,
-        childrenCount: household.children_count,
-        petsCount: household.pets_count,
-        propertyType: household.property_type,
-        daysUntilMove: getDaysUntilMove() || 0
-      } : undefined
+      const householdContext = household ? buildHouseholdContext(household) : undefined
 
       const chatMessages = [
         ...messages.map(msg => ({
@@ -112,6 +120,22 @@ Stelle mir gerne deine erste Frage! 😊`,
       if (error) {
         console.error('Supabase function error:', error)
         throw error
+      }
+
+      // Save messages to database if we have a session
+      if (sessionId) {
+        await Promise.all([
+          supabase.from('chat_messages').insert({
+            session_id: sessionId,
+            role: 'user',
+            content: userMessage
+          }),
+          supabase.from('chat_messages').insert({
+            session_id: sessionId,
+            role: 'assistant',
+            content: data.message
+          })
+        ])
       }
 
       return data.message || 'Entschuldigung, ich konnte keine Antwort generieren.'
@@ -144,9 +168,9 @@ Stelle mir gerne deine erste Frage! 😊`,
         content: response,
         timestamp: new Date(),
         suggestions: [
-          'Weitere Tipps?',
+          'Weitere Details?',
           'Was ist als nächstes zu tun?',
-          'Wie spare ich Kosten?'
+          'Gibt es Alternativen?'
         ]
       }
 
@@ -154,11 +178,10 @@ Stelle mir gerne deine erste Frage! 😊`,
     } catch (error) {
       console.error('Error calling AI assistant:', error)
       
-      // Fallback message
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Entschuldigung, ich bin momentan nicht verfügbar. Hier sind einige wichtige Umzugstipps:
+        content: `Entschuldigung, ich bin momentan nicht verfügbar. Hier sind trotzdem einige wichtige Umzugstipps:
 
 📅 **Wichtige Fristen:**
 • 3 Monate vorher: Mietvertrag kündigen
@@ -170,7 +193,7 @@ Stelle mir gerne deine erste Frage! 😊`,
 • Erstelle eine Checkliste
 • Hole mehrere Umzugsangebote ein
 • Sammle wichtige Dokumente
-• Plane ein Umzugsbudget (800-2000€)
+• Plane ein Umzugsbudget
 
 Versuche es gleich nochmal - ich bin normalerweise sofort da! 😊`,
         timestamp: new Date()
@@ -197,6 +220,24 @@ Versuche es gleich nochmal - ich bin normalerweise sofort da! 😊`,
       e.preventDefault()
       handleSend()
     }
+  }
+
+  const handleConsent = () => {
+    updateConsent(true)
+  }
+
+  // Show loading state
+  if (consentLoading) {
+    return (
+      <Card className={`h-[600px] flex items-center justify-center ${className}`}>
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      </Card>
+    )
+  }
+
+  // Show consent dialog if no consent given
+  if (!hasConsent) {
+    return <AIConsentDialog onConsent={handleConsent} className={className} />
   }
 
   return (

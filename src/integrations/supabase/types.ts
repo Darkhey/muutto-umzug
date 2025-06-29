@@ -9,6 +9,79 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          context: Json | null
+          created_at: string
+          household_id: string
+          id: string
+          last_message_at: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          household_id: string
+          id?: string
+          last_message_at?: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          last_message_at?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_templates: {
         Row: {
           assigned_role: Database["public"]["Enums"]["household_role"] | null
@@ -234,6 +307,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_assistant_consent: boolean | null
+          ai_assistant_consent_date: string | null
           avatar_url: string | null
           created_at: string
           full_name: string | null
@@ -241,6 +316,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_assistant_consent?: boolean | null
+          ai_assistant_consent_date?: string | null
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
@@ -248,6 +325,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_assistant_consent?: boolean | null
+          ai_assistant_consent_date?: string | null
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
