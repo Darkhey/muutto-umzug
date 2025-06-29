@@ -58,6 +58,14 @@ export const useDashboardModules = (initialModules: DashboardModule[]) => {
     }
   }, []);
 
+  // Apply initial modules when they change (e.g., after async loading)
+  useEffect(() => {
+    if (initialModules.length && modules.length === 0) {
+      setModules(initialModules);
+      setModulePositions({});
+    }
+  }, [initialModules, modules.length]);
+
   // Save modules to localStorage when they change
   useEffect(() => {
     if (modules.length > 0) {
