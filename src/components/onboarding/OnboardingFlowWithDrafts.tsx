@@ -7,8 +7,28 @@ import { CreateHouseholdData } from '@/hooks/useHouseholds';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
+interface OnboardingData {
+  householdName: string
+  moveDate: string
+  householdSize: number
+  childrenCount: number
+  petsCount: number
+  propertyType: string | ''
+  postalCode: string
+  oldAddress: string
+  newAddress: string
+  livingSpace: number
+  rooms: number
+  furnitureVolume: number
+  members: Array<{
+    name: string
+    email: string
+    role: string
+  }>
+}
+
 interface OnboardingFlowWithDraftsProps {
-  onComplete: (data: CreateHouseholdData) => void;
+  onComplete: (data: OnboardingData) => Promise<void>;
   onSkip: () => void;
 }
 
@@ -56,7 +76,7 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
     setShowDraftList(true);
   };
 
-  const handleOnboardingComplete = async (data: CreateHouseholdData) => {
+  const handleOnboardingComplete = async (data: OnboardingData) => {
     try {
       // Wenn ein Entwurf bearbeitet wurde, markiere ihn als abgeschlossen
       if (currentDraftId) {

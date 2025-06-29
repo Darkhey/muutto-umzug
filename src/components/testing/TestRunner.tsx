@@ -452,14 +452,14 @@ export const TestRunner = () => {
     
     try {
       const validationResults = [
-        { isValid: true, errors: [] },
-        { isValid: false, errors: ['Error 1'] },
-        { isValid: false, errors: ['Error 2'] }
+        { isValid: true, errors: {} },
+        { isValid: false, errors: { error1: 'Error 1' } },
+        { isValid: false, errors: { error2: 'Error 2' } }
       ]
       
       const combined = combineValidationResults(...validationResults)
-      
-      if (!combined.isValid && combined.errors.length === 2) {
+
+      if (!combined.isValid && Object.keys(combined.errors).length === 2) {
         updateTestResult(suiteName, 'Test helper functions', { 
           status: 'passed', 
           duration: Date.now() - helperStartTime,
@@ -487,7 +487,7 @@ export const TestRunner = () => {
       // Test error handling by trying to validate invalid data
       const result = validateEmail('invalid')
       
-      if (!result.isValid && result.errors.length > 0) {
+      if (!result.isValid && Object.keys(result.errors).length > 0) {
         updateTestResult(suiteName, 'Error handling', { 
           status: 'passed', 
           duration: Date.now() - errorStartTime,
