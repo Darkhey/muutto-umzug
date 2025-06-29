@@ -28,12 +28,15 @@ import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCa
 import { getDaysUntilMove, getUrgencyColor, getUrgencyIcon } from '@/utils/moveDate'
 import { WorkInProgressCard } from './WorkInProgressCard'
 import { supabase } from '@/integrations/supabase/client'
+import { TimelineView } from './timeline/TimelineView'
+import { TimelineButton } from './timeline/TimelineButton'
 
 type ViewMode =
   | 'dashboard'
   | 'household-overview'
   | 'member-management'
   | 'task-list'
+  | 'timeline-view'
   | 'onboarding'
   | 'onboarding-success'
   | 'testing'
@@ -220,6 +223,11 @@ export const Dashboard = () => {
     setActiveHousehold(household)
     setViewMode('task-list')
   }
+  
+  const openTimelineView = (household: ExtendedHousehold) => {
+    setActiveHousehold(household)
+    setViewMode('timeline-view')
+  }
 
   const showMemberManagement = () => {
     setViewMode('member-management')
@@ -346,6 +354,12 @@ export const Dashboard = () => {
   if (viewMode === 'task-list' && activeHousehold) {
     return (
       <TaskList household={activeHousehold} onBack={() => setViewMode('household-overview')} />
+    )
+  }
+  
+  if (viewMode === 'timeline-view' && activeHousehold) {
+    return (
+      <TimelineView household={activeHousehold} onBack={() => setViewMode('household-overview')} />
     )
   }
 

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,6 +7,7 @@ import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCa
 import { useTasks } from '@/hooks/useTasks'
 import { PROPERTY_TYPES } from '@/config/app'
 import { Users, Calendar, MapPin, Home, Settings, Square } from 'lucide-react'
+import { TimelineButton } from '@/components/timeline/TimelineButton'
 
 interface HouseholdOverviewProps {
   household: ExtendedHousehold
@@ -184,12 +184,39 @@ export const HouseholdOverview = ({
       {/* Tasks */}
       <Card>
         <CardHeader>
-          <CardTitle>Aufgaben</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Aufgaben</CardTitle>
+            <div className="flex gap-2">
+              <TimelineButton household={household} />
+              <Button onClick={onViewTasks} className="bg-blue-600 hover:bg-blue-700">
+                Zur Aufgabenliste
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <Button onClick={onViewTasks} className="bg-blue-600 hover:bg-blue-700">
-            Zur Aufgabenliste
-          </Button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-800 mb-1">Vor dem Umzug</h4>
+              <p className="text-blue-600">
+                {tasks.filter(t => t.phase === 'vor_umzug' && !t.completed).length} offene Aufgaben
+              </p>
+            </div>
+            
+            <div className="p-3 bg-green-50 rounded-lg">
+              <h4 className="font-medium text-green-800 mb-1">Umzugstag</h4>
+              <p className="text-green-600">
+                {tasks.filter(t => t.phase === 'umzugstag' && !t.completed).length} offene Aufgaben
+              </p>
+            </div>
+            
+            <div className="p-3 bg-purple-50 rounded-lg">
+              <h4 className="font-medium text-purple-800 mb-1">Nach dem Umzug</h4>
+              <p className="text-purple-600">
+                {tasks.filter(t => t.phase === 'nach_umzug' && !t.completed).length} offene Aufgaben
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

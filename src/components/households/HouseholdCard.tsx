@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -7,6 +6,7 @@ import { Users } from 'lucide-react'
 import { ExtendedHousehold } from '@/types/household'
 import { getDaysUntilMove, getUrgencyColor, getUrgencyIcon } from '@/utils/moveDate'
 import { getProgressColor } from '@/utils/progressCalculator'
+import { TimelineButton } from '@/components/timeline/TimelineButton'
 
 interface HouseholdCardProps {
   household: ExtendedHousehold
@@ -62,6 +62,7 @@ export const HouseholdCard = ({
               {household.pets_count > 0 && `, ${household.pets_count} Haustiere`}
             </div>
             <div className="flex gap-2">
+              <TimelineButton household={household} size="sm" />
               <Button
                 size="sm"
                 variant="outline"

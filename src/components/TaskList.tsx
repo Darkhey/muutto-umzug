@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +8,7 @@ import TaskCard from './tasks/TaskCard';
 import { useTasks } from '@/hooks/useTasks';
 import { Database, TaskPhase } from '@/types/database';
 import { ExtendedHousehold } from '@/types/household';
+import { TimelineButton } from './timeline/TimelineButton';
 
 type Task = Database['public']['Tables']['tasks']['Row'];
 
@@ -78,6 +78,8 @@ export const TaskList = ({ household, onBack }: TaskListProps) => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Zurück zum Dashboard
           </Button>
+          
+          <TimelineButton household={household} />
         </div>
 
         {/* Household Info */}
