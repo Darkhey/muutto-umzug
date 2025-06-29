@@ -352,6 +352,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_merge_households: {
+        Args: { p_household_ids: string[] }
+        Returns: boolean
+      }
       create_household_from_draft: {
         Args: { p_draft_id: string }
         Returns: string
@@ -374,6 +378,13 @@ export type Database = {
           p_user_id: string
           p_user_name: string
           p_user_email: string
+        }
+        Returns: string
+      }
+      merge_households: {
+        Args: {
+          p_source_household_ids: string[]
+          p_destination_household_id: string
         }
         Returns: string
       }

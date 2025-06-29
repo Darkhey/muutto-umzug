@@ -16,13 +16,10 @@ import {
   DragEndEvent
 } from '@dnd-kit/core'
 import { 
-  arrayMove, 
   SortableContext, 
   sortableKeyboardCoordinates, 
-  verticalListSortingStrategy,
-  useSortable
+  rectSortingStrategy
 } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { 
   Home, 
   Users, 
@@ -44,7 +41,9 @@ import {
   Scale,
   Truck,
   Sparkles,
-  Merge
+  Merge,
+  Magnet,
+  Grid3X3
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHouseholds } from '@/hooks/useHouseholds'
@@ -60,6 +59,8 @@ import { OnboardingSuccess } from '@/components/onboarding/OnboardingSuccess'
 import { useTasks } from '@/hooks/useTasks'
 import { HouseholdMergerButton } from './HouseholdMergerButton'
 import { DashboardStats } from './DashboardStats'
+import { MagneticDraggableModule } from './MagneticDraggableModule'
+import { useDashboardModules } from '@/hooks/useDashboardModules'
 import { supabase } from '@/integrations/supabase/client'
 
 // Define module types
@@ -74,77 +75,11 @@ export interface DashboardModule {
   size: 'small' | 'medium' | 'large'
 }
 
-// Sortable module component
-const SortableModule = ({ module, onToggle }: { 
-  module: DashboardModule, 
-  onToggle: (id: string) => void 
-}) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: module.id,
-  })
-  
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 1 : 0,
-  }
-
-  return (
-    <div 
-      ref={setNodeRef} 
-      style={style}
-      className={`mb-6 ${module.size === 'large' ? 'col-span-2' : module.size === 'medium' ? 'col-span-1' : 'col-span-1'}`}
-    >
-      <Card className={`bg-white shadow-lg ${!module.enabled ? 'opacity-60' : ''}`}>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div className="flex items-center gap-2">
-            <div className="cursor-move" {...attributes} {...listeners}>
-              <GripVertical className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-            </div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              {module.icon}
-              {module.title}
-            </CardTitle>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch 
-              checked={module.enabled} 
-              onCheckedChange={() => onToggle(module.id)} 
-              id={`toggle-${module.id}`}
-            />
-            <Label htmlFor={`toggle-${module.id}`} className="text-xs text-gray-500">
-              {module.enabled ? 'Aktiv' : 'Inaktiv'}
-            </Label>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {module.enabled ? (
-            module.component
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-gray-500">
-              <p className="mb-4">Dieses Modul ist deaktiviert</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onToggle(module.id)}
-              >
-                Aktivieren
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
 export const ModularDashboard = () => {
   const { user, signOut } = useAuth()
   const { households, loading, createHousehold, addMembers } = useHouseholds()
   const { toast } = useToast()
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
-  const [modules, setModules] = useState<DashboardModule[]>([])
   const [activeTab, setActiveTab] = useState('dashboard')
   const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success'>('dashboard')
   const [onboardingData, setOnboardingData] = useState<any>(null)
@@ -156,7 +91,11 @@ export const ModularDashboard = () => {
   const [householdProgress, setHouseholdProgress] = useState<Record<string, number>>({})
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -235,13 +174,14 @@ export const ModularDashboard = () => {
   }, [households])
 
   // Initialize modules based on the first household
+  const [initialModules, setInitialModules] = useState<DashboardModule[]>([])
+  
   useEffect(() => {
     if (households && households.length > 0) {
       const firstHousehold = households[0]
       setActiveHousehold(firstHousehold)
       
-      // Create modules
-      const initialModules: DashboardModule[] = [
+      const modules: DashboardModule[] = [
         {
           id: 'household-overview',
           title: 'Haushalt Übersicht',
@@ -571,12 +511,24 @@ export const ModularDashboard = () => {
         }
       ]
       
-      setModules(initialModules)
+      setInitialModules(modules)
     } else {
       setActiveHousehold(null)
-      setModules([])
+      setInitialModules([])
     }
   }, [households])
+
+  const {
+    modules,
+    modulePositions,
+    settings,
+    toggleModule,
+    updateModulePosition,
+    resetLayout,
+    compactLayout,
+    updateSetting,
+    saveSettings
+  } = useDashboardModules(initialModules)
 
   const handleOnboardingComplete = async (data: any) => {
     try {
@@ -626,13 +578,7 @@ export const ModularDashboard = () => {
     const { active, over } = event
     
     if (over && active.id !== over.id) {
-      setModules((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
-        
-        return arrayMove(items, oldIndex, newIndex)
-      })
-      
+      // Handle module reordering if needed
       toast({
         title: 'Dashboard angepasst',
         description: 'Die Anordnung der Module wurde gespeichert',
@@ -640,25 +586,18 @@ export const ModularDashboard = () => {
     }
   }
 
-  const toggleModule = (id: string) => {
-    setModules(prev => 
-      prev.map(module => 
-        module.id === id ? { ...module, enabled: !module.enabled } : module
-      )
+  // Show auth page if not logged in
+  if (!user && !loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Bitte melde dich an, um das Dashboard zu sehen.</p>
+        </div>
+      </div>
     )
-    
-    const module = modules.find(m => m.id === id)
-    if (module) {
-      toast({
-        title: module.enabled ? `${module.title} deaktiviert` : `${module.title} aktiviert`,
-        description: module.enabled 
-          ? `Das Modul wurde ausgeblendet` 
-          : `Das Modul wurde zum Dashboard hinzugefügt`,
-      })
-    }
   }
 
-  if (loading || (households.length > 0 && !activeHousehold)) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
@@ -731,6 +670,15 @@ export const ModularDashboard = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={compactLayout}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              <Magnet className="h-4 w-4 mr-2" />
+              Komprimieren
+            </Button>
             <Button variant="outline" size="sm">
               <Settings className="h-4 w-4 mr-2" />
               Einstellungen
@@ -789,16 +737,24 @@ export const ModularDashboard = () => {
             >
               <SortableContext
                 items={modules.filter(m => m.enabled).map(m => m.id)}
-                strategy={verticalListSortingStrategy}
+                strategy={rectSortingStrategy}
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div 
+                  className="grid gap-6 auto-rows-min"
+                  style={{
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gridAutoRows: 'minmax(300px, auto)'
+                  }}
+                >
                   {modules
                     .filter(module => module.enabled)
                     .map(module => (
-                      <SortableModule 
+                      <MagneticDraggableModule 
                         key={module.id} 
-                        module={module} 
-                        onToggle={toggleModule} 
+                        module={module}
+                        position={modulePositions[module.id]}
+                        onToggle={toggleModule}
+                        onPositionChange={updateModulePosition}
                       />
                     ))}
                 </div>
@@ -910,17 +866,36 @@ export const ModularDashboard = () => {
                     <h3 className="font-semibold">Layout-Einstellungen</h3>
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
+                        <p className="font-medium">Magnetisches Grid</p>
+                        <p className="text-sm text-gray-600">Module docken automatisch nach oben an</p>
+                      </div>
+                      <Switch 
+                        checked={settings.magneticGrid} 
+                        onCheckedChange={(checked) => updateSetting('magneticGrid', checked)}
+                        id="magnetic-grid" 
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
                         <p className="font-medium">Kompaktes Layout</p>
                         <p className="text-sm text-gray-600">Zeigt mehr Module auf einmal an</p>
                       </div>
-                      <Switch id="compact-layout" />
+                      <Switch 
+                        checked={settings.compactLayout}
+                        onCheckedChange={(checked) => updateSetting('compactLayout', checked)}
+                        id="compact-layout" 
+                      />
                     </div>
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <p className="font-medium">Automatisches Sortieren</p>
                         <p className="text-sm text-gray-600">Sortiert Module nach Priorität</p>
                       </div>
-                      <Switch id="auto-sort" />
+                      <Switch 
+                        checked={settings.autoSort}
+                        onCheckedChange={(checked) => updateSetting('autoSort', checked)}
+                        id="auto-sort" 
+                      />
                     </div>
                   </div>
 
@@ -964,8 +939,11 @@ export const ModularDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
-                    <Button className="bg-blue-600 hover:bg-blue-700">
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={resetLayout}>
+                      Layout zurücksetzen
+                    </Button>
+                    <Button onClick={saveSettings} className="bg-blue-600 hover:bg-blue-700">
                       Einstellungen speichern
                     </Button>
                   </div>
