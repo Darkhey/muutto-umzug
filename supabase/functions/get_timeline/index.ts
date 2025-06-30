@@ -74,8 +74,8 @@ serve(async (req) => {
 
   const formatted = (tasks ?? []).map((t) => ({
     ...t,
-    color: moduleColors[t.module as string] || 'gray',
-    is_overdue: t.due_date ? new Date(t.due_date) < new Date() && t.status !== 'done' : false,
+    module_color: moduleColors[t.category as string] || 'gray',
+    is_overdue: t.due_date ? new Date(t.due_date) < new Date() && !t.completed : false,
   }))
 
   const { data: prefs } = await supabase

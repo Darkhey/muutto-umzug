@@ -460,24 +460,24 @@ export type Database = {
           id: number
           task_id: string | null
           changed_by: string | null
-          old_due: string | null
-          new_due: string | null
+          old_due: string
+          new_due: string
           changed_at: string
         }
         Insert: {
           id?: number
           task_id?: string | null
           changed_by?: string | null
-          old_due?: string | null
-          new_due?: string | null
+          old_due: string
+          new_due: string
           changed_at?: string
         }
         Update: {
           id?: number
           task_id?: string | null
           changed_by?: string | null
-          old_due?: string | null
-          new_due?: string | null
+          old_due?: string
+          new_due?: string
           changed_at?: string
         }
         Relationships: [

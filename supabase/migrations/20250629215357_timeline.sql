@@ -16,10 +16,10 @@ CREATE TABLE IF NOT EXISTS public.timeline_preferences (
 CREATE TABLE IF NOT EXISTS public.task_history (
   id         bigserial PRIMARY KEY,
   task_id    uuid REFERENCES public.tasks(id) ON DELETE CASCADE,
-  changed_by uuid REFERENCES auth.users(id),
-  old_due    date,
-  new_due    date,
-  changed_at timestamptz DEFAULT now()
+  changed_by uuid REFERENCES auth.users(id) ON DELETE SET NULL, -- may be NULL for automated updates
+  old_due    date NOT NULL,
+  new_due    date NOT NULL,
+  changed_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_task_history_task_id ON public.task_history (task_id);
@@ -58,7 +58,13 @@ CREATE POLICY "Timeline prefs modify" ON public.timeline_preferences
       SELECT household_id FROM public.household_members
       WHERE user_id = auth.uid()
     )
-  ) WITH CHECK (household_id = OLD.household_id);
+  ) WITH CHECK (
+    household_id = OLD.household_id AND
+    household_id IN (
+      SELECT household_id FROM public.household_members
+      WHERE user_id = auth.uid()
+    )
+  );
 CREATE POLICY "Timeline prefs insert" ON public.timeline_preferences
   FOR INSERT WITH CHECK (
     household_id IN (

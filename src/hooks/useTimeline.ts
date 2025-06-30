@@ -67,7 +67,12 @@ export function useTimeline(householdId?: string) {
       } else {
         await supabase
           .from('timeline_preferences')
-          .insert({ household_id: householdId })
+          .insert({
+            household_id: householdId,
+            zoom_level: 'month',
+            snap_to_grid: true,
+            show_modules: []
+          })
       }
     } catch (err) {
       console.error('Error fetching timeline data:', err)
