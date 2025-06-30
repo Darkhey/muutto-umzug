@@ -38,6 +38,7 @@ import { useHouseholds } from '@/hooks/useHouseholds'
 import { useToast } from '@/hooks/use-toast'
 import { ExtendedHousehold } from '@/types/household'
 import { APP_CONFIG } from '@/config/app'
+import { useNavigate } from 'react-router-dom'
 import { DashboardStats } from './DashboardStats'
 import { HouseholdMergerButton } from './HouseholdMergerButton'
 import { OnboardingFlowWithDrafts } from '@/components/onboarding/OnboardingFlowWithDrafts'
@@ -52,6 +53,7 @@ export const ModularDashboard = () => {
   const { user, signOut } = useAuth()
   const { households, loading, createHousehold, addMembers } = useHouseholds()
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success' | 'household-overview' | 'member-management'>('dashboard')
@@ -368,7 +370,13 @@ export const ModularDashboard = () => {
                   <p className="text-xs text-green-700 mt-1">3 Helfer bestätigt</p>
                 </div>
               </div>
-              <Button variant="outline" className="w-full">Umzugstag planen</Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate('/moving-day')}
+              >
+                Umzugstag planen
+              </Button>
             </div>
           ),
           enabled: true,
