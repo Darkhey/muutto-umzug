@@ -12,7 +12,7 @@ import { useHouseholdMembers } from '@/hooks/useHouseholdMembers'
 import { useAuth } from '@/contexts/AuthContext'
 import { HOUSEHOLD_ROLES, getRoleIcon, getRoleColor } from '@/config/roles'
 import { HouseholdRole } from '@/types/household'
-import { Users, UserPlus, Mail, Crown, Clock, CheckCircle, Trash2, Settings, Copy } from 'lucide-react'
+import { Users, UserPlus, Mail, Crown, Clock, CheckCircle, Trash2, Settings, Copy, Link2, MessageCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 
@@ -137,22 +137,51 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
             {members.length} {members.length === 1 ? 'Mitglied' : 'Mitglieder'}
           </p>
           {isOwner && invitationCode && (
-            <div className="flex items-center mt-2 space-x-2">
-              <span className="text-sm text-gray-600">Einladungscode:</span>
-              <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                {invitationCode}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  navigator.clipboard.writeText(invitationCode)
-                  toast({ title: 'Code kopiert' })
-                }}
-              >
-                <Copy className="h-3 w-3 mr-1" />
-                Kopieren
-              </Button>
+            <div className="flex flex-col mt-2 space-y-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Einladungscode:</span>
+                <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                  {invitationCode}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(invitationCode)
+                    toast({ title: 'Code kopiert' })
+                  }}
+                >
+                  <Copy className="h-3 w-3 mr-1" />
+                  Kopieren
+                </Button>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Einladungslink:</span>
+                <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded break-all">
+                  {`${window.location.origin}?invite=${invitationCode}`}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}?invite=${invitationCode}`)
+                    toast({ title: 'Link kopiert' })
+                  }}
+                >
+                  <Link2 className="h-3 w-3 mr-1" />
+                  Link kopieren
+                </Button>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`Tritt meinem Haushalt bei: ${window.location.origin}?invite=${invitationCode}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline" size="sm">
+                    <MessageCircle className="h-3 w-3 mr-1" />
+                    WhatsApp
+                  </Button>
+                </a>
+              </div>
             </div>
           )}
         </div>
