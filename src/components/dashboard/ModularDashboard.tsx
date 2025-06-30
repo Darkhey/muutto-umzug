@@ -3,23 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { 
-  DndContext, 
-  closestCenter, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
-  useSensors,
-  DragEndEvent
-} from '@dnd-kit/core'
-import { 
-  SortableContext, 
-  sortableKeyboardCoordinates, 
-  rectSortingStrategy
-} from '@dnd-kit/sortable'
 import { 
   Home, 
   Users, 
@@ -33,7 +18,6 @@ import {
   TrendingUp, 
   Bell, 
   Settings,
-  GripVertical,
   MapPin,
   CreditCard,
   FileText,
@@ -42,38 +26,22 @@ import {
   Truck,
   Sparkles,
   Merge,
-  Magnet,
-  Grid3X3
+  Grid3X3,
+  RotateCcw
 } from 'lucide-react'
+
+import { EnhancedResponsiveGrid } from './ResponsiveGridLayout'
+import { EnhancedModuleCard } from './EnhancedModuleCard'
+import { useEnhancedDashboardModules, DashboardModule } from '@/hooks/useEnhancedDashboardModules'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHouseholds } from '@/hooks/useHouseholds'
 import { useToast } from '@/hooks/use-toast'
 import { ExtendedHousehold } from '@/types/household'
 import { APP_CONFIG } from '@/config/app'
-import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
-import { AIAssistant } from '@/components/ai/AIAssistant'
-import { ReminderSystem } from '@/components/reminders/ReminderSystem'
-import { MovingInsights } from '@/components/insights/MovingInsights'
+import { DashboardStats } from './DashboardStats'
+import { HouseholdMergerButton } from './HouseholdMergerButton'
 import { OnboardingFlowWithDrafts } from '@/components/onboarding/OnboardingFlowWithDrafts'
 import { OnboardingSuccess } from '@/components/onboarding/OnboardingSuccess'
-import { useTasks } from '@/hooks/useTasks'
-import { HouseholdMergerButton } from './HouseholdMergerButton'
-import { DashboardStats } from './DashboardStats'
-import { MagneticDraggableModule } from './MagneticDraggableModule'
-import { useDashboardModules } from '@/hooks/useDashboardModules'
-import { supabase } from '@/integrations/supabase/client'
-
-// Define module types
-export interface DashboardModule {
-  id: string
-  title: string
-  icon: React.ReactNode
-  component: React.ReactNode
-  enabled: boolean
-  category: 'primary' | 'secondary' | 'utility'
-  description: string
-  size: 'small' | 'medium' | 'large'
-}
 
 export const ModularDashboard = () => {
   const { user, signOut } = useAuth()
@@ -88,90 +56,6 @@ export const ModularDashboard = () => {
   const [totalTasks, setTotalTasks] = useState(0)
   const [completedTasks, setCompletedTasks] = useState(0)
   const [averageProgress, setAverageProgress] = useState(0)
-  const [householdProgress, setHouseholdProgress] = useState<Record<string, number>>({})
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
-
-  // Fetch all tasks for all households to calculate aggregated statistics
-  useEffect(() => {
-    const fetchAllTasks = async () => {
-      if (households.length === 0) return
-      
-      try {
-        const { data, error } = await supabase
-          .from('tasks')
-          .select('household_id, completed')
-          .in('household_id', households.map(h => h.id))
-        
-        if (error) throw error
-        
-        if (data) {
-          // Calculate total and completed tasks
-          const total = data.length
-          const completed = data.filter(t => t.completed).length
-          
-          setTotalTasks(total)
-          setCompletedTasks(completed)
-          
-          // Calculate progress for each household
-          const progressByHousehold: Record<string, { total: number, completed: number }> = {}
-          
-          data.forEach(task => {
-            if (!progressByHousehold[task.household_id]) {
-              progressByHousehold[task.household_id] = { total: 0, completed: 0 }
-            }
-            
-            progressByHousehold[task.household_id].total++
-            if (task.completed) {
-              progressByHousehold[task.household_id].completed++
-            }
-          })
-          
-          // Calculate progress percentages
-          const progressMap: Record<string, number> = {}
-          let totalProgress = 0
-          
-          households.forEach(household => {
-            const stats = progressByHousehold[household.id]
-            if (stats && stats.total > 0) {
-              const progressMetrics = calculateHouseholdProgress(
-                household.move_date,
-                stats.completed,
-                stats.total
-              )
-              progressMap[household.id] = progressMetrics.overall
-              totalProgress += progressMetrics.overall
-            } else {
-              // If no tasks, calculate based on time only
-              const progressMetrics = calculateHouseholdProgress(
-                household.move_date,
-                0,
-                0
-              )
-              progressMap[household.id] = progressMetrics.overall
-              totalProgress += progressMetrics.overall
-            }
-          })
-          
-          setHouseholdProgress(progressMap)
-          setAverageProgress(Math.round(totalProgress / households.length))
-        }
-      } catch (error) {
-        console.error('Error fetching tasks:', error)
-      }
-    }
-    
-    fetchAllTasks()
-  }, [households])
 
   // Initialize modules based on the first household
   const [initialModules, setInitialModules] = useState<DashboardModule[]>([])
@@ -520,15 +404,15 @@ export const ModularDashboard = () => {
 
   const {
     modules,
-    modulePositions,
+    layouts,
     settings,
     toggleModule,
-    updateModulePosition,
-    resetLayout,
+    handleLayoutChange,
     compactLayout,
+    resetLayout,
     updateSetting,
     saveSettings
-  } = useDashboardModules(initialModules)
+  } = useEnhancedDashboardModules(initialModules)
 
   const handleOnboardingComplete = async (data: any) => {
     try {
@@ -572,18 +456,6 @@ export const ModularDashboard = () => {
       title: 'Willkommen bei muutto! 🎉',
       description: `Dein Haushalt "${onboardingData?.householdName}" ist bereit. Lass uns mit der Planung beginnen!`
     })
-  }
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    
-    if (over && active.id !== over.id) {
-      // Handle module reordering if needed
-      toast({
-        title: 'Dashboard angepasst',
-        description: 'Die Anordnung der Module wurde gespeichert',
-      })
-    }
   }
 
   // Show auth page if not logged in
@@ -676,8 +548,17 @@ export const ModularDashboard = () => {
               onClick={compactLayout}
               className="text-blue-600 hover:text-blue-700"
             >
-              <Magnet className="h-4 w-4 mr-2" />
+              <Grid3X3 className="h-4 w-4 mr-2" />
               Komprimieren
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={resetLayout}
+              className="text-gray-600 hover:text-gray-700"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Zurücksetzen
             </Button>
             <Button variant="outline" size="sm">
               <Settings className="h-4 w-4 mr-2" />
@@ -709,7 +590,7 @@ export const ModularDashboard = () => {
           <TabsContent value="dashboard" className="space-y-6">
             {/* Household Management Actions */}
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold">Deine Haushalte</h2>
+              <h2 className="text-xl font-bold">Deine Module</h2>
               <div className="flex gap-2">
                 <HouseholdMergerButton 
                   variant="outline"
@@ -730,35 +611,24 @@ export const ModularDashboard = () => {
               </div>
             </div>
 
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={modules.filter(m => m.enabled).map(m => m.id)}
-                strategy={rectSortingStrategy}
+            {/* Enhanced Grid Layout */}
+            <div className="min-h-[600px]">
+              <EnhancedResponsiveGrid
+                layouts={layouts}
+                onLayoutChange={handleLayoutChange}
               >
-                <div
-                  className="grid gap-6 auto-rows-min grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-                  style={{
-                    gridAutoRows: 'max-content'
-                  }}
-                >
-                  {modules
-                    .filter(module => module.enabled)
-                    .map(module => (
-                      <MagneticDraggableModule 
-                        key={module.id} 
-                        module={module}
-                        position={modulePositions[module.id]}
+                {modules
+                  .filter(module => module.enabled)
+                  .map(module => (
+                    <div key={module.id}>
+                      <EnhancedModuleCard
+                        {...module}
                         onToggle={toggleModule}
-                        onPositionChange={updateModulePosition}
                       />
-                    ))}
-                </div>
-              </SortableContext>
-            </DndContext>
+                    </div>
+                  ))}
+              </EnhancedResponsiveGrid>
+            </div>
           </TabsContent>
 
           <TabsContent value="modules" className="space-y-6">
@@ -865,19 +735,8 @@ export const ModularDashboard = () => {
                     <h3 className="font-semibold">Layout-Einstellungen</h3>
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
-                        <p className="font-medium">Magnetisches Grid</p>
-                        <p className="text-sm text-gray-600">Module docken automatisch nach oben an</p>
-                      </div>
-                      <Switch 
-                        checked={settings.magneticGrid} 
-                        onCheckedChange={(checked) => updateSetting('magneticGrid', checked)}
-                        id="magnetic-grid" 
-                      />
-                    </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
                         <p className="font-medium">Kompaktes Layout</p>
-                        <p className="text-sm text-gray-600">Zeigt mehr Module auf einmal an</p>
+                        <p className="text-sm text-gray-600">Module automatisch nach oben verschieben</p>
                       </div>
                       <Switch 
                         checked={settings.compactLayout}
@@ -887,54 +746,25 @@ export const ModularDashboard = () => {
                     </div>
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
-                        <p className="font-medium">Automatisches Sortieren</p>
-                        <p className="text-sm text-gray-600">Sortiert Module nach Priorität</p>
+                        <p className="font-medium">Magnetisches Grid</p>
+                        <p className="text-sm text-gray-600">Module docken automatisch an verfügbare Positionen</p>
                       </div>
                       <Switch 
-                        checked={settings.autoSort}
-                        onCheckedChange={(checked) => updateSetting('autoSort', checked)}
-                        id="auto-sort" 
+                        checked={settings.magneticGrid}
+                        onCheckedChange={(checked) => updateSetting('magneticGrid', checked)}
+                        id="magnetic-grid" 
                       />
                     </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Benachrichtigungen</h3>
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
-                        <p className="font-medium">E-Mail-Benachrichtigungen</p>
-                        <p className="text-sm text-gray-600">Erhalte wichtige Updates per E-Mail</p>
+                        <p className="font-medium">Kategorie-Badges anzeigen</p>
+                        <p className="text-sm text-gray-600">Zeigt farbige Badges für Modul-Kategorien</p>
                       </div>
-                      <Switch id="email-notifications" defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">Push-Benachrichtigungen</p>
-                        <p className="text-sm text-gray-600">Erhalte Echtzeit-Updates im Browser</p>
-                      </div>
-                      <Switch id="push-notifications" />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Daten & Privatsphäre</h3>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">Anonyme Nutzungsstatistiken</p>
-                        <p className="text-sm text-gray-600">Hilf uns, die App zu verbessern</p>
-                      </div>
-                      <Switch id="usage-stats" defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <p className="font-medium">KI-Personalisierung</p>
-                        <p className="text-sm text-gray-600">Personalisierte Tipps vom KI-Assistenten</p>
-                      </div>
-                      <Switch id="ai-personalization" defaultChecked />
+                      <Switch 
+                        checked={settings.showCategoryBadges}
+                        onCheckedChange={(checked) => updateSetting('showCategoryBadges', checked)}
+                        id="category-badges" 
+                      />
                     </div>
                   </div>
 
