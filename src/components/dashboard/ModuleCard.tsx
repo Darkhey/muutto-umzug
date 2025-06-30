@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { GripVertical, Maximize2, Minimize2 } from 'lucide-react';
 import { useState } from 'react';
-import { DashboardModule } from './ModularDashboard';
+import { DashboardModule } from '@/hooks/useEnhancedDashboardModules';
 
 interface ModuleCardProps {
   module: DashboardModule;

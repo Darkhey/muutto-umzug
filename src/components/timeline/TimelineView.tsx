@@ -37,7 +37,8 @@ import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import timeGridPlugin from '@fullcalendar/timegrid'
-import { EventClickArg, DateClickArg } from '@fullcalendar/core'
+import { EventClickArg } from '@fullcalendar/core'
+import { DateClickArg } from '@fullcalendar/interaction'
 
 // Import vis-timeline
 import { Timeline, DataSet } from 'vis-timeline/standalone'
@@ -775,7 +776,7 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
       </div>
       
       {/* Custom CSS for timeline */}
-      <style jsx global>{`
+      <style>{`
         .timeline-container {
           font-family: system-ui, -apple-system, sans-serif;
         }

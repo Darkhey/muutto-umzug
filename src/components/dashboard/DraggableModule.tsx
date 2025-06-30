@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { GripVertical } from 'lucide-react';
-import { DashboardModule } from './ModularDashboard';
+import { DashboardModule } from '@/hooks/useEnhancedDashboardModules';
 
 interface DraggableModuleProps {
   module: DashboardModule;
