@@ -5,6 +5,7 @@ set -euo pipefail
 
 # Optional flag: --fresh to reset local Supabase DB
 FRESH_DB=0
+SUPABASE_CLI_VERSION="1.153.4"
 for arg in "$@"; do
   case "$arg" in
     --fresh)
@@ -45,9 +46,12 @@ if [ ! -d node_modules ]; then
 fi
 
 # 3. Install Supabase CLI if missing
-if ! command -v supabase >/dev/null 2>&1; then
-  echo "Installing Supabase CLI globally..."
-  npm install -g supabase
+if command -v supabase >/dev/null 2>&1; then
+  SUPABASE_CMD="supabase"
+else
+  echo "Supabase CLI not found. Using npx for commands..."
+  SUPABASE_CMD="npx supabase@${SUPABASE_CLI_VERSION}"
+  npm install supabase@${SUPABASE_CLI_VERSION} --save-dev >/dev/null
 fi
 
 # 4. Prepare local environment variables
@@ -61,14 +65,13 @@ EOV
 fi
 
 # 5. Apply database migrations if Supabase CLI is available
-if command -v supabase >/dev/null 2>&1; then
+if [ -n "$SUPABASE_CMD" ]; then
   echo "Applying Supabase migrations..."
   if [ "$FRESH_DB" -eq 1 ]; then
     echo "WARNING: this will reset your local Supabase database and erase existing data"
--    supabase db reset --no-verify-auth > /dev/null
-+    supabase db reset --no-verify-auth --force
+    $SUPABASE_CMD db reset --no-verify-auth --force
   else
-    supabase db push > /dev/null
+    $SUPABASE_CMD db push > /dev/null
   fi
 fi
 
