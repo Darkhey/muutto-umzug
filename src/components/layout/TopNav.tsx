@@ -8,6 +8,7 @@ interface Item {
 const items: Item[] = [
   { label: 'Dashboard', to: '/' },
   { label: 'Timeline', to: '/timeline' },
+  { label: 'Umzugstag', to: '/moving-day' },
   { label: 'Settings', to: '/settings' }
 ]
 

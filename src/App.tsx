@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Timeline from "./pages/Timeline";
+import MovingDay from "./pages/MovingDay";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Impressum from "./pages/Impressum";
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/timeline" element={<Timeline />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/moving-day" element={<MovingDay />} />
               <Route path="/impressum" element={<Impressum />} />
               <Route path="/datenschutz" element={<Datenschutz />} />
               <Route path="/agb" element={<AGB />} />
