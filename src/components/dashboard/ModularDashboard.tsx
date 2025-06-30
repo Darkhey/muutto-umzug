@@ -42,6 +42,9 @@ import { DashboardStats } from './DashboardStats'
 import { HouseholdMergerButton } from './HouseholdMergerButton'
 import { OnboardingFlowWithDrafts } from '@/components/onboarding/OnboardingFlowWithDrafts'
 import { OnboardingSuccess } from '@/components/onboarding/OnboardingSuccess'
+import { AIAssistant } from '@/components/ai/AIAssistant'
+import { ReminderSystem } from '@/components/reminders/ReminderSystem'
+import { MovingInsights } from '@/components/insights/MovingInsights'
 
 export const ModularDashboard = () => {
   const { user, signOut } = useAuth()

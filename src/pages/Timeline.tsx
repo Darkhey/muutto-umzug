@@ -1,10 +1,10 @@
-import { useAuth } from '@/contexts/AuthContext'
-import { useTimeline } from '@/hooks/useTimeline'
 import { useEffect } from 'react'
+import { useTimeline } from '@/hooks/useTimeline'
+import { useHouseholds } from '@/hooks/useHouseholds'
 
 const Timeline = () => {
-  const { currentHousehold } = useAuth()
-  const householdId = currentHousehold?.id
+  const { households } = useHouseholds()
+  const householdId = Array.isArray(households) && households.length > 0 ? households[0].id : undefined
   const { timelineItems, loading, error } = useTimeline(householdId)
 
   useEffect(() => {}, [householdId])
