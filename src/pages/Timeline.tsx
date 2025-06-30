@@ -4,7 +4,7 @@ import { useHouseholds } from '@/hooks/useHouseholds'
 
 const Timeline = () => {
   const { households } = useHouseholds()
-  const householdId = households[0]?.id
+  const householdId = Array.isArray(households) && households.length > 0 ? households[0].id : undefined
   const { timelineItems, loading, error } = useTimeline(householdId)
 
   useEffect(() => {}, [householdId])
