@@ -1,6 +1,11 @@
+import { Suspense, lazy } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { ModularDashboard } from '@/components/dashboard/ModularDashboard';
 import { AuthPage } from '@/components/auth/AuthPage';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
+
+const ModularDashboard = lazy(() =>
+  import('@/components/dashboard/ModularDashboard')
+);
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -22,7 +27,9 @@ const Index = () => {
 
   return (
     <div>
-      <ModularDashboard />
+      <Suspense fallback={<DashboardSkeleton />}>
+        <ModularDashboard />
+      </Suspense>
     </div>
   );
 };
