@@ -12,7 +12,7 @@ import { useHouseholdMembers } from '@/hooks/useHouseholdMembers'
 import { useAuth } from '@/contexts/AuthContext'
 import { HOUSEHOLD_ROLES, getRoleIcon, getRoleColor } from '@/config/roles'
 import { HouseholdRole } from '@/types/household'
-import { Users, UserPlus, Mail, Crown, Clock, CheckCircle, Trash2, Settings, Copy } from 'lucide-react'
+import { Users, UserPlus, Mail, Crown, Clock, CheckCircle, Trash2, Settings, Copy, Link2, MessageCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 
@@ -33,6 +33,14 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
     role: 'null' as string
   })
   const [invitationCode, setInvitationCode] = useState('')
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const invitationLink = invitationCode && origin ? `${origin}?invite=${invitationCode}` : ''
+  const whatsappUrl = invitationLink
+    ? `https://wa.me/?text=${encodeURIComponent(
+        `Tritt meinem Haushalt bei: ${invitationLink}`
+      )}`
+    : '#'
 
   useEffect(() => {
     const fetchCode = async () => {
@@ -137,22 +145,60 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
             {members.length} {members.length === 1 ? 'Mitglied' : 'Mitglieder'}
           </p>
           {isOwner && invitationCode && (
-            <div className="flex items-center mt-2 space-x-2">
-              <span className="text-sm text-gray-600">Einladungscode:</span>
-              <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                {invitationCode}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  navigator.clipboard.writeText(invitationCode)
-                  toast({ title: 'Code kopiert' })
-                }}
-              >
-                <Copy className="h-3 w-3 mr-1" />
-                Kopieren
-              </Button>
+            <div className="flex flex-col mt-2 space-y-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Einladungscode:</span>
+                <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                  {invitationCode}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    try {
+                      navigator.clipboard.writeText(invitationCode)
+                      toast({ title: 'Code kopiert' })
+                    } catch (e) {
+                      toast({ title: 'Fehler beim Kopieren', variant: 'destructive' })
+                    }
+                  }}
+                >
+                  <Copy className="h-3 w-3 mr-1" />
+                  Kopieren
+                </Button>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Einladungslink:</span>
+                <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded break-all">
+                  {invitationLink}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (!invitationLink) return
+                    try {
+                      navigator.clipboard.writeText(invitationLink)
+                      toast({ title: 'Link kopiert' })
+                    } catch (e) {
+                      toast({ title: 'Fehler beim Kopieren', variant: 'destructive' })
+                    }
+                  }}
+                >
+                  <Link2 className="h-3 w-3 mr-1" />
+                  Link kopieren
+                </Button>
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline" size="sm">
+                    <MessageCircle className="h-3 w-3 mr-1" />
+                    WhatsApp
+                  </Button>
+                </a>
+              </div>
             </div>
           )}
         </div>
