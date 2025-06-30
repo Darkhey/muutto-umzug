@@ -154,6 +154,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={!invitationCode}
                   onClick={() => {
                     try {
                       navigator.clipboard.writeText(invitationCode)
