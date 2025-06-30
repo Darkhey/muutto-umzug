@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
-import { DashboardModule } from './ModularDashboard';
+import { DashboardModule } from '@/hooks/useEnhancedDashboardModules';
 
 interface GridPosition {
   x: number;

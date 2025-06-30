@@ -3,7 +3,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Settings, Sparkles } from 'lucide-react';
-import { DashboardModule } from './ModularDashboard';
+import { DashboardModule } from '@/hooks/useEnhancedDashboardModules';
 
 interface ModuleSettingsProps {
   modules: DashboardModule[];

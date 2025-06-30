@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { DashboardModule } from '@/components/dashboard/ModularDashboard';
+import { DashboardModule } from '@/hooks/useEnhancedDashboardModules';
 import { useToast } from '@/hooks/use-toast';
 
 interface GridPosition {
