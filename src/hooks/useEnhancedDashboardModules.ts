@@ -42,8 +42,12 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
     
     if (savedModules) {
       try {
-        const parsedModules = JSON.parse(savedModules);
-        setModules(parsedModules);
+        const parsedModules = JSON.parse(savedModules) as Partial<DashboardModule>[];
+        const mergedModules = initialModules.map((initial) => {
+          const saved = parsedModules.find((m) => m.id === initial.id);
+          return { ...initial, ...saved };
+        });
+        setModules(mergedModules);
       } catch (error) {
         console.error('Error parsing saved modules:', error);
       }
@@ -79,7 +83,15 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
   // Save modules to localStorage when they change
   useEffect(() => {
     if (modules.length > 0) {
-      localStorage.setItem('dashboard_modules_v2', JSON.stringify(modules));
+      const serializable = modules.map(({ id, title, enabled, category, description, size }) => ({
+        id,
+        title,
+        enabled,
+        category,
+        description,
+        size,
+      }));
+      localStorage.setItem('dashboard_modules_v2', JSON.stringify(serializable));
     }
   }, [modules]);
 
