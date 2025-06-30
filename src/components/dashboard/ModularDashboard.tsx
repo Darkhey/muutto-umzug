@@ -19,7 +19,7 @@ import {
   Bell,
   Settings,
   MapPin,
-  Map,
+  Map as DashboardMap,
   CreditCard,
   FileText,
   Package,
@@ -381,7 +381,7 @@ export const ModularDashboard = () => {
         {
           id: 'map',
           title: 'Karte',
-          icon: <Map className="h-5 w-5 text-green-600" />,
+          icon: <DashboardMap className="h-5 w-5 text-green-600" />,
           component: (
             <MapModule latitude={52.52} longitude={13.405} />
           ),

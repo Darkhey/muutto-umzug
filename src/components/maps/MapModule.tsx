@@ -68,6 +68,8 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
     'verwaltung'
   ])
   const [pois, setPois] = useState<POI[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const toggle = (key: Category) => {
     setSelected(prev =>
@@ -83,27 +85,44 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
         .join('')
       if (!queries) {
         setPois([])
+        setError(null)
+        setLoading(false)
         return
       }
       const url =
         'https://overpass-api.de/api/interpreter?data=' +
         encodeURIComponent(`[out:json];(${queries});out;`)
       try {
+        setLoading(true)
+        setError(null)
         const res = await fetch(url, { signal: controller.signal })
-        if (!res.ok) return
+        if (!res.ok) {
+          setError('Fehler beim Laden der Orte')
+          setLoading(false)
+          return
+        }
         const data = await res.json()
         const elements = data.elements as OverpassElement[]
-        const mapped: POI[] = elements.map(el => ({
-          id: el.id,
-          lat: el.lat,
-          lon: el.lon,
-          tags: el.tags,
-          category: CATEGORY_OPTIONS.find(c => queries.includes(c.query))?.key as Category,
-          distance: haversine(latitude, longitude, el.lat, el.lon)
-        }))
+        const mapped: POI[] = elements.map(el => {
+          const category = CATEGORY_OPTIONS.find(opt => {
+            const [k, v] = opt.query.split('=')
+            return el.tags?.[k] === v
+          })?.key as Category
+          return {
+            id: el.id,
+            lat: el.lat,
+            lon: el.lon,
+            tags: el.tags,
+            category,
+            distance: haversine(latitude, longitude, el.lat, el.lon)
+          }
+        })
         setPois(mapped)
+        setLoading(false)
       } catch (e) {
         console.error(e)
+        setError('Fehler beim Abrufen der Orte')
+        setLoading(false)
       }
     }
     fetchPOIs()
@@ -126,6 +145,12 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
           </div>
         ))}
       </div>
+      {loading && (
+        <p className="text-sm text-gray-500">Lade Orte...</p>
+      )}
+      {error && (
+        <p className="text-sm text-red-600">{error}</p>
+      )}
       <MapContainer
         center={center}
         zoom={13}
