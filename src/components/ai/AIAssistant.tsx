@@ -7,10 +7,11 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
-import { Bot, User, Send, Loader2, Sparkles } from 'lucide-react'
+import { Bot, User, Send, Loader2, Sparkles, PlusCircle } from 'lucide-react'
 import { ExtendedHousehold } from '@/types/household'
 import { supabase } from '@/integrations/supabase/client'
 import { AIConsentDialog } from './AIConsentDialog'
+import { AddTaskFromChatDialog } from '../tasks/AddTaskFromChatDialog'
 import { useUserConsent } from '@/hooks/useUserConsent'
 import { generatePersonalizedWelcomeMessage, buildHouseholdContext } from '@/utils/aiPersonalization'
 
@@ -36,6 +37,8 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false)
+  const [taskMessage, setTaskMessage] = useState<string>('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   // Initialize with personalized welcome message when consent is given
@@ -241,6 +244,7 @@ Versuche es gleich nochmal - ich bin normalerweise sofort da! 😊`,
   }
 
   return (
+    <>
     <Card className={`h-[600px] flex flex-col ${className}`}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
@@ -303,6 +307,17 @@ Versuche es gleich nochmal - ich bin normalerweise sofort da! 😊`,
                       ))}
                     </div>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-6 mt-2 flex items-center gap-1"
+                    onClick={() => {
+                      setTaskMessage(message.content)
+                      setTaskDialogOpen(true)
+                    }}
+                  >
+                    <PlusCircle className="h-3 w-3" /> Aufgabe
+                  </Button>
                 </div>
                 
                 {message.role === 'user' && (
@@ -357,5 +372,12 @@ Versuche es gleich nochmal - ich bin normalerweise sofort da! 😊`,
         </div>
       </CardContent>
     </Card>
+    <AddTaskFromChatDialog
+      open={taskDialogOpen}
+      onOpenChange={setTaskDialogOpen}
+      message={taskMessage}
+      householdId={household?.id}
+    />
+    </>
   )
 }
