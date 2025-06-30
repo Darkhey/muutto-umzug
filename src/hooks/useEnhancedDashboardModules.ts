@@ -42,8 +42,12 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
     
     if (savedModules) {
       try {
-        const parsedModules = JSON.parse(savedModules);
-        setModules(parsedModules);
+        const parsedModules = JSON.parse(savedModules) as Array<Partial<DashboardModule>>;
+        const restoredModules: DashboardModule[] = parsedModules.map((saved) => {
+          const initial = initialModules.find((m) => m.id === saved.id);
+          return initial ? { ...initial, ...saved } as DashboardModule : saved as DashboardModule;
+        });
+        setModules(restoredModules);
       } catch (error) {
         console.error('Error parsing saved modules:', error);
       }
@@ -79,7 +83,15 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
   // Save modules to localStorage when they change
   useEffect(() => {
     if (modules.length > 0) {
-      localStorage.setItem('dashboard_modules_v2', JSON.stringify(modules));
+      const serializableModules = modules.map((m) => ({
+        id: m.id,
+        title: m.title,
+        enabled: m.enabled,
+        category: m.category,
+        description: m.description,
+        size: m.size,
+      }));
+      localStorage.setItem('dashboard_modules_v2', JSON.stringify(serializableModules));
     }
   }, [modules]);
 
