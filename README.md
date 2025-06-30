@@ -2,6 +2,8 @@
 
 **muutto** is a modular relocation assistant for the German market. It helps households organise every step of moving house with shared tasks, reminders and checklists. The app is built with React, TypeScript and Vite on the frontend and uses Supabase for authentication and data storage.
 
+![Navigation overview](public/placeholder.svg)
+
 ## Project info
 
 **URL**: https://lovable.dev/projects/5408f1d3-0599-4d20-b60a-e9dc3f50050e

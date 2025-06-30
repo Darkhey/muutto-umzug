@@ -24,16 +24,23 @@ export function useTimeline(householdId?: string) {
       setLoading(true)
       setError(null)
 
-      // Fetch timeline items
-      const { data, error: itemsError } = await supabase.rpc(
+      const { data, error: itemsError } = await supabase.functions.invoke(
         'get_timeline',
-        { p_household_id: householdId }
+        { body: { household_id: householdId } }
       )
 
       if (itemsError) throw itemsError
 
-      // Format data for timeline
-      const formattedItems: TimelineItem[] = (data || []).map((item: any) => ({
+      interface GetTimelineResponse {
+        tasks: any[]
+        preferences: TimelinePreferences | null
+      }
+
+      const response = data as GetTimelineResponse
+      const tasks = response?.tasks || []
+      const prefsData = response?.preferences
+
+      const formattedItems: TimelineItem[] = tasks.map((item: any) => ({
         id: item.id,
         title: item.title,
         description: item.description || '',
@@ -51,31 +58,16 @@ export function useTimeline(householdId?: string) {
 
       setTimelineItems(formattedItems)
 
-      // Fetch preferences
-      const { data: prefsData, error: prefsError } = await supabase
-        .from('timeline_preferences')
-        .select('*')
-        .eq('household_id', householdId)
-        .maybeSingle()
-
-      if (prefsError) throw prefsError
-
       if (prefsData) {
         setPreferences({
           zoom_level: prefsData.zoom_level,
           snap_to_grid: prefsData.snap_to_grid,
-          show_modules: prefsData.show_modules
+          show_modules: prefsData.show_modules,
         })
       } else {
-        // Create default preferences if none exist
         await supabase
           .from('timeline_preferences')
-          .insert({
-            household_id: householdId,
-            zoom_level: 'month',
-            snap_to_grid: true,
-            show_modules: ['all']
-          })
+          .insert({ household_id: householdId })
       }
     } catch (err) {
       console.error('Error fetching timeline data:', err)
@@ -95,13 +87,9 @@ export function useTimeline(householdId?: string) {
     try {
       const formattedDate = newDate ? newDate.toISOString().split('T')[0] : null
 
-      const { error } = await supabase.rpc(
-        'update_task_due_date',
-        {
-          p_task_id: taskId,
-          p_new_date: formattedDate
-        }
-      )
+      const { error } = await supabase.functions.invoke('update_due', {
+        body: { task_id: taskId, new_date: formattedDate }
+      })
 
       if (error) throw error
 
