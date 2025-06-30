@@ -8,6 +8,10 @@ import Index from "./pages/Index";
 import Timeline from "./pages/Timeline";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Impressum from "./pages/Impressum";
+import Datenschutz from "./pages/Datenschutz";
+import AGB from "./pages/AGB";
+import Kontakt from "./pages/Kontakt";
 import { AppShell } from "@/components/layout/AppShell";
 
 const queryClient = new QueryClient();
@@ -24,6 +28,10 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/timeline" element={<Timeline />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/impressum" element={<Impressum />} />
+              <Route path="/datenschutz" element={<Datenschutz />} />
+              <Route path="/agb" element={<AGB />} />
+              <Route path="/kontakt" element={<Kontakt />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppShell>
