@@ -1,4 +1,5 @@
 
+import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +14,11 @@ export interface DashboardModule {
   description: string;
   size: 'small' | 'medium' | 'large';
 }
+
+const isValidPartialModule = (obj: any): obj is Partial<DashboardModule> => {
+  return typeof obj === 'object' && obj !== null &&
+    (typeof obj.id === 'string' || obj.id === undefined);
+};
 
 const getModuleGridSize = (size: 'small' | 'medium' | 'large') => {
   switch (size) {
@@ -42,10 +48,26 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
     
     if (savedModules) {
       try {
-        const parsedModules = JSON.parse(savedModules);
-        setModules(parsedModules);
+        const parsed = JSON.parse(savedModules);
+        if (Array.isArray(parsed) && parsed.every(isValidPartialModule)) {
+          const restoredModules = parsed
+            .map((saved) => {
+              const initial = initialModules.find(m => m.id === saved.id);
+              return initial ? { ...initial, ...saved } : null;
+            })
+            .filter((m): m is DashboardModule => m !== null);
+          if (restoredModules.length > 0) {
+            setModules(restoredModules);
+          } else {
+            setModules(initialModules);
+          }
+        } else {
+          console.error('Invalid saved modules structure');
+          setModules(initialModules);
+        }
       } catch (error) {
         console.error('Error parsing saved modules:', error);
+        setModules(initialModules);
       }
     }
 
@@ -79,7 +101,15 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
   // Save modules to localStorage when they change
   useEffect(() => {
     if (modules.length > 0) {
-      localStorage.setItem('dashboard_modules_v2', JSON.stringify(modules));
+      const serializableModules = modules.map((m) => ({
+        id: m.id,
+        title: m.title,
+        enabled: m.enabled,
+        category: m.category,
+        description: m.description,
+        size: m.size,
+      }));
+      localStorage.setItem('dashboard_modules_v2', JSON.stringify(serializableModules));
     }
   }, [modules]);
 
