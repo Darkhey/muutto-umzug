@@ -32,6 +32,10 @@ export function CreateTaskDialog({ open, onOpenChange, date, onCreate }: CreateT
       await onCreate(trimmed)
       setTitle('')
       onOpenChange(false)
+    } catch (error) {
+      // Error handling is delegated to onCreate, but we should ensure
+      // the component state is consistent
+      console.error('Failed to create task:', error)
     } finally {
       setSubmitting(false)
     }
