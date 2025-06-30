@@ -16,9 +16,10 @@ import {
   AlertTriangle, 
   Bot, 
   TrendingUp, 
-  Bell, 
+  Bell,
   Settings,
   MapPin,
+  Map as DashboardMap,
   CreditCard,
   FileText,
   Package,
@@ -38,6 +39,7 @@ import { useHouseholds } from '@/hooks/useHouseholds'
 import { useToast } from '@/hooks/use-toast'
 import { ExtendedHousehold } from '@/types/household'
 import { APP_CONFIG } from '@/config/app'
+import MapModule from '@/components/maps/MapModule'
 import { DashboardStats } from './DashboardStats'
 import { HouseholdMergerButton } from './HouseholdMergerButton'
 import { OnboardingFlowWithDrafts } from '@/components/onboarding/OnboardingFlowWithDrafts'
@@ -375,6 +377,18 @@ export const ModularDashboard = () => {
           category: 'secondary',
           description: 'Plane deinen Umzugstag im Detail',
           size: 'medium'
+        },
+        {
+          id: 'map',
+          title: 'Karte',
+          icon: <DashboardMap className="h-5 w-5 text-green-600" />,
+          component: (
+            <MapModule latitude={52.52} longitude={13.405} />
+          ),
+          enabled: true,
+          category: 'primary',
+          description: 'Interaktive Karte mit wichtigen Orten',
+          size: 'large'
         },
         {
           id: 'weather',
