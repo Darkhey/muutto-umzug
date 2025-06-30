@@ -883,7 +883,7 @@ const Cloud = ({ className }: { className?: string }) => (
 )
 
 const Sun = ({ className }: { className?: string }) => (
-  <svg 
+  <svg
     xmlns="http://www.w3.org/2000/svg" 
     viewBox="0 0 24 24" 
     fill="none" 
@@ -904,3 +904,5 @@ const Sun = ({ className }: { className?: string }) => (
     <path d="m19.07 4.93-1.41 1.41" />
   </svg>
 )
+
+export default ModularDashboard
