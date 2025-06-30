@@ -56,6 +56,7 @@ export const ModularDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success' | 'household-overview' | 'member-management'>('dashboard')
   const [onboardingData, setOnboardingData] = useState<any>(null)
+  const [navigationLoading, setNavigationLoading] = useState(false)
   
   // Aggregated statistics state
   const [totalTasks, setTotalTasks] = useState(0)
@@ -97,6 +98,7 @@ export const ModularDashboard = () => {
                 variant="outline"
                 className="w-full"
                 onClick={() => openHousehold(firstHousehold)}
+                disabled={navigationLoading}
               >
                 Details anzeigen
               </Button>
@@ -470,8 +472,10 @@ export const ModularDashboard = () => {
   }
 
   const openHousehold = (household: ExtendedHousehold) => {
+    setNavigationLoading(true)
     setActiveHousehold(household)
     setViewMode('household-overview')
+    setNavigationLoading(false)
   }
 
   const showMemberManagement = () => {
@@ -541,7 +545,7 @@ export const ModularDashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center mb-6">
-            <Button variant="ghost" onClick={() => setViewMode('household-overview')} className="mr-4">
+            <Button variant="ghost" onClick={() => setViewMode('household-overview')} className="mr-4" aria-label="Zurück zur Haushaltsübersicht">
               ← Zurück zur Übersicht
             </Button>
             <h1 className="text-2xl font-bold text-gray-900">Mitglieder verwalten</h1>
