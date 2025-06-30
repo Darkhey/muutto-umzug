@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { useTimeline } from '@/hooks/useTimeline'
+import { useTasks } from '@/hooks/useTasks'
 import { TimelineItem, TimelineViewOptions } from '@/types/timeline'
 import { ExtendedHousehold } from '@/types/household'
 import { 
@@ -58,6 +59,7 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
     updateTaskDueDate, 
     updatePreferences 
   } = useTimeline(household.id)
+  const { createTask } = useTasks(household.id)
   
   const [viewMode, setViewMode] = useState<'timeline' | 'calendar'>('timeline')
   const [viewOptions, setViewOptions] = useState<TimelineViewOptions>({
@@ -118,9 +120,11 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
     
     // Prepare data for vis-timeline
     const items = new DataSet(
-      filteredItems.map(item => ({
-        id: item.id,
-        content: `
+      filteredItems.map(item => {
+        const dateText = item.start ? format(new Date(item.start), 'dd.MM') : ''
+        return {
+          id: item.id,
+          content: `
           <div class="timeline-item ${item.is_overdue ? 'overdue' : ''} ${item.completed ? 'completed' : ''} priority-${item.priority}">
             <div class="timeline-item-header" style="background-color: var(--${item.module_color}-100);">
               <span class="timeline-item-title">${item.title}</span>
@@ -131,14 +135,16 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
               <div class="timeline-item-meta">
                 <span class="timeline-item-phase">${item.phase}</span>
                 <span class="timeline-item-priority">${item.priority}</span>
+                ${dateText ? `<span class="timeline-item-date">${dateText}</span>` : ''}
               </div>
             </div>
           </div>
         `,
-        start: item.start || undefined,
-        type: 'box',
-        className: item.className
-      }))
+          start: item.start || undefined,
+          type: 'box',
+          className: item.className
+        }
+      })
     )
     
     // Configure timeline options
@@ -241,18 +247,44 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
   const handleEventClick = (arg: EventClickArg) => {
     const taskId = arg.event.id
     const task = timelineItems.find(item => item.id === taskId)
-    
+
     if (task) {
       toast({
         title: task.title,
-        description: task.description || 'Keine Beschreibung vorhanden'
+        description:
+          (task.description || 'Keine Beschreibung vorhanden') +
+          (task.start
+            ? `\nFällig am ${format(new Date(task.start), 'dd.MM.yyyy')}`
+            : '')
       })
     }
   }
 
   // Handle calendar date click
-  const handleDateClick = (arg: DateClickArg) => {
-    // Scroll timeline to this date
+  const handleDateClick = async (arg: DateClickArg) => {
+    const title = window.prompt(
+      `Neue Aufgabe für ${format(arg.date, 'dd.MM.yyyy')} anlegen:`
+    )
+    if (title) {
+      try {
+        await createTask({
+          title,
+          phase: 'vor_umzug',
+          priority: 'mittel',
+          due_date: format(arg.date, 'yyyy-MM-dd')
+        })
+        toast({
+          title: 'Aufgabe erstellt',
+          description: 'Die Aufgabe wurde erfolgreich hinzugefügt.'
+        })
+      } catch (err) {
+        toast({
+          title: 'Fehler',
+          description: 'Aufgabe konnte nicht erstellt werden',
+          variant: 'destructive'
+        })
+      }
+    }
     if (timelineInstanceRef.current) {
       timelineInstanceRef.current.moveTo(arg.date)
     }
@@ -844,6 +876,10 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
           justify-content: space-between;
           font-size: 0.7rem;
           color: #6b7280;
+        }
+
+        .timeline-item-date {
+          margin-left: auto;
         }
         
         .timeline-item-assignee {
