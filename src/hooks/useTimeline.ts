@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -18,83 +19,104 @@ export function useTimeline(householdId?: string) {
 
   // Fetch timeline data
   const fetchTimelineData = useCallback(async () => {
-    if (!householdId) return
+    if (!householdId || !user) {
+      console.log('useTimeline: Missing householdId or user', { householdId, user: !!user })
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)
       setError(null)
+      
+      console.log('useTimeline: Fetching timeline data for household:', householdId)
 
-      const { data, error: itemsError } = await supabase.functions.invoke(
-        'get_timeline',
-        { body: { household_id: householdId } }
-      )
+      // Versuche zuerst direkt die Tasks zu laden (ohne Edge Function)
+      const { data: tasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select(`
+          *,
+          assigned_member:household_members!tasks_assigned_to_fkey(name)
+        `)
+        .eq('household_id', householdId)
+        .order('due_date', { ascending: true, nullsLast: true })
 
-      if (itemsError) throw itemsError
-
-      interface GetTimelineResponse {
-        tasks: any[]
-        preferences: TimelinePreferences | null
+      if (tasksError) {
+        console.error('useTimeline: Error fetching tasks:', tasksError)
+        throw new Error(`Fehler beim Laden der Aufgaben: ${tasksError.message}`)
       }
 
-      const response = data as GetTimelineResponse
-      const tasks = response?.tasks || []
-      const prefsData = response?.preferences
+      console.log('useTimeline: Tasks loaded:', tasks)
 
-      const formattedItems: TimelineItem[] = tasks.map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        description: item.description || '',
-        start: item.due_date,
-        phase: item.phase,
-        priority: item.priority,
-        category: item.category || '',
-        completed: item.completed,
-        assigned_to: item.assigned_to,
-        assignee_name: item.assignee_name,
-        is_overdue: item.is_overdue,
-        module_color: item.module_color,
-        className: `timeline-item-${item.priority} ${item.completed ? 'completed' : ''} ${item.is_overdue ? 'overdue' : ''}`
+      // Transformiere die Daten
+      const formattedItems: TimelineItem[] = (tasks || []).map((task) => ({
+        id: task.id,
+        title: task.title || 'Unbenannte Aufgabe',
+        description: task.description || '',
+        start: task.due_date,
+        phase: task.phase || 'vor_umzug',
+        priority: task.priority || 'mittel',
+        category: task.category || '',
+        completed: task.completed || false,
+        assigned_to: task.assigned_to,
+        assignee_name: task.assigned_member?.name || null,
+        is_overdue: task.due_date ? new Date(task.due_date) < new Date() && !task.completed : false,
+        module_color: getModuleColor(task.phase || 'vor_umzug'),
+        className: `timeline-item-${task.priority || 'mittel'} ${task.completed ? 'completed' : ''} ${task.due_date && new Date(task.due_date) < new Date() && !task.completed ? 'overdue' : ''}`
       }))
 
+      console.log('useTimeline: Formatted items:', formattedItems)
       setTimelineItems(formattedItems)
+
+      // Lade Preferences
+      const { data: prefsData } = await supabase
+        .from('timeline_preferences')
+        .select('*')
+        .eq('household_id', householdId)
+        .maybeSingle()
 
       if (prefsData) {
         setPreferences({
-          zoom_level: prefsData.zoom_level,
-          snap_to_grid: prefsData.snap_to_grid,
-          show_modules: prefsData.show_modules,
+          zoom_level: prefsData.zoom_level || 'month',
+          snap_to_grid: prefsData.snap_to_grid ?? true,
+          show_modules: prefsData.show_modules || ['all'],
         })
-      } else {
-        await supabase
-          .from('timeline_preferences')
-          .insert({
-            household_id: householdId,
-            zoom_level: 'month',
-            snap_to_grid: true,
-            show_modules: []
-          })
       }
+
     } catch (err) {
-      console.error('Error fetching timeline data:', err)
-      setError(err instanceof Error ? err : new Error('Failed to fetch timeline data'))
+      console.error('useTimeline: Error in fetchTimelineData:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Ein unbekannter Fehler ist aufgetreten'
+      setError(new Error(errorMessage))
       toast({
         title: 'Fehler beim Laden der Zeitachse',
-        description: err instanceof Error ? err.message : 'Ein unbekannter Fehler ist aufgetreten',
+        description: errorMessage,
         variant: 'destructive'
       })
     } finally {
       setLoading(false)
     }
-  }, [householdId, toast])
+  }, [householdId, user, toast])
+
+  // Helper function to get module color
+  const getModuleColor = (phase: string): string => {
+    switch (phase) {
+      case 'vor_umzug': return 'blue'
+      case 'umzugstag': return 'green'
+      case 'nach_umzug': return 'purple'
+      case 'langzeit': return 'orange'
+      default: return 'gray'
+    }
+  }
 
   // Update task due date
   const updateTaskDueDate = async (taskId: string, newDate: Date | null) => {
     try {
       const formattedDate = newDate ? newDate.toISOString().split('T')[0] : null
 
-      const { error } = await supabase.functions.invoke('update_due', {
-        body: { task_id: taskId, new_date: formattedDate }
-      })
+      const { error } = await supabase
+        .from('tasks')
+        .update({ due_date: formattedDate })
+        .eq('id', taskId)
 
       if (error) throw error
 
@@ -131,11 +153,11 @@ export function useTimeline(householdId?: string) {
     try {
       const { error } = await supabase
         .from('timeline_preferences')
-        .update({
+        .upsert({
+          household_id: householdId,
+          ...preferences,
           ...newPrefs,
-          updated_at: new Date().toISOString()
         })
-        .eq('household_id', householdId)
 
       if (error) throw error
 
@@ -167,6 +189,7 @@ export function useTimeline(householdId?: string) {
           filter: `household_id=eq.${householdId}`
         },
         () => {
+          console.log('useTimeline: Real-time update received, refetching...')
           fetchTimelineData()
         }
       )

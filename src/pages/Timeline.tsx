@@ -1,38 +1,48 @@
+
 import { useEffect } from 'react'
 import { useTimeline } from '@/hooks/useTimeline'
 import { useHouseholds } from '@/hooks/useHouseholds'
+import { SimpleTimelineView } from '@/components/timeline/SimpleTimelineView'
 
 const Timeline = () => {
   const { households } = useHouseholds()
   const householdId = Array.isArray(households) && households.length > 0 ? households[0].id : undefined
   const { timelineItems, loading, error } = useTimeline(householdId)
 
-  useEffect(() => {}, [householdId])
+  useEffect(() => {
+    console.log('Timeline page - household ID:', householdId)
+    console.log('Timeline page - items:', timelineItems)
+    console.log('Timeline page - loading:', loading)
+    console.log('Timeline page - error:', error)
+  }, [householdId, timelineItems, loading, error])
 
   if (!householdId) {
-    return <p className="text-center">Kein Haushalt ausgewählt</p>
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-12">
+            <p className="text-lg text-gray-600">Kein Haushalt ausgewählt</p>
+            <p className="text-sm text-gray-500 mt-2">Bitte erstellen Sie zuerst einen Haushalt.</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Timeline</h1>
-      {loading && <p>Lädt...</p>}
-      {error && <div className="text-red-500">Fehler beim Laden der Timeline: {error.message}</div>}
-      <ul className="space-y-2">
-        {!loading && timelineItems.length === 0 && (
-          <li className="text-center text-gray-500">Keine Aufgaben gefunden</li>
-        )}
-        {timelineItems.map((task) => (
-          <li key={task.id} className="border rounded p-2">
-            <div className="flex justify-between">
-              <span>{task.title}</span>
-              <span>{task.start ?? 'Kein Datum'}</span>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
+  const household = households?.[0]
+  if (!household) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-12">
+            <p className="text-lg text-gray-600">Haushalt nicht gefunden</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return <SimpleTimelineView household={household} />
 }
 
 export default Timeline

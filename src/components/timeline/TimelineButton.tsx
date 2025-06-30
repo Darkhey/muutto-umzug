@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { 
@@ -7,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog'
-import { TimelineView } from '@/components/timeline/TimelineView'
+import { SimpleTimelineView } from '@/components/timeline/SimpleTimelineView'
 import { Calendar, MoveHorizontal } from 'lucide-react'
 import { ExtendedHousehold } from '@/types/household'
 
@@ -41,7 +42,7 @@ export const TimelineButton = ({
             Zeitachse
           </DialogTitle>
         </DialogHeader>
-        <TimelineView 
+        <SimpleTimelineView 
           household={household} 
           onBack={() => setOpen(false)} 
         />
