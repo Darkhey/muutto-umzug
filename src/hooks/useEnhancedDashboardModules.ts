@@ -125,53 +125,79 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
 
   const generateDefaultLayouts = useCallback((modulesToLayout: DashboardModule[]) => {
     const enabledModules = modulesToLayout.filter(m => m.enabled);
-    
-    // Generate layout for each breakpoint
-    const newLayouts: Layouts = {
-      lg: [], // 4 columns
-      md: [], // 2 columns  
-      sm: [], // 1 column
-      xs: []  // 1 column
-    };
 
-    enabledModules.forEach((module, index) => {
+    // Prepare empty layouts and column height trackers for masonry like placement
+    const newLayouts: Layouts = { lg: [], md: [], sm: [], xs: [] };
+    const lgHeights = [0, 0, 0, 0];
+    const mdHeights = [0, 0];
+    let smHeight = 0;
+    let xsHeight = 0;
+
+    enabledModules.forEach(module => {
       const gridSize = getModuleGridSize(module.size);
-      
-      // Large screens (4 columns)
+
+      // ----- Large breakpoint (4 columns) -----
+      let bestX = 0;
+      let minHeight = Number.MAX_SAFE_INTEGER;
+      for (let x = 0; x <= 4 - gridSize.w; x++) {
+        const colHeight = Math.max(...lgHeights.slice(x, x + gridSize.w));
+        if (colHeight < minHeight) {
+          minHeight = colHeight;
+          bestX = x;
+        }
+      }
       newLayouts.lg.push({
         i: module.id,
-        x: (index * gridSize.w) % 4,
-        y: Math.floor((index * gridSize.w) / 4) * gridSize.h,
+        x: bestX,
+        y: minHeight,
         w: gridSize.w,
         h: gridSize.h,
       });
+      for (let i = bestX; i < bestX + gridSize.w; i++) {
+        lgHeights[i] = minHeight + gridSize.h;
+      }
 
-      // Medium screens (2 columns)
+      // ----- Medium breakpoint (2 columns) -----
+      const mdWidth = Math.min(gridSize.w, 2);
+      let mdBestX = 0;
+      let mdMinHeight = Number.MAX_SAFE_INTEGER;
+      for (let x = 0; x <= 2 - mdWidth; x++) {
+        const colHeight = Math.max(...mdHeights.slice(x, x + mdWidth));
+        if (colHeight < mdMinHeight) {
+          mdMinHeight = colHeight;
+          mdBestX = x;
+        }
+      }
       newLayouts.md.push({
         i: module.id,
-        x: (index * Math.min(gridSize.w, 2)) % 2,
-        y: Math.floor((index * Math.min(gridSize.w, 2)) / 2) * gridSize.h,
-        w: Math.min(gridSize.w, 2),
+        x: mdBestX,
+        y: mdMinHeight,
+        w: mdWidth,
         h: gridSize.h,
       });
+      for (let i = mdBestX; i < mdBestX + mdWidth; i++) {
+        mdHeights[i] = mdMinHeight + gridSize.h;
+      }
 
-      // Small screens (1 column)
+      // ----- Small breakpoint (1 column) -----
       newLayouts.sm.push({
         i: module.id,
         x: 0,
-        y: index * gridSize.h,
+        y: smHeight,
         w: 1,
         h: gridSize.h,
       });
+      smHeight += gridSize.h;
 
-      // Extra small screens (1 column)
+      // ----- Extra small breakpoint (1 column) -----
       newLayouts.xs.push({
         i: module.id,
         x: 0,
-        y: index * gridSize.h,
+        y: xsHeight,
         w: 1,
         h: gridSize.h,
       });
+      xsHeight += gridSize.h;
     });
 
     setLayouts(newLayouts);
