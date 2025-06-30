@@ -48,7 +48,7 @@ export const EnhancedModuleCard: React.FC<ModuleCardProps> = ({
     <div data-grid-id={id} className="h-full">
       <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
         <Card className={`
-          h-full flex flex-col transition-all duration-200 ease-out
+          h-full flex flex-col overflow-hidden transition-all duration-200 ease-out
           ${enabled ? 'bg-white border-2 border-transparent hover:border-blue-200' : 'bg-gray-50 opacity-60'}
         `}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 flex-shrink-0">
