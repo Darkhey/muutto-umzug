@@ -45,6 +45,8 @@ import { OnboardingSuccess } from '@/components/onboarding/OnboardingSuccess'
 import { AIAssistant } from '@/components/ai/AIAssistant'
 import { ReminderSystem } from '@/components/reminders/ReminderSystem'
 import { MovingInsights } from '@/components/insights/MovingInsights'
+import { HouseholdOverview } from '../household/HouseholdOverview'
+import { MemberManagement } from '../household/MemberManagement'
 
 export const ModularDashboard = () => {
   const { user, signOut } = useAuth()
@@ -52,7 +54,7 @@ export const ModularDashboard = () => {
   const { toast } = useToast()
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success'>('dashboard')
+  const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success' | 'household-overview' | 'member-management'>('dashboard')
   const [onboardingData, setOnboardingData] = useState<any>(null)
   
   // Aggregated statistics state
@@ -91,7 +93,13 @@ export const ModularDashboard = () => {
                   <p className="font-semibold">{firstHousehold.household_size} Personen</p>
                 </div>
               </div>
-              <Button variant="outline" className="w-full">Details anzeigen</Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => openHousehold(firstHousehold)}
+              >
+                Details anzeigen
+              </Button>
             </div>
           ),
           enabled: true,
@@ -461,6 +469,20 @@ export const ModularDashboard = () => {
     })
   }
 
+  const openHousehold = (household: ExtendedHousehold) => {
+    setActiveHousehold(household)
+    setViewMode('household-overview')
+  }
+
+  const showMemberManagement = () => {
+    setViewMode('member-management')
+  }
+
+  const backToDashboard = () => {
+    setViewMode('dashboard')
+    setActiveHousehold(null)
+  }
+
   // Show auth page if not logged in
   if (!user && !loading) {
     return (
@@ -478,6 +500,57 @@ export const ModularDashboard = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Lädt Dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (viewMode === 'household-overview' && activeHousehold) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center mb-6">
+            <Button variant="ghost" onClick={backToDashboard} className="mr-4">
+              ← Zurück zum Dashboard
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900">Haushalt verwalten</h1>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <HouseholdOverview
+                household={activeHousehold}
+                onManageMembers={showMemberManagement}
+                onEditHousehold={() => {}}
+                onViewTasks={() => {}}
+              />
+            </div>
+
+            <div className="space-y-6">
+              <MovingInsights household={activeHousehold} />
+              <AIAssistant household={activeHousehold} />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (viewMode === 'member-management' && activeHousehold) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center mb-6">
+            <Button variant="ghost" onClick={() => setViewMode('household-overview')} className="mr-4">
+              ← Zurück zur Übersicht
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900">Mitglieder verwalten</h1>
+          </div>
+
+          <MemberManagement
+            householdId={activeHousehold.id}
+            isOwner={activeHousehold.created_by === user?.id}
+          />
         </div>
       </div>
     )
