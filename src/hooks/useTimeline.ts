@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -16,7 +17,7 @@ export function useTimeline(householdId?: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  // Fetch timeline data
+  // Fetch timeline data directly from Supabase
   const fetchTimelineData = useCallback(async () => {
     if (!householdId) return
 
@@ -24,54 +25,65 @@ export function useTimeline(householdId?: string) {
       setLoading(true)
       setError(null)
 
-      const { data, error: itemsError } = await supabase.functions.invoke(
-        'get_timeline',
-        { body: { household_id: householdId } }
-      )
+      // Fetch tasks with assignee information
+      const { data: tasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select(`
+          *,
+          assignee:household_members!assigned_to(name)
+        `)
+        .eq('household_id', householdId)
 
-      if (itemsError) throw itemsError
+      if (tasksError) throw tasksError
 
-      interface GetTimelineResponse {
-        tasks: any[]
-        preferences: TimelinePreferences | null
+      // Fetch preferences
+      const { data: prefsData, error: prefsError } = await supabase
+        .from('timeline_preferences')
+        .select('*')
+        .eq('household_id', householdId)
+        .maybeSingle()
+
+      if (prefsError && prefsError.code !== 'PGRST116') {
+        console.warn('Error fetching preferences:', prefsError)
       }
 
-      const response = data as GetTimelineResponse
-      const tasks = response?.tasks || []
-      const prefsData = response?.preferences
-
-      const formattedItems: TimelineItem[] = tasks.map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        description: item.description || '',
-        start: item.due_date,
-        phase: item.phase,
-        priority: item.priority,
-        category: item.category || '',
-        completed: item.completed,
-        assigned_to: item.assigned_to,
-        assignee_name: item.assignee_name,
-        is_overdue: item.is_overdue,
-        module_color: item.module_color,
-        className: `timeline-item-${item.priority} ${item.completed ? 'completed' : ''} ${item.is_overdue ? 'overdue' : ''}`
+      // Format tasks for timeline
+      const formattedItems: TimelineItem[] = (tasks || []).map((task: any) => ({
+        id: task.id,
+        title: task.title,
+        description: task.description || '',
+        start: task.due_date,
+        phase: task.phase,
+        priority: task.priority,
+        category: task.category || '',
+        completed: task.completed,
+        assigned_to: task.assigned_to,
+        assignee_name: task.assignee?.name || null,
+        is_overdue: task.due_date ? new Date(task.due_date) < new Date() && !task.completed : false,
+        module_color: getModuleColor(task.phase),
+        className: `timeline-item-${task.priority} ${task.completed ? 'completed' : ''} ${
+          task.due_date && new Date(task.due_date) < new Date() && !task.completed ? 'overdue' : ''
+        }`
       }))
 
       setTimelineItems(formattedItems)
 
+      // Set preferences
       if (prefsData) {
         setPreferences({
           zoom_level: prefsData.zoom_level,
           snap_to_grid: prefsData.snap_to_grid,
-          show_modules: prefsData.show_modules,
+          show_modules: prefsData.show_modules || ['all'],
         })
       } else {
+        // Create default preferences
         await supabase
           .from('timeline_preferences')
           .insert({
             household_id: householdId,
             zoom_level: 'month',
             snap_to_grid: true,
-            show_modules: []
+            show_modules: ['all']
           })
       }
     } catch (err) {
@@ -87,14 +99,29 @@ export function useTimeline(householdId?: string) {
     }
   }, [householdId, toast])
 
+  // Get module color based on phase
+  const getModuleColor = (phase: string) => {
+    const colors = {
+      vor_umzug: 'blue',
+      umzugstag: 'green', 
+      nach_umzug: 'purple',
+      langzeit: 'orange'
+    }
+    return colors[phase as keyof typeof colors] || 'gray'
+  }
+
   // Update task due date
   const updateTaskDueDate = async (taskId: string, newDate: Date | null) => {
     try {
       const formattedDate = newDate ? newDate.toISOString().split('T')[0] : null
 
-      const { error } = await supabase.functions.invoke('update_due', {
-        body: { task_id: taskId, new_date: formattedDate }
-      })
+      const { error } = await supabase
+        .from('tasks')
+        .update({ 
+          due_date: formattedDate,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', taskId)
 
       if (error) throw error
 
@@ -102,7 +129,11 @@ export function useTimeline(householdId?: string) {
       setTimelineItems(prev => 
         prev.map(item => 
           item.id === taskId 
-            ? { ...item, start: formattedDate, is_overdue: newDate ? newDate < new Date() && !item.completed : false }
+            ? { 
+                ...item, 
+                start: formattedDate, 
+                is_overdue: newDate ? newDate < new Date() && !item.completed : false 
+              }
             : item
         )
       )

@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { 
@@ -7,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog'
-import { TimelineView } from '@/components/timeline/TimelineView'
+import { HorizontalTimelineView } from '@/components/timeline/HorizontalTimelineView'
 import { Calendar, MoveHorizontal } from 'lucide-react'
 import { ExtendedHousehold } from '@/types/household'
 
@@ -31,17 +32,17 @@ export const TimelineButton = ({
       <DialogTrigger asChild>
         <Button variant={variant} size={size} className={className}>
           <MoveHorizontal className="mr-2 h-4 w-4" />
-          Zeitachse
+          Timeline
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Zeitachse
+            Umzugs-Timeline
           </DialogTitle>
         </DialogHeader>
-        <TimelineView 
+        <HorizontalTimelineView 
           household={household} 
           onBack={() => setOpen(false)} 
         />
