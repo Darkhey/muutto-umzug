@@ -71,9 +71,10 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
     <div className="space-y-2">
       <RadioGroup
         value={radius.key}
-        onValueChange={key =>
-          setRadius(RADIUS_OPTIONS.find(r => r.key === key) as RadiusOption)
-        }
+        onValueChange={key => {
+          const option = RADIUS_OPTIONS.find(r => r.key === key)
+          if (option) setRadius(option)
+        }}
         className="flex gap-3"
       >
         {RADIUS_OPTIONS.map(opt => (
