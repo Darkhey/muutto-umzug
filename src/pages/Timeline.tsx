@@ -7,7 +7,6 @@ const Timeline = () => {
   const householdId = currentHousehold?.id
   const { timelineItems, loading, updateTaskDueDate } = useTimeline(householdId)
 
-  useEffect(() => {}, [householdId])
 
   if (!householdId) {
     return <p className="text-center">Kein Haushalt ausgewählt</p>
