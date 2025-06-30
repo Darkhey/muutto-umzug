@@ -204,7 +204,8 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
       const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6
       const isMoveDay = format(currentDate, 'yyyy-MM-dd') === household.move_date
       const isCurrentDay = isToday(currentDate)
-      
+      const isFirstOfMonth = currentDate.getDate() === 1
+
       days.push(
         <div
           key={i}
@@ -215,19 +216,24 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
           }`}
           style={{ left: x }}
         >
+          {isFirstOfMonth && (
+            <div className="absolute -top-10 -left-8 text-xs font-semibold text-gray-700 whitespace-nowrap">
+              {format(currentDate, 'MMM yyyy', { locale: de })}
+            </div>
+          )}
           {i % 7 === 0 && (
             <div className="absolute -top-6 -left-8 text-xs text-gray-500 whitespace-nowrap">
               {format(currentDate, 'dd.MM', { locale: de })}
             </div>
           )}
           {isMoveDay && (
-            <div className="absolute -top-12 -left-12 text-xs font-bold text-red-600 whitespace-nowrap">
-              Umzugstag
+            <div className="absolute -top-12 -left-16 text-xs font-bold text-red-600 whitespace-nowrap">
+              Umzugstag {format(currentDate, 'dd.MM.yyyy', { locale: de })}
             </div>
           )}
           {isCurrentDay && (
-            <div className="absolute -top-12 -left-8 text-xs font-bold text-blue-600 whitespace-nowrap">
-              Heute
+            <div className="absolute -top-12 -left-12 text-xs font-bold text-blue-600 whitespace-nowrap">
+              Heute {format(currentDate, 'dd.MM', { locale: de })}
             </div>
           )}
         </div>

@@ -24,8 +24,9 @@ import {
   Calendar as CalendarIcon, 
   List, 
   CheckCircle, 
-  Clock, 
-  Undo2, 
+  Clock,
+  Undo2,
+  Plus,
   MoveHorizontal,
   Filter,
   X,
@@ -275,6 +276,18 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
     }
   }
 
+  const handleAddAppointment = () => {
+    const today = new Date()
+    setNewTaskDate(today)
+    setTaskDialogOpen(true)
+    if (timelineInstanceRef.current) {
+      timelineInstanceRef.current.moveTo(today)
+    }
+    if (calendarRef.current) {
+      calendarRef.current.getApi().gotoDate(today)
+    }
+  }
+
   const handleCreateTask = async (title: string) => {
     if (!newTaskDate) return
     try {
@@ -491,6 +504,10 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleZoomOut}>
                   <ZoomOut className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleAddAppointment}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Termin hinzufügen
                 </Button>
                 {undoStack.length > 0 && (
                   <Button variant="outline" size="sm" onClick={handleUndo}>
