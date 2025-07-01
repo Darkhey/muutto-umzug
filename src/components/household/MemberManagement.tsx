@@ -12,7 +12,9 @@ import { useHouseholdMembers } from '@/hooks/useHouseholdMembers'
 import { useAuth } from '@/contexts/AuthContext'
 import { HOUSEHOLD_ROLES, getRoleIcon, getRoleColor } from '@/config/roles'
 import { HouseholdRole } from '@/types/household'
-import { Users, UserPlus, Mail, Crown, Clock, CheckCircle, Trash2, Settings, Copy, Link2, MessageCircle } from 'lucide-react'
+import { Users, UserPlus, Mail, Crown, Clock, CheckCircle, Trash2, Settings, Copy, Link2, MessageCircle, QrCode } from 'lucide-react'
+import QRCode from 'react-qr-code'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 
@@ -189,7 +191,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                   <Link2 className="h-3 w-3 mr-1" />
                   Link kopieren
                 </Button>
-                <a
+              <a
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -199,6 +201,31 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                     WhatsApp
                   </Button>
                 </a>
+                {invitationLink && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        aria-label="QR-Code für Einladungslink anzeigen"
+                      >
+                        <QrCode className="h-3 w-3 mr-1" />
+                        QR-Code
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="flex justify-center"
+                      aria-label="QR-Code des Einladungslinks"
+                    >
+                      <div
+                        role="img"
+                        aria-label={`QR-Code für Einladungslink: ${invitationLink}`}
+                      >
+                        <QRCode value={invitationLink} size={128} />
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
               </div>
             </div>
           )}
