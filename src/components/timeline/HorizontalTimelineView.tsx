@@ -19,7 +19,7 @@ interface HorizontalTimelineViewProps {
   onBack?: () => void
 }
 
-interface TimelineTask extends TimelineItem {
+interface TimelineTaskExtended extends TimelineItem {
   x: number
   width: number
   y: number
@@ -46,15 +46,15 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
   const timelineRef = useRef<HTMLDivElement>(null)
   const [zoomLevel, setZoomLevel] = useState(30)
   const [showCompleted, setShowCompleted] = useState(false)
-  const [selectedTask, setSelectedTask] = useState<TimelineTask | null>(null)
+  const [selectedTask, setSelectedTask] = useState<TimelineItem | null>(null)
   const [timelineStart, setTimelineStart] = useState(new Date())
   const [timelineEnd, setTimelineEnd] = useState(new Date())
-  const [filteredTasks, setFilteredTasks] = useState<TimelineTask[]>([])
+  const [filteredTasks, setFilteredTasks] = useState<TimelineTaskExtended[]>([])
 
   const { exportToICal } = useTimelineExport(timelineItems, household.name)
 
   // Convert timeline items to positioned tasks
-  const convertToTimelineTasks = useCallback((items: TimelineItem[]): TimelineTask[] => {
+  const convertToTimelineTasks = useCallback((items: TimelineItem[]): TimelineTaskExtended[] => {
     const daysDiff = (date1: Date, date2: Date) => {
       const diffTime = date1.getTime() - date2.getTime()
       return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
@@ -75,7 +75,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
         width,
         y,
         height: 60
-      } as TimelineTask
+      } as TimelineTaskExtended
     })
   }, [timelineItems, showCompleted, zoomLevel, timelineStart, household.move_date])
 
@@ -116,6 +116,10 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
     timelineStart,
     updateTaskDueDate
   })
+
+  const handleTaskDoubleClick = (task: TimelineTaskExtended) => {
+    setSelectedTask(task)
+  }
 
   if (loading) {
     return (
@@ -165,7 +169,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
                   colors={COLORS}
                   phaseColors={PHASE_COLORS}
                   onMouseDown={handleMouseDown}
-                  onDoubleClick={setSelectedTask}
+                  onDoubleClick={handleTaskDoubleClick}
                 />
               ))}
             </div>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog'
@@ -6,14 +7,15 @@ import { Input } from '@/components/ui/input'
 import { Calendar } from '@/components/ui/calendar'
 import { useTasks } from '@/hooks/useTasks'
 import { extractDate } from '@/utils/dateParsing'
+import { TaskPhase, TaskPriority } from '@/types/database'
 
 interface AddTaskFromChatDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   message: string
   householdId?: string
-  defaultPhase?: string
-  defaultPriority?: string
+  defaultPhase?: TaskPhase
+  defaultPriority?: TaskPriority
 }
 
 export function AddTaskFromChatDialog({
@@ -21,8 +23,8 @@ export function AddTaskFromChatDialog({
   onOpenChange,
   message,
   householdId,
-  defaultPhase = 'vor_umzug',
-  defaultPriority = 'mittel',
+  defaultPhase = 'vor_umzug' as TaskPhase,
+  defaultPriority = 'mittel' as TaskPriority,
 }: AddTaskFromChatDialogProps) {
   const { createTask } = useTasks(householdId)
   const [title, setTitle] = useState(message)

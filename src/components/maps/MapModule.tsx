@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
@@ -63,7 +64,6 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
       prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
     )
   }
-
 
   const center: LatLngExpression = [latitude, longitude]
 
