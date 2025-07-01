@@ -106,19 +106,21 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
         <MapContainer
           center={centerPosition}
           zoom={13}
+          scrollWheelZoom={false}
           style={{ height: '100%', width: '100%' }}
-          className="rounded-lg z-0"
         >
           <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <Marker position={centerPosition}>
+          <Marker position={centerPosition} icon={houseIcon}>
             <Popup>Zieladresse</Popup>
           </Marker>
           {pois.map(poi => (
             <Marker
               key={poi.id}
               position={[poi.lat, poi.lon] as LatLngExpression}
+              icon={categoryIcons[poi.category]}
             >
               <Popup>
                 <div className="space-y-1">
