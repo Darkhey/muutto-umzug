@@ -1,10 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import {
+  CATEGORY_CONFIG,
+  Category,
+  RADIUS_OPTIONS,
+  RadiusOption
+} from '@/config/map'
+import { usePOIs } from './usePOIs'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -17,47 +25,22 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow
 })
 
-type Category = 'kita' | 'arzt' | 'supermarkt' | 'verwaltung'
-
-interface POI {
-  id: number
-  lat: number
-  lon: number
-  tags?: Record<string, string>
-  category: Category
-  distance: number
-}
-
-interface OverpassElement {
-  id: number
-  lat: number
-  lon: number
-  tags?: Record<string, string>
-}
+const houseIcon = L.divIcon({ html: '🏠', className: '', iconSize: [24, 24] })
+const categoryIcons = CATEGORY_CONFIG.reduce<Record<Category, L.DivIcon>>(
+  (acc, c) => {
+    acc[c.key] = L.divIcon({
+      html: `<span style="background:${c.color};width:1rem;height:1rem;display:block;border-radius:50%;border:2px solid white"></span>`,
+      className: '',
+      iconSize: [16, 16]
+    })
+    return acc
+  },
+  {} as Record<Category, L.DivIcon>
+)
 
 interface MapModuleProps {
   latitude: number
   longitude: number
-}
-
-const CATEGORY_OPTIONS: { key: Category; label: string; query: string }[] = [
-  { key: 'kita', label: 'Kitas', query: 'amenity=kindergarten' },
-  { key: 'arzt', label: 'Ärzte', query: 'amenity=doctors' },
-  { key: 'supermarkt', label: 'Supermärkte', query: 'shop=supermarket' },
-  { key: 'verwaltung', label: 'Stadtverwaltung', query: 'amenity=townhall' }
-]
-
-function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371 // km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180
-  const dLon = ((lon2 - lon1) * Math.PI) / 180
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
 }
 
 export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
@@ -67,9 +50,13 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
     'supermarkt',
     'verwaltung'
   ])
-  const [pois, setPois] = useState<POI[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [radius, setRadius] = useState<RadiusOption>(RADIUS_OPTIONS[1])
+  const { pois, loading, error } = usePOIs(
+    latitude,
+    longitude,
+    selected,
+    radius.radius
+  )
 
   const toggle = (key: Category) => {
     setSelected(prev =>
@@ -77,64 +64,28 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
     )
   }
 
-  useEffect(() => {
-    const controller = new AbortController()
-    async function fetchPOIs() {
-      const queries = CATEGORY_OPTIONS.filter(o => selected.includes(o.key))
-        .map(o => `node[${o.query}](around:3000,${latitude},${longitude});`)
-        .join('')
-      if (!queries) {
-        setPois([])
-        setError(null)
-        setLoading(false)
-        return
-      }
-      const url =
-        'https://overpass-api.de/api/interpreter?data=' +
-        encodeURIComponent(`[out:json];(${queries});out;`)
-      try {
-        setLoading(true)
-        setError(null)
-        const res = await fetch(url, { signal: controller.signal })
-        if (!res.ok) {
-          setError('Fehler beim Laden der Orte')
-          setLoading(false)
-          return
-        }
-        const data = await res.json()
-        const elements = data.elements as OverpassElement[]
-        const mapped: POI[] = elements.map(el => {
-          const category = CATEGORY_OPTIONS.find(opt => {
-            const [k, v] = opt.query.split('=')
-            return el.tags?.[k] === v
-          })?.key as Category
-          return {
-            id: el.id,
-            lat: el.lat,
-            lon: el.lon,
-            tags: el.tags,
-            category,
-            distance: haversine(latitude, longitude, el.lat, el.lon)
-          }
-        })
-        setPois(mapped)
-        setLoading(false)
-      } catch (e) {
-        console.error(e)
-        setError('Fehler beim Abrufen der Orte')
-        setLoading(false)
-      }
-    }
-    fetchPOIs()
-    return () => controller.abort()
-  }, [selected, latitude, longitude])
 
   const center: LatLngExpression = [latitude, longitude]
 
   return (
     <div className="space-y-2">
+      <RadioGroup
+        value={radius.key}
+        onValueChange={key =>
+          setRadius(RADIUS_OPTIONS.find(r => r.key === key) as RadiusOption)
+        }
+        className="flex gap-3"
+      >
+        {RADIUS_OPTIONS.map(opt => (
+          <div key={opt.key} className="flex items-center space-x-2">
+            <RadioGroupItem value={opt.key} id={`rad-${opt.key}`} />
+            <Label htmlFor={`rad-${opt.key}`}>{opt.label}</Label>
+          </div>
+        ))}
+      </RadioGroup>
+
       <div className="flex flex-wrap gap-3">
-        {CATEGORY_OPTIONS.map(opt => (
+        {CATEGORY_CONFIG.map(opt => (
           <div key={opt.key} className="flex items-center space-x-2">
             <Checkbox
               id={`cat-${opt.key}`}
@@ -161,11 +112,15 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <Marker position={center}>
-          <Popup>Startpunkt</Popup>
+        <Marker position={center} icon={houseIcon}>
+          <Popup>Zieladresse</Popup>
         </Marker>
         {pois.map(poi => (
-          <Marker key={poi.id} position={[poi.lat, poi.lon]}>
+          <Marker
+            key={poi.id}
+            position={[poi.lat, poi.lon]}
+            icon={categoryIcons[poi.category]}
+          >
             <Popup>
               <div className="space-y-1">
                 <p className="font-medium">
@@ -179,6 +134,17 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
           </Marker>
         ))}
       </MapContainer>
+      <div className="flex flex-wrap gap-4 pt-2 text-sm">
+        {CATEGORY_CONFIG.map(c => (
+          <div key={c.key} className="flex items-center gap-1">
+            <span
+              className="inline-block w-3 h-3 rounded-full"
+              style={{ background: c.color }}
+            />
+            {c.label}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
