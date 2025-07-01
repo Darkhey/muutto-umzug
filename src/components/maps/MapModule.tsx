@@ -1,5 +1,4 @@
 
-
 import { useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
@@ -110,8 +109,8 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
         className="rounded-lg z-0"
       >
         <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; OpenStreetMap contributors"
         />
         <Marker position={center} icon={houseIcon}>
           <Popup>Zieladresse</Popup>
@@ -151,4 +150,3 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
 }
 
 export default MapModule
-
