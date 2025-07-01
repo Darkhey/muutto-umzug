@@ -440,6 +440,8 @@ export const ModularDashboard = () => {
     handleLayoutChange,
     compactLayout,
     resetLayout,
+    repairLayouts,
+    optimizeLayouts,
     updateSetting,
     saveSettings
   } = useEnhancedDashboardModules(initialModules)
@@ -722,6 +724,8 @@ export const ModularDashboard = () => {
               <EnhancedResponsiveGrid
                 layouts={layouts}
                 onLayoutChange={handleLayoutChange}
+                isDraggable={true}
+                isResizable={true}
               >
                 {modules
                   .filter(module => module.enabled)
@@ -888,7 +892,7 @@ export const ModularDashboard = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Layout Debugger */}
+        {/* Enhanced Layout Debugger */}
         <LayoutDebugger
           layouts={layouts}
           modules={modules.map(m => ({ 
@@ -899,6 +903,8 @@ export const ModularDashboard = () => {
           }))}
           onCompactLayout={compactLayout}
           onResetLayout={resetLayout}
+          onRepairLayout={repairLayouts}
+          onOptimizeLayout={optimizeLayouts}
           debugMode={debugMode}
           onToggleDebug={() => setDebugMode(!debugMode)}
         />

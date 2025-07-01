@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { Layout, Layouts } from 'react-grid-layout';
 import { useToast } from '@/hooks/use-toast';
+import { validateLayout, repairLayout, optimizeSpacing } from '@/utils/layoutValidator';
 
 export interface DashboardModule {
   id: string;
@@ -20,12 +21,12 @@ const isValidPartialModule = (obj: any): obj is Partial<DashboardModule> => {
     (typeof obj.id === 'string' || obj.id === undefined);
 };
 
-// Optimized module grid sizes for better layout
+// Enhanced module grid sizes with better constraints
 const getModuleGridSize = (size: 'small' | 'medium' | 'large') => {
   switch (size) {
     case 'small': return { w: 1, h: 2 };
     case 'medium': return { w: 1, h: 3 };
-    case 'large': return { w: 2, h: 4 }; // Increased height for large modules
+    case 'large': return { w: 2, h: 4 };
     default: return { w: 1, h: 3 };
   }
 };
@@ -39,9 +40,10 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
     autoSort: false,
     magneticGrid: true,
     showCategoryBadges: true,
+    autoRepair: true, // New setting for automatic layout repair
   });
 
-  // Load saved modules and layouts from localStorage
+  // Load saved data from localStorage
   useEffect(() => {
     const savedModules = localStorage.getItem('dashboard_modules_v2');
     const savedLayouts = localStorage.getItem('dashboard_layouts_v2');
@@ -75,7 +77,9 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
     if (savedLayouts) {
       try {
         const parsedLayouts = JSON.parse(savedLayouts);
-        setLayouts(parsedLayouts);
+        // Validate layouts before setting
+        const validatedLayouts = validateAndRepairLayouts(parsedLayouts);
+        setLayouts(validatedLayouts);
       } catch (error) {
         console.error('Error parsing saved layouts:', error);
       }
@@ -84,7 +88,7 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
     if (savedSettings) {
       try {
         const parsedSettings = JSON.parse(savedSettings);
-        setSettings(parsedSettings);
+        setSettings({ ...settings, ...parsedSettings });
       } catch (error) {
         console.error('Error parsing saved settings:', error);
       }
@@ -99,7 +103,7 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
     }
   }, [initialModules, modules.length]);
 
-  // Save modules to localStorage when they change
+  // Save data to localStorage
   useEffect(() => {
     if (modules.length > 0) {
       const serializableModules = modules.map((m) => ({
@@ -114,34 +118,63 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
     }
   }, [modules]);
 
-  // Save layouts to localStorage when they change
   useEffect(() => {
     localStorage.setItem('dashboard_layouts_v2', JSON.stringify(layouts));
   }, [layouts]);
 
-  // Save settings to localStorage when they change
   useEffect(() => {
     localStorage.setItem('dashboard_settings_v2', JSON.stringify(settings));
   }, [settings]);
 
-  // Improved layout generation with better collision detection
+  // Validate and repair layouts utility
+  const validateAndRepairLayouts = useCallback((layouts: Layouts): Layouts => {
+    const repairedLayouts: Layouts = {};
+    const breakpoints = ['lg', 'md', 'sm', 'xs'] as const;
+    
+    breakpoints.forEach(bp => {
+      const layout = layouts[bp] || [];
+      const validation = validateLayout(layout, bp);
+      
+      if (!validation.isValid && settings.autoRepair) {
+        repairedLayouts[bp] = repairLayout(layout, bp);
+        console.log(`Auto-repaired layout for ${bp}: fixed ${validation.overlaps.length} overlaps and ${validation.outOfBounds.length} out-of-bounds items`);
+      } else {
+        repairedLayouts[bp] = layout;
+      }
+    });
+    
+    return repairedLayouts;
+  }, [settings.autoRepair]);
+
+  // Enhanced layout generation with collision prevention
   const generateDefaultLayouts = useCallback((modulesToLayout: DashboardModule[]) => {
     const enabledModules = modulesToLayout.filter(m => m.enabled);
     const newLayouts: Layouts = { lg: [], md: [], sm: [], xs: [] };
 
-    // Generate layouts for each breakpoint
     const breakpointConfigs = [
-      { breakpoint: 'lg', cols: 3, key: 'lg' },
+      { breakpoint: 'lg', cols: 4, key: 'lg' },
       { breakpoint: 'md', cols: 2, key: 'md' },
       { breakpoint: 'sm', cols: 1, key: 'sm' },
       { breakpoint: 'xs', cols: 1, key: 'xs' }
     ];
 
     breakpointConfigs.forEach(({ breakpoint, cols, key }) => {
-      const grid: boolean[][] = [];
       const layoutItems: Layout[] = [];
+      const occupiedCells = new Map<string, boolean>();
 
-      enabledModules.forEach(module => {
+      // Sort modules by priority (primary first, then by size)
+      const sortedModules = [...enabledModules].sort((a, b) => {
+        const priorityOrder = { primary: 0, secondary: 1, utility: 2 };
+        const aPriority = priorityOrder[a.category];
+        const bPriority = priorityOrder[b.category];
+        
+        if (aPriority !== bPriority) return aPriority - bPriority;
+        
+        const sizeOrder = { large: 0, medium: 1, small: 2 };
+        return sizeOrder[a.size] - sizeOrder[b.size];
+      });
+
+      sortedModules.forEach(module => {
         const gridSize = getModuleGridSize(module.size);
         let width = Math.min(gridSize.w, cols);
         let height = gridSize.h;
@@ -151,27 +184,20 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
           width = 1;
         }
 
-        // Find the best position for this module
+        // Find optimal position using enhanced algorithm
         let bestX = 0;
         let bestY = 0;
         let found = false;
 
-        // Try to find a position that doesn't overlap
         for (let y = 0; y < 50 && !found; y++) {
           for (let x = 0; x <= cols - width && !found; x++) {
-            // Check if this position is free
             let canPlace = true;
+            
+            // Check if this position is free
             for (let dy = 0; dy < height && canPlace; dy++) {
               for (let dx = 0; dx < width && canPlace; dx++) {
-                const gridY = y + dy;
-                const gridX = x + dx;
-                
-                // Initialize grid row if needed
-                if (!grid[gridY]) {
-                  grid[gridY] = new Array(cols).fill(false);
-                }
-                
-                if (grid[gridY][gridX]) {
+                const cellKey = `${x + dx},${y + dy}`;
+                if (occupiedCells.has(cellKey)) {
                   canPlace = false;
                 }
               }
@@ -182,16 +208,11 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
               bestY = y;
               found = true;
 
-              // Mark grid cells as occupied
+              // Mark cells as occupied
               for (let dy = 0; dy < height; dy++) {
                 for (let dx = 0; dx < width; dx++) {
-                  const gridY = y + dy;
-                  const gridX = x + dx;
-                  
-                  if (!grid[gridY]) {
-                    grid[gridY] = new Array(cols).fill(false);
-                  }
-                  grid[gridY][gridX] = true;
+                  const cellKey = `${x + dx},${y + dy}`;
+                  occupiedCells.set(cellKey, true);
                 }
               }
             }
@@ -210,29 +231,32 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
       newLayouts[key as keyof Layouts] = layoutItems;
     });
 
-    setLayouts(newLayouts);
-  }, []);
+    // Validate and repair generated layouts
+    const validatedLayouts = validateAndRepairLayouts(newLayouts);
+    setLayouts(validatedLayouts);
+  }, [validateAndRepairLayouts]);
 
+  // Enhanced layout change handler with validation
   const handleLayoutChange = useCallback((layout: Layout[], allLayouts: Layouts) => {
     // Validate layouts before setting
-    const validatedLayouts = { ...allLayouts };
+    const validatedLayouts = validateAndRepairLayouts(allLayouts);
     
-    Object.keys(validatedLayouts).forEach(breakpoint => {
-      const layoutArray = validatedLayouts[breakpoint as keyof Layouts];
-      if (layoutArray) {
-        // Remove any invalid layouts
-        validatedLayouts[breakpoint as keyof Layouts] = layoutArray.filter(item => 
-          item.w > 0 && item.h > 0 && item.x >= 0 && item.y >= 0
-        );
-      }
-    });
-
     setLayouts(validatedLayouts);
-    toast({
-      title: 'Layout gespeichert',
-      description: 'Die Anordnung der Module wurde aktualisiert',
+    
+    // Show toast if repairs were made
+    const hasChanges = Object.keys(allLayouts).some(bp => {
+      const original = allLayouts[bp as keyof Layouts] || [];
+      const repaired = validatedLayouts[bp as keyof Layouts] || [];
+      return JSON.stringify(original) !== JSON.stringify(repaired);
     });
-  }, [toast]);
+    
+    if (hasChanges) {
+      toast({
+        title: 'Layout optimiert',
+        description: 'Überlappungen und ungültige Positionen wurden automatisch korrigiert',
+      });
+    }
+  }, [validateAndRepairLayouts, toast]);
 
   const toggleModule = useCallback((id: string) => {
     setModules(prev => {
@@ -258,7 +282,6 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
   }, [generateDefaultLayouts, toast]);
 
   const compactLayout = useCallback(() => {
-    // Trigger re-generation of layouts to compact them
     generateDefaultLayouts(modules);
     toast({
       title: 'Layout komprimiert',
@@ -274,6 +297,24 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
       description: 'Das Dashboard wurde auf die Standardeinstellungen zurückgesetzt',
     });
   }, [initialModules, generateDefaultLayouts, toast]);
+
+  // New repair function
+  const repairLayouts = useCallback((repairedLayouts: Layouts) => {
+    setLayouts(repairedLayouts);
+    toast({
+      title: 'Layout repariert',
+      description: 'Alle Überlappungen und Positionsfehler wurden behoben',
+    });
+  }, [toast]);
+
+  // New optimize function
+  const optimizeLayouts = useCallback((optimizedLayouts: Layouts) => {
+    setLayouts(optimizedLayouts);
+    toast({
+      title: 'Layout optimiert',
+      description: 'Spacing und Anordnung wurden verbessert',
+    });
+  }, [toast]);
 
   const updateSetting = useCallback((setting: string, value: boolean) => {
     setSettings(prev => ({
@@ -297,6 +338,8 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
     handleLayoutChange,
     compactLayout,
     resetLayout,
+    repairLayouts,
+    optimizeLayouts,
     updateSetting,
     saveSettings
   };
