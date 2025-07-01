@@ -10,13 +10,15 @@ import { useToast } from '@/hooks/use-toast'
 import { useTimeline } from '@/hooks/useTimeline'
 import { TimelineItem } from '@/types/timeline'
 import { ExtendedHousehold } from '@/types/household'
-import { 
-  Calendar, 
+import { EditTaskDialog } from '@/components/tasks/EditTaskDialog'
+import {
+  Calendar,
   Download,
-  ZoomIn, 
-  ZoomOut, 
+  ZoomIn,
+  ZoomOut,
   Clock,
-  Grip
+  Grip,
+  Star
 } from 'lucide-react'
 import { format, addDays, subDays, startOfMonth, endOfMonth, isToday } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -56,8 +58,9 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
   const [showCompleted, setShowCompleted] = useState(false)
   const [draggedTask, setDraggedTask] = useState<TimelineTask | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-  const [timelineStart] = useState(subDays(new Date(household.move_date), 60))
-  const [timelineEnd] = useState(addDays(new Date(household.move_date), 60))
+  const [selectedTask, setSelectedTask] = useState<TimelineTask | null>(null)
+  const [timelineStart, setTimelineStart] = useState(new Date())
+  const [timelineEnd, setTimelineEnd] = useState(new Date())
   const [filteredTasks, setFilteredTasks] = useState<TimelineTask[]>([])
 
   // Convert timeline items to positioned tasks
@@ -89,6 +92,31 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
   useEffect(() => {
     setFilteredTasks(convertToTimelineTasks(timelineItems))
   }, [timelineItems, convertToTimelineTasks])
+
+  // Determine timeline range based on tasks
+  useEffect(() => {
+    if (timelineItems.length === 0) {
+      const move = new Date(household.move_date)
+      setTimelineStart(subDays(move, 30))
+      setTimelineEnd(addDays(move, 30))
+      return
+    }
+
+    const dates = timelineItems
+      .filter(item => item.start)
+      .map(item => new Date(item.start!))
+
+    const earliest = dates.length
+      ? new Date(Math.min(...dates.map(d => d.getTime())))
+      : new Date(household.move_date)
+
+    const latest = dates.length
+      ? new Date(Math.max(...dates.map(d => d.getTime())))
+      : new Date(household.move_date)
+
+    setTimelineStart(subDays(earliest, 10))
+    setTimelineEnd(addDays(latest, 10))
+  }, [timelineItems, household.move_date])
 
   // Export to iCal
   const exportToICal = () => {
@@ -227,7 +255,8 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
             </div>
           )}
           {isMoveDay && (
-            <div className="absolute -top-12 -left-16 text-xs font-bold text-red-600 whitespace-nowrap">
+            <div className="absolute -top-12 -left-16 flex items-center text-xs font-bold text-red-600 whitespace-nowrap">
+              <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-500" />
               Umzugstag {format(currentDate, 'dd.MM.yyyy', { locale: de })}
             </div>
           )}
@@ -297,7 +326,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
         
         <CardContent>
           {/* Timeline Container */}
-          <div className="relative border rounded-lg bg-white overflow-x-auto" style={{ height: '400px' }}>
+          <div className="relative border rounded-lg bg-white overflow-x-auto overflow-y-visible" style={{ height: '400px' }}>
             <div 
               ref={timelineRef}
               className="relative bg-gradient-to-r from-blue-50 via-white to-purple-50"
@@ -325,6 +354,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
                         : COLORS[task.priority as keyof typeof COLORS] || PHASE_COLORS[task.phase as keyof typeof PHASE_COLORS]
                   }}
                   onMouseDown={(e) => handleMouseDown(e, task)}
+                  onDoubleClick={() => setSelectedTask(task)}
                 >
                   <div className="p-2 h-full flex flex-col justify-between text-white text-xs">
                     <div className="flex items-start justify-between">
@@ -428,5 +458,11 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
         </Card>
       </div>
     </div>
+    <EditTaskDialog
+      open={selectedTask !== null}
+      onOpenChange={(open) => !open && setSelectedTask(null)}
+      householdId={household.id}
+      task={selectedTask}
+    />
   )
 }
