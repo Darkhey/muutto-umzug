@@ -204,13 +204,25 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                 {invitationLink && (
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        aria-label="QR-Code für Einladungslink anzeigen"
+                      >
                         <QrCode className="h-3 w-3 mr-1" />
                         QR-Code
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="flex justify-center">
-                      <QRCode value={invitationLink} size={128} />
+                    <PopoverContent
+                      className="flex justify-center"
+                      aria-label="QR-Code des Einladungslinks"
+                    >
+                      <div
+                        role="img"
+                        aria-label={`QR-Code für Einladungslink: ${invitationLink}`}
+                      >
+                        <QRCode value={invitationLink} size={128} />
+                      </div>
                     </PopoverContent>
                   </Popover>
                 )}
