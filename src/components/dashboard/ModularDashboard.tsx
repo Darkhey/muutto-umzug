@@ -28,11 +28,13 @@ import {
   Sparkles,
   Merge,
   Grid3X3,
-  RotateCcw
+  RotateCcw,
+  Grid
 } from 'lucide-react'
 
 import { EnhancedResponsiveGrid } from './ResponsiveGridLayout'
 import { EnhancedModuleCard } from './EnhancedModuleCard'
+import { LayoutDebugger } from './LayoutDebugger'
 import { useEnhancedDashboardModules, DashboardModule } from '@/hooks/useEnhancedDashboardModules'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHouseholds } from '@/hooks/useHouseholds'
@@ -59,6 +61,7 @@ export const ModularDashboard = () => {
   const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success' | 'household-overview' | 'member-management'>('dashboard')
   const [onboardingData, setOnboardingData] = useState<any>(null)
   const [navigationLoading, setNavigationLoading] = useState(false)
+  const [debugMode, setDebugMode] = useState(false)
   
   // Aggregated statistics state
   const [totalTasks, setTotalTasks] = useState(0)
@@ -654,6 +657,15 @@ export const ModularDashboard = () => {
               <RotateCcw className="h-4 w-4 mr-2" />
               Zurücksetzen
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setDebugMode(!debugMode)}
+              className="text-purple-600 hover:text-purple-700"
+            >
+              <Grid className="h-4 w-4 mr-2" />
+              Debug
+            </Button>
             <Button variant="outline" size="sm">
               <Settings className="h-4 w-4 mr-2" />
               Einstellungen
@@ -706,7 +718,7 @@ export const ModularDashboard = () => {
             </div>
 
             {/* Enhanced Grid Layout */}
-            <div className="min-h-[600px]">
+            <div className="min-h-[600px] relative">
               <EnhancedResponsiveGrid
                 layouts={layouts}
                 onLayoutChange={handleLayoutChange}
@@ -875,6 +887,21 @@ export const ModularDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Layout Debugger */}
+        <LayoutDebugger
+          layouts={layouts}
+          modules={modules.map(m => ({ 
+            id: m.id, 
+            title: m.title, 
+            enabled: m.enabled, 
+            size: m.size 
+          }))}
+          onCompactLayout={compactLayout}
+          onResetLayout={resetLayout}
+          debugMode={debugMode}
+          onToggleDebug={() => setDebugMode(!debugMode)}
+        />
       </div>
     </div>
   )

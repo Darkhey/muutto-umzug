@@ -19,26 +19,35 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
   onLayoutChange,
   className = "layout"
 }) => {
-  const breakpoints = { lg: 1200, md: 768, sm: 480, xs: 0 };
-  const cols = { lg: 4, md: 2, sm: 1, xs: 1 };
+  // Optimized breakpoints and columns for better responsive behavior
+  const breakpoints = { lg: 1200, md: 996, sm: 768, xs: 480 };
+  const cols = { lg: 3, md: 2, sm: 1, xs: 1 }; // Reduced lg from 4 to 3 for better spacing
 
   return (
-    <ResponsiveGridLayout
-      className={className}
-      layouts={layouts}
-      breakpoints={breakpoints}
-      cols={cols}
-      rowHeight={180}
-      onLayoutChange={onLayoutChange}
-      compactType="vertical"
-      preventCollision={false}
-      margin={[16, 16]}
-      containerPadding={[0, 0]}
-      draggableHandle=".drag-handle"
-      resizeHandles={['se']}
-      useCSSTransforms={true}
-    >
-      {children}
-    </ResponsiveGridLayout>
+    <div className="relative">
+      <ResponsiveGridLayout
+        className={className}
+        layouts={layouts}
+        breakpoints={breakpoints}
+        cols={cols}
+        rowHeight={120} // Reduced from 180px for better granularity
+        onLayoutChange={onLayoutChange}
+        compactType="horizontal" // Changed from "vertical" for better space utilization
+        preventCollision={true} // Enable collision prevention
+        margin={[16, 16]}
+        containerPadding={[16, 16]} // Added container padding
+        draggableHandle=".drag-handle"
+        resizeHandles={['se']}
+        useCSSTransforms={true}
+        isDraggable={true}
+        isResizable={true}
+        autoSize={true}
+        verticalCompact={true}
+        measureBeforeMount={false}
+        style={{ minHeight: '600px' }}
+      >
+        {children}
+      </ResponsiveGridLayout>
+    </div>
   );
 };

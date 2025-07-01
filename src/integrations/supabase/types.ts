@@ -335,6 +335,41 @@ export type Database = {
         }
         Relationships: []
       }
+      task_history: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          id: string
+          new_due_date: string | null
+          old_due_date: string | null
+          task_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          id?: string
+          new_due_date?: string | null
+          old_due_date?: string | null
+          task_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          new_due_date?: string | null
+          old_due_date?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_history_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           actual_duration: number | null
@@ -426,6 +461,44 @@ export type Database = {
           },
         ]
       }
+      timeline_preferences: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          show_modules: string[] | null
+          snap_to_grid: boolean
+          updated_at: string
+          zoom_level: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          show_modules?: string[] | null
+          snap_to_grid?: boolean
+          updated_at?: string
+          zoom_level?: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          show_modules?: string[] | null
+          snap_to_grid?: boolean
+          updated_at?: string
+          zoom_level?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_preferences_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -451,6 +524,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_timeline: {
+        Args: { p_household_id: string }
+        Returns: {
+          id: string
+          title: string
+          description: string
+          phase: string
+          priority: string
+          category: string
+          due_date: string
+          completed: boolean
+          assigned_to: string
+          assignee_name: string
+          is_overdue: boolean
+          module_color: string
+        }[]
+      }
       join_household_by_code: {
         Args: {
           p_invitation_code: string
@@ -466,6 +556,10 @@ export type Database = {
           p_destination_household_id: string
         }
         Returns: string
+      }
+      update_task_due_date: {
+        Args: { p_task_id: string; p_new_date: string }
+        Returns: boolean
       }
       user_is_household_member: {
         Args: { p_household_id: string }

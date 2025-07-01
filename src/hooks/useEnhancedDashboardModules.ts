@@ -20,11 +20,12 @@ const isValidPartialModule = (obj: any): obj is Partial<DashboardModule> => {
     (typeof obj.id === 'string' || obj.id === undefined);
 };
 
+// Optimized module grid sizes for better layout
 const getModuleGridSize = (size: 'small' | 'medium' | 'large') => {
   switch (size) {
     case 'small': return { w: 1, h: 2 };
     case 'medium': return { w: 1, h: 3 };
-    case 'large': return { w: 2, h: 3 };
+    case 'large': return { w: 2, h: 4 }; // Increased height for large modules
     default: return { w: 1, h: 3 };
   }
 };
@@ -123,91 +124,110 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
     localStorage.setItem('dashboard_settings_v2', JSON.stringify(settings));
   }, [settings]);
 
+  // Improved layout generation with better collision detection
   const generateDefaultLayouts = useCallback((modulesToLayout: DashboardModule[]) => {
     const enabledModules = modulesToLayout.filter(m => m.enabled);
-
-    // Prepare empty layouts and column height trackers for masonry like placement
     const newLayouts: Layouts = { lg: [], md: [], sm: [], xs: [] };
-    const lgHeights = [0, 0, 0, 0];
-    const mdHeights = [0, 0];
-    let smHeight = 0;
-    let xsHeight = 0;
 
-    enabledModules.forEach(module => {
-      const gridSize = getModuleGridSize(module.size);
+    // Generate layouts for each breakpoint
+    const breakpointConfigs = [
+      { breakpoint: 'lg', cols: 3, key: 'lg' },
+      { breakpoint: 'md', cols: 2, key: 'md' },
+      { breakpoint: 'sm', cols: 1, key: 'sm' },
+      { breakpoint: 'xs', cols: 1, key: 'xs' }
+    ];
 
-      // Validate width to prevent negative loop bounds
-      const lgWidth = Math.min(gridSize.w, 4);
+    breakpointConfigs.forEach(({ breakpoint, cols, key }) => {
+      const grid: boolean[][] = [];
+      const layoutItems: Layout[] = [];
 
-      // ----- Large breakpoint (4 columns) -----
-      let bestX = 0;
-      let minHeight = Number.MAX_SAFE_INTEGER;
-      for (let x = 0; x <= 4 - lgWidth; x++) {
-        const colHeight = Math.max(...lgHeights.slice(x, x + lgWidth));
-        if (colHeight < minHeight) {
-          minHeight = colHeight;
-          bestX = x;
+      enabledModules.forEach(module => {
+        const gridSize = getModuleGridSize(module.size);
+        let width = Math.min(gridSize.w, cols);
+        let height = gridSize.h;
+
+        // For single column layouts, ensure full width
+        if (cols === 1) {
+          width = 1;
         }
-      }
-      newLayouts.lg.push({
-        i: module.id,
-        x: bestX,
-        y: minHeight,
-        w: lgWidth,
-        h: gridSize.h,
-      });
-      for (let i = bestX; i < bestX + lgWidth; i++) {
-        lgHeights[i] = minHeight + gridSize.h;
-      }
 
-      // ----- Medium breakpoint (2 columns) -----
-      const mdWidth = Math.min(gridSize.w, 2);
-      let mdBestX = 0;
-      let mdMinHeight = Number.MAX_SAFE_INTEGER;
-      for (let x = 0; x <= 2 - mdWidth; x++) {
-        const colHeight = Math.max(...mdHeights.slice(x, x + mdWidth));
-        if (colHeight < mdMinHeight) {
-          mdMinHeight = colHeight;
-          mdBestX = x;
+        // Find the best position for this module
+        let bestX = 0;
+        let bestY = 0;
+        let found = false;
+
+        // Try to find a position that doesn't overlap
+        for (let y = 0; y < 50 && !found; y++) {
+          for (let x = 0; x <= cols - width && !found; x++) {
+            // Check if this position is free
+            let canPlace = true;
+            for (let dy = 0; dy < height && canPlace; dy++) {
+              for (let dx = 0; dx < width && canPlace; dx++) {
+                const gridY = y + dy;
+                const gridX = x + dx;
+                
+                // Initialize grid row if needed
+                if (!grid[gridY]) {
+                  grid[gridY] = new Array(cols).fill(false);
+                }
+                
+                if (grid[gridY][gridX]) {
+                  canPlace = false;
+                }
+              }
+            }
+
+            if (canPlace) {
+              bestX = x;
+              bestY = y;
+              found = true;
+
+              // Mark grid cells as occupied
+              for (let dy = 0; dy < height; dy++) {
+                for (let dx = 0; dx < width; dx++) {
+                  const gridY = y + dy;
+                  const gridX = x + dx;
+                  
+                  if (!grid[gridY]) {
+                    grid[gridY] = new Array(cols).fill(false);
+                  }
+                  grid[gridY][gridX] = true;
+                }
+              }
+            }
+          }
         }
-      }
-      newLayouts.md.push({
-        i: module.id,
-        x: mdBestX,
-        y: mdMinHeight,
-        w: mdWidth,
-        h: gridSize.h,
-      });
-      for (let i = mdBestX; i < mdBestX + mdWidth; i++) {
-        mdHeights[i] = mdMinHeight + gridSize.h;
-      }
 
-      // ----- Small breakpoint (1 column) -----
-      newLayouts.sm.push({
-        i: module.id,
-        x: 0,
-        y: smHeight,
-        w: 1,
-        h: gridSize.h,
+        layoutItems.push({
+          i: module.id,
+          x: bestX,
+          y: bestY,
+          w: width,
+          h: height,
+        });
       });
-      smHeight += gridSize.h;
 
-      // ----- Extra small breakpoint (1 column) -----
-      newLayouts.xs.push({
-        i: module.id,
-        x: 0,
-        y: xsHeight,
-        w: 1,
-        h: gridSize.h,
-      });
-      xsHeight += gridSize.h;
+      newLayouts[key as keyof Layouts] = layoutItems;
     });
 
     setLayouts(newLayouts);
   }, []);
 
   const handleLayoutChange = useCallback((layout: Layout[], allLayouts: Layouts) => {
-    setLayouts(allLayouts);
+    // Validate layouts before setting
+    const validatedLayouts = { ...allLayouts };
+    
+    Object.keys(validatedLayouts).forEach(breakpoint => {
+      const layoutArray = validatedLayouts[breakpoint as keyof Layouts];
+      if (layoutArray) {
+        // Remove any invalid layouts
+        validatedLayouts[breakpoint as keyof Layouts] = layoutArray.filter(item => 
+          item.w > 0 && item.h > 0 && item.x >= 0 && item.y >= 0
+        );
+      }
+    });
+
+    setLayouts(validatedLayouts);
     toast({
       title: 'Layout gespeichert',
       description: 'Die Anordnung der Module wurde aktualisiert',
@@ -221,7 +241,7 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
       );
       
       // Regenerate layouts when modules change
-      setTimeout(() => generateDefaultLayouts(updated), 0);
+      setTimeout(() => generateDefaultLayouts(updated), 100);
       
       const module = prev.find(m => m.id === id);
       if (module) {

@@ -44,20 +44,31 @@ export const EnhancedModuleCard: React.FC<ModuleCardProps> = ({
     }
   };
 
+  // Get minimum height based on module size
+  const getMinHeight = (size: string) => {
+    switch (size) {
+      case 'small': return 'min-h-[240px]'; // 120px * 2
+      case 'medium': return 'min-h-[360px]'; // 120px * 3
+      case 'large': return 'min-h-[480px]'; // 120px * 4
+      default: return 'min-h-[360px]';
+    }
+  };
+
   return (
-    <div data-grid-id={id} className="h-full">
+    <div data-grid-id={id} className={`h-full ${getMinHeight(size)}`}>
       <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
         <Card className={`
-          h-full flex flex-col overflow-hidden transition-all duration-200 ease-out
-          ${enabled ? 'bg-white border-2 border-transparent hover:border-blue-200' : 'bg-gray-50 opacity-60'}
+          h-full flex flex-col transition-all duration-200 ease-out
+          ${enabled ? 'bg-white border-2 border-transparent hover:border-blue-200 shadow-md' : 'bg-gray-50 opacity-60 shadow-sm'}
+          ${getMinHeight(size)}
         `}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 flex-shrink-0">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 flex-shrink-0 px-3 py-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="drag-handle cursor-move touch-none p-1 rounded hover:bg-gray-100 transition-colors flex-shrink-0">
                 <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600" />
               </div>
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                {icon}
+                <div className="flex-shrink-0">{icon}</div>
                 <CardTitle className="text-sm font-medium truncate">{title}</CardTitle>
               </div>
             </div>
@@ -91,9 +102,9 @@ export const EnhancedModuleCard: React.FC<ModuleCardProps> = ({
             </div>
           </CardHeader>
           <CollapsibleContent className="flex-1 flex flex-col">
-            <CardContent className="flex-1 overflow-hidden">
+            <CardContent className="flex-1 overflow-hidden p-3">
               {enabled ? (
-                <div className="h-full overflow-auto">
+                <div className="h-full overflow-y-auto overflow-x-hidden">
                   {component}
                 </div>
               ) : (
