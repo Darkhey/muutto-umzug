@@ -65,7 +65,7 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
     )
   }
 
-  const center: LatLngExpression = [latitude, longitude]
+  const centerPosition: LatLngExpression = [latitude, longitude]
 
   return (
     <div className="space-y-2">
@@ -102,38 +102,38 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
       {error && (
         <p className="text-sm text-red-600">{error}</p>
       )}
-      <MapContainer
-        center={center}
-        zoom={13}
-        style={{ height: '400px', width: '100%' }}
-        className="rounded-lg z-0"
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
-        />
-        <Marker position={center} icon={houseIcon}>
-          <Popup>Zieladresse</Popup>
-        </Marker>
-        {pois.map(poi => (
-          <Marker
-            key={poi.id}
-            position={[poi.lat, poi.lon]}
-            icon={categoryIcons[poi.category]}
-          >
-            <Popup>
-              <div className="space-y-1">
-                <p className="font-medium">
-                  {poi.tags?.name || 'Unbenannter Ort'}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {poi.distance.toFixed(2)} km entfernt
-                </p>
-              </div>
-            </Popup>
+      <div style={{ height: '400px', width: '100%' }} className="rounded-lg">
+        <MapContainer
+          center={centerPosition}
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+          className="rounded-lg z-0"
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <Marker position={centerPosition}>
+            <Popup>Zieladresse</Popup>
           </Marker>
-        ))}
-      </MapContainer>
+          {pois.map(poi => (
+            <Marker
+              key={poi.id}
+              position={[poi.lat, poi.lon] as LatLngExpression}
+            >
+              <Popup>
+                <div className="space-y-1">
+                  <p className="font-medium">
+                    {poi.tags?.name || 'Unbenannter Ort'}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {poi.distance.toFixed(2)} km entfernt
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
       <div className="flex flex-wrap gap-4 pt-2 text-sm">
         {CATEGORY_CONFIG.map(c => (
           <div key={c.key} className="flex items-center gap-1">
