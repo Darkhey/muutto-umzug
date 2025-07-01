@@ -1,14 +1,19 @@
-import { Suspense, lazy } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { AuthPage } from '@/components/auth/AuthPage';
-import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
+import { Suspense, lazy } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { AuthPage } from '@/components/auth/AuthPage'
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton'
+import { useLocation } from 'react-router-dom'
+import JoinHousehold from './JoinHousehold'
 
 const ModularDashboard = lazy(() =>
   import('@/components/dashboard/ModularDashboard')
 );
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuth()
+  const location = useLocation()
+  const searchParams = new URLSearchParams(location.search)
+  const inviteCode = searchParams.get('invite')
 
   if (loading) {
     return (
@@ -19,6 +24,10 @@ const Index = () => {
         </div>
       </div>
     );
+  }
+
+  if (inviteCode) {
+    return <JoinHousehold code={inviteCode} />
   }
 
   if (!user) {

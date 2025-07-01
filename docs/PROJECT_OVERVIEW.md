@@ -51,6 +51,7 @@ Users (Supabase Auth)
 2. **Haushaltsverwaltung**
    - Haushalte erstellen mit vollständigen Details
    - Mitglieder einladen per E-Mail
+   - Beitritt über individuellen Einladungslink
    - Rollenzuweisung (5 vordefinierte Rollen)
    - Owner-Rechte und Berechtigungssystem
    - Sichere Datentrennung zwischen Haushalten
