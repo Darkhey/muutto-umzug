@@ -1,11 +1,23 @@
 import React from 'react'
+import { Helmet } from 'react-helmet-async'
 
 const AGB = () => {
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <h1 className="text-2xl font-bold mb-4">
-        Allgemeine Geschäftsbedingungen (AGB) für die Nutzung der App „muutto“
-      </h1>
+    <>
+      <Helmet>
+        <title>AGB - Allgemeine Geschäftsbedingungen | muutto</title>
+        <meta
+          name="description"
+          content="Allgemeine Geschäftsbedingungen für die Nutzung der muutto App - KI-gestützter Umzugsassistent"
+        />
+        <meta name="robots" content="index, follow" />
+      </Helmet>
+      <main className="max-w-4xl mx-auto space-y-4" role="main">
+        <header>
+          <h1 className="text-2xl font-bold mb-4">
+            Allgemeine Geschäftsbedingungen (AGB) für die Nutzung der App „muutto“
+          </h1>
+        </header>
 
       <h2 className="text-xl font-semibold mt-4 mb-2">1. Geltungsbereich</h2>
       <p className="mb-2">
@@ -94,7 +106,8 @@ const AGB = () => {
         „muutto“ verfasst und sollen die Nutzung transparent und verständlich
         regeln. Viel Erfolg beim Planen Ihres Umzugs!
       </p>
-    </div>
+      </main>
+    </>
   )
 }
 
