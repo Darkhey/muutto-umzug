@@ -56,6 +56,11 @@ if [ ! -f .env.local ]; then
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 OPENAI_API_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_PRICE_ONE_TIME=
+STRIPE_PRICE_MONTHLY=
+STRIPE_WEBHOOK_SECRET=
+FRONTEND_URL=
 EOV
   echo "Created .env.local. Please fill in your Supabase and OpenAI credentials."
 fi
@@ -65,8 +70,8 @@ if command -v supabase >/dev/null 2>&1; then
   echo "Applying Supabase migrations..."
   if [ "$FRESH_DB" -eq 1 ]; then
     echo "WARNING: this will reset your local Supabase database and erase existing data"
--    supabase db reset --no-verify-auth > /dev/null
-+    supabase db reset --no-verify-auth --force
+    # --force bypasses confirmation so the script can run non-interactively
+    supabase db reset --no-verify-auth --force
   else
     supabase db push > /dev/null
   fi
