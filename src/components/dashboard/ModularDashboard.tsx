@@ -51,6 +51,7 @@ import { ReminderSystem } from '@/components/reminders/ReminderSystem'
 import { MovingInsights } from '@/components/insights/MovingInsights'
 import { HouseholdOverview } from '../household/HouseholdOverview'
 import { MemberManagement } from '../household/MemberManagement'
+import { ChecklistView } from '../checklist/ChecklistView'
 
 export const ModularDashboard = () => {
   const { user, signOut } = useAuth()
@@ -115,43 +116,14 @@ export const ModularDashboard = () => {
           size: 'medium'
         },
         {
-          id: 'tasks',
-          title: 'Aufgaben',
+          id: 'checklist',
+          title: 'Checkliste',
           icon: <CheckCircle className="h-5 w-5 text-green-600" />,
-          component: (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold">Nächste Aufgaben</h3>
-                <Button variant="ghost" size="sm">Alle anzeigen</Button>
-              </div>
-              <div className="space-y-2">
-                {[
-                  { title: 'Mietvertrag kündigen', date: '15.07.2025', priority: 'high' },
-                  { title: 'Umzugsunternehmen buchen', date: '01.08.2025', priority: 'medium' },
-                  { title: 'Strom ummelden', date: '15.08.2025', priority: 'low' }
-                ].map((task, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 border rounded-lg">
-                    <div>
-                      <p className="font-medium text-sm">{task.title}</p>
-                      <p className="text-xs text-gray-500">{task.date}</p>
-                    </div>
-                    <Badge variant="outline" className={
-                      task.priority === 'high' ? 'bg-red-50 text-red-800' :
-                      task.priority === 'medium' ? 'bg-yellow-50 text-yellow-800' :
-                      'bg-green-50 text-green-800'
-                    }>
-                      {task.priority === 'high' ? 'Hoch' : 
-                       task.priority === 'medium' ? 'Mittel' : 'Niedrig'}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ),
+          component: <ChecklistView household={firstHousehold} />,
           enabled: true,
           category: 'primary',
-          description: 'Verwalte deine Umzugsaufgaben und To-Dos',
-          size: 'medium'
+          description: 'Aufgaben & Timeline verwalten',
+          size: 'large'
         },
         {
           id: 'ai-assistant',
