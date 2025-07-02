@@ -56,6 +56,10 @@ if [ ! -f .env.local ]; then
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 OPENAI_API_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_PRICE_ONE_TIME=
+STRIPE_PRICE_MONTHLY=
+STRIPE_WEBHOOK_SECRET=
 EOV
   echo "Created .env.local. Please fill in your Supabase and OpenAI credentials."
 fi

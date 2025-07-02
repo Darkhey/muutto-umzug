@@ -1,0 +1,53 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Stripe from 'npm:stripe@14.21.0'
+
+type CheckoutSession = Stripe.Checkout.Session
+type StripeSubscription = Stripe.Subscription
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+)
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { apiVersion: '2023-10-16' })
+const endpointSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!
+
+serve(async (req) => {
+  const sig = req.headers.get('stripe-signature')
+  if (!sig) return new Response('Missing signature', { status: 400 })
+
+  const body = await req.text()
+  let event
+  try {
+    event = stripe.webhooks.constructEvent(body, sig, endpointSecret)
+  } catch (err) {
+    return new Response(`Webhook Error: ${err.message}`, { status: 400 })
+  }
+
+  switch (event.type) {
+    case 'checkout.session.completed': {
+      const session = event.data.object as CheckoutSession
+      const userId = session.client_reference_id as string
+      const mode = session.mode === 'subscription' ? 'monthly' : 'one-time'
+      await supabase.from('premium_status').upsert({
+        user_id: userId,
+        is_premium: true,
+        premium_mode: mode,
+        purchase_date: new Date().toISOString(),
+        stripe_subscription_id: session.subscription ?? null,
+      })
+      break
+    }
+    case 'invoice.payment_failed':
+    case 'customer.subscription.deleted': {
+      const sub = event.data.object as StripeSubscription
+      await supabase
+        .from('premium_status')
+        .update({ is_premium: false })
+        .eq('stripe_subscription_id', sub.id)
+      break
+    }
+  }
+
+  return new Response('ok', { status: 200 })
+})

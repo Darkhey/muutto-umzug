@@ -21,6 +21,10 @@ The application requires access to your Supabase instance. Create a `.env.local`
 ```bash
 VITE_SUPABASE_URL=<your-supabase-url>
 VITE_SUPABASE_ANON_KEY=<your-anon-key>
+STRIPE_SECRET_KEY=<your-stripe-secret>
+STRIPE_PRICE_ONE_TIME=<price-id-one-time>
+STRIPE_PRICE_MONTHLY=<price-id-monthly>
+STRIPE_WEBHOOK_SECRET=<webhook-secret>
 ```
 
 These variables are read by the Supabase client in `src/integrations/supabase/client.ts`. Alternatively you can edit that file directly with your credentials.
