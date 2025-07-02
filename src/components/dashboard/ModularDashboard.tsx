@@ -46,7 +46,7 @@ import { DashboardStats } from './DashboardStats'
 import { HouseholdMergerButton } from './HouseholdMergerButton'
 import { OnboardingFlowWithDrafts } from '@/components/onboarding/OnboardingFlowWithDrafts'
 import { OnboardingSuccess } from '@/components/onboarding/OnboardingSuccess'
-import { AIAssistant } from '@/components/ai/AIAssistant'
+
 import { ReminderSystem } from '@/components/reminders/ReminderSystem'
 import { MovingInsights } from '@/components/insights/MovingInsights'
 import { HouseholdOverview } from '../household/HouseholdOverview'
@@ -123,16 +123,6 @@ export const ModularDashboard = () => {
           enabled: true,
           category: 'primary',
           description: 'Aufgaben & Timeline verwalten',
-          size: 'large'
-        },
-        {
-          id: 'ai-assistant',
-          title: 'KI-Assistent',
-          icon: <Bot className="h-5 w-5 text-indigo-600" />,
-          component: <AIAssistant household={firstHousehold} />,
-          enabled: true,
-          category: 'primary',
-          description: 'Dein persönlicher KI-Assistent für Umzugsfragen',
           size: 'large'
         },
         {
@@ -523,7 +513,6 @@ export const ModularDashboard = () => {
 
             <div className="space-y-6">
               <MovingInsights household={activeHousehold} />
-              <AIAssistant household={activeHousehold} />
             </div>
           </div>
         </div>
