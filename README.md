@@ -21,9 +21,15 @@ The application requires access to your Supabase instance. Create a `.env.local`
 ```bash
 VITE_SUPABASE_URL=<your-supabase-url>
 VITE_SUPABASE_ANON_KEY=<your-anon-key>
+STRIPE_SECRET_KEY=<your-stripe-secret>
+STRIPE_PRICE_ONE_TIME=<price-id-one-time>
+STRIPE_PRICE_MONTHLY=<price-id-monthly>
+STRIPE_WEBHOOK_SECRET=<webhook-secret>
+FRONTEND_URL=<http://localhost:5173>
 ```
+These variables are read by the Supabase client and Stripe edge functions. Ensure they are set in your environment before running the app.
 
-These variables are read by the Supabase client in `src/integrations/supabase/client.ts`. Alternatively you can edit that file directly with your credentials.
+**Security Note**: Keep `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` safe and never commit them to version control.
 
 ## Quick setup
 
@@ -33,6 +39,8 @@ To automatically install dependencies and prepare the local environment, run:
 ./scripts/setup.sh          # install deps and apply migrations
 ./scripts/setup.sh --fresh  # additionally reset the local database
 ```
+
+Passing `--fresh` will run `supabase db reset --force` to drop and recreate the database without asking for confirmation. Use it with care.
 
 The script installs Node.js (via `nvm` if necessary), downloads npm packages, installs the Supabase CLI and creates a `.env.local` file with placeholder values. Pass `--fresh` to wipe and recreate the local Supabase database before applying migrations.
 
