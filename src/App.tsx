@@ -15,35 +15,46 @@ import AGB from "./pages/AGB";
 import Kontakt from "./pages/Kontakt";
 import Premium from "./pages/Premium";
 import { AppShell } from "@/components/layout/AppShell";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppShell>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/timeline" element={<Timeline />} />
-                <Route path="/premium" element={<Premium />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/impressum" element={<Impressum />} />
-                <Route path="/datenschutz" element={<Datenschutz />} />
-                <Route path="/agb" element={<AGB />} />
-                <Route path="/kontakt" element={<Kontakt />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AppShell>
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </HelmetProvider>
-);
+const App = () => {
+  console.log('App: Rendering...')
+  
+  return (
+    <ErrorBoundary>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <ErrorBoundary>
+              <AuthProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <ErrorBoundary>
+                    <AppShell>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/timeline" element={<Timeline />} />
+                        <Route path="/premium" element={<Premium />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/impressum" element={<Impressum />} />
+                        <Route path="/datenschutz" element={<Datenschutz />} />
+                        <Route path="/agb" element={<AGB />} />
+                        <Route path="/kontakt" element={<Kontakt />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </AppShell>
+                  </ErrorBoundary>
+                </BrowserRouter>
+              </AuthProvider>
+            </ErrorBoundary>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
+    </ErrorBoundary>
+  )
+}
 
 export default App;
