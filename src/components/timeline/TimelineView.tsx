@@ -160,12 +160,14 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
       max: viewOptions.end,
       zoomMin: 1000 * 60 * 60 * 24 * 7, // One week
       zoomMax: 1000 * 60 * 60 * 24 * 365, // One year
-      snap: preferences.snap_to_grid ? (item: any) => {
-        const date = new Date(item.start)
-        date.setHours(0, 0, 0, 0)
-        return date
-      } : null,
-      onMove: (item: any, callback: (item?: any) => void) => {
+      snap: preferences.snap_to_grid
+        ? (item: TimelineItem) => {
+            const date = new Date(item.start)
+            date.setHours(0, 0, 0, 0)
+            return date
+          }
+        : null,
+      onMove: (item: TimelineItem, callback: (item?: TimelineItem) => void) => {
         // Store the old date for undo functionality
         const oldItem = filteredItems.find(i => i.id === item.id)
         if (oldItem) {
@@ -177,7 +179,7 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
         updateTaskDueDate(item.id, newDate)
         callback(item) // confirm the change
       },
-      template: (item: any) => {
+      template: (item: TimelineItem) => {
         return item.content
       }
     }
@@ -198,7 +200,7 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
       )
       
       // Add event listeners
-      timelineInstanceRef.current.on('click', (properties: any) => {
+      timelineInstanceRef.current.on('click', (properties: { item?: string }) => {
         if (properties.item) {
           const item = filteredItems.find(i => i.id === properties.item)
           if (item) {

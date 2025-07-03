@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Users, CheckCircle, Calendar, Plus, Home, LogOut, Bot, Bell, Bug } from 'lucide-react'
 import { OnboardingFlowWithDrafts } from './onboarding/OnboardingFlowWithDrafts'
+import type { OnboardingData } from './onboarding/OnboardingFlow'
 import { OnboardingSuccess } from './onboarding/OnboardingSuccess'
 import { InviteOnboarding } from './onboarding/InviteOnboarding'
 import { usePendingInvitations } from '@/hooks/usePendingInvitations'
@@ -28,6 +29,7 @@ import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCa
 import { getDaysUntilMove, getUrgencyColor, getUrgencyIcon } from '@/utils/moveDate'
 import { WorkInProgressCard } from './WorkInProgressCard'
 import { supabase } from '@/integrations/supabase/client'
+import type { CreateHouseholdData } from '@/hooks/useHouseholds'
 import { TimelineView } from './timeline/TimelineView'
 import { TimelineButton } from './timeline/TimelineButton'
 
@@ -50,7 +52,7 @@ export const Dashboard = () => {
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [dailyTip] = useState(getRandomTip())
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [onboardingData, setOnboardingData] = useState<any>(null)
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
   const [householdProgress, setHouseholdProgress] = useState<Record<string, number>>({})
   const { invitations, loading: inviteLoading, error: inviteError, refetch: refetchInvites } = usePendingInvitations()
 
@@ -137,7 +139,7 @@ export const Dashboard = () => {
     )
   }
 
-  const handleOnboardingComplete = async (data: any) => {
+  const handleOnboardingComplete = async (data: OnboardingData) => {
     try {
       setOnboardingData(data)
       
@@ -165,7 +167,7 @@ export const Dashboard = () => {
 
       // Add members if any
       if (data.members && data.members.length > 0) {
-        const validMembers = data.members.filter((m: any) => m.name.trim() && m.email.trim())
+        const validMembers = data.members.filter(m => m.name.trim() && m.email.trim())
         if (validMembers.length > 0) {
           await addMembers(household.id, validMembers)
         }
@@ -203,7 +205,7 @@ export const Dashboard = () => {
     await signOut()
   }
 
-  const handleHouseholdUpdate = async (updates: any) => {
+  const handleHouseholdUpdate = async (updates: Partial<CreateHouseholdData>) => {
     if (!activeHousehold) return
 
     try {

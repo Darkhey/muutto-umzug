@@ -12,7 +12,7 @@ interface DraftVersion {
   id: string;
   draft_id: string;
   version: number;
-  data: any;
+  data: unknown;
   created_at: string;
   user_id: string;
 }

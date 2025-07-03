@@ -16,7 +16,7 @@ export interface DashboardModule {
   size: 'small' | 'medium' | 'large';
 }
 
-const isValidPartialModule = (obj: any): obj is Partial<DashboardModule> => {
+const isValidPartialModule = (obj: unknown): obj is Partial<DashboardModule> => {
   return typeof obj === 'object' && obj !== null &&
     (typeof obj.id === 'string' || obj.id === undefined);
 };
@@ -177,7 +177,7 @@ export const useEnhancedDashboardModules = (initialModules: DashboardModule[]) =
       sortedModules.forEach(module => {
         const gridSize = getModuleGridSize(module.size);
         let width = Math.min(gridSize.w, cols);
-        let height = gridSize.h;
+        const height = gridSize.h;
 
         // For single column layouts, ensure full width
         if (cols === 1) {

@@ -9,7 +9,7 @@ interface TimelineTask {
   width: number
   height: number
   completed: boolean
-  [key: string]: any
+  [key: string]: unknown
 }
 
 interface UseTimelineDragProps {
