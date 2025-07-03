@@ -13,6 +13,7 @@ import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import AGB from "./pages/AGB";
 import Kontakt from "./pages/Kontakt";
+import Premium from "./pages/Premium";
 import { AppShell } from "@/components/layout/AppShell";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/timeline" element={<Timeline />} />
+                <Route path="/premium" element={<Premium />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/impressum" element={<Impressum />} />
                 <Route path="/datenschutz" element={<Datenschutz />} />
