@@ -1,5 +1,4 @@
-
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -44,12 +43,12 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
   const [onboardingData, setOnboardingData] = useState<any>({})
 
   const onboardingQuestions = [
-    "Wohin ziehst du um? (Stadt und Bundesland)",
-    "Von wo ziehst du weg? (Stadt und Bundesland)",
-    "Hast du einen Hund? (Ja/Nein)",
-    "Hast du Kinder? (Ja/Nein)",
-    "Hast du ein Auto? (Ja/Nein)",
-    "Gibt es sonst noch etwas, das wir beachten sollten? (z.B. Zweitwohnsitz, Auslandsumzug, Pflegefall)"
+    { id: 'move_to', text: 'Wohin ziehst du um? (Stadt und Bundesland)', field: 'move_to' },
+    { id: 'move_from', text: 'Von wo ziehst du weg? (Stadt und Bundesland)', field: 'move_from' },
+    { id: 'has_dog', text: 'Hast du einen Hund? (Ja/Nein)', field: 'has_pets', parser: (a: string) => a.trim().toLowerCase() === 'ja' },
+    { id: 'has_children', text: 'Hast du Kinder? (Ja/Nein)', field: 'has_children', parser: (a: string) => a.trim().toLowerCase() === 'ja' },
+    { id: 'owns_car', text: 'Hast du ein Auto? (Ja/Nein)', field: 'owns_car', parser: (a: string) => a.trim().toLowerCase() === 'ja' },
+    { id: 'notes', text: 'Gibt es sonst noch etwas, das wir beachten sollten? (z.B. Zweitwohnsitz, Auslandsumzug, Pflegefall)', field: 'important_notes' }
   ]
 
   const updateProfile = async (profileUpdates: any) => {
@@ -115,7 +114,7 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
       setMessages([{
         id: '1',
         role: 'assistant',
-        content: onboardingQuestions[0],
+        content: onboardingQuestions[0].text,
         timestamp: new Date()
       }])
       setOnboardingStep(0)
@@ -215,39 +214,32 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
     setIsLoading(true)
 
     if (onboardingStep < onboardingQuestions.length) {
-      const question = onboardingQuestions[onboardingStep]
+      const questionObj = onboardingQuestions[onboardingStep]
       const answer = userMessage.content
-      setOnboardingData(prev => ({ ...prev, [question]: answer }))
+      setOnboardingData(prev => ({ ...prev, [questionObj.field]: questionObj.parser ? questionObj.parser(answer) : answer }))
 
       if (onboardingStep === onboardingQuestions.length - 1) {
         // Last question, process all data
         const profileUpdates: any = {}
-        // Map answers to profile fields
-        if (onboardingData["Hast du einen Hund? (Ja/Nein)"]?.toLowerCase() === "ja") {
-          profileUpdates.has_pets = true
-        }
-        if (onboardingData["Hast du Kinder? (Ja/Nein)"]?.toLowerCase() === "ja") {
-          profileUpdates.has_children = true
-        }
-        if (onboardingData["Hast du ein Auto? (Ja/Nein)"]?.toLowerCase() === "ja") {
-          profileUpdates.owns_car = true
-        }
-        // Add more mappings for other questions as needed
-
+        onboardingQuestions.forEach(q => {
+          if (q.field && onboardingData[q.field] !== undefined) {
+            profileUpdates[q.field] = onboardingData[q.field]
+          }
+        })
         await updateProfile(profileUpdates)
-
         // Call the Supabase function to generate personalized tasks
         if (user && household) {
           try {
             const { data, error } = await supabase.rpc('generate_personalized_tasks', {
               p_user_id: user.id,
-              p_move_from_state: onboardingData["Von wo ziehst du weg? (Stadt und Bundesland)"] || '',
-              p_move_to_state: onboardingData["Wohin ziehst du um? (Stadt und Bundesland)"] || '',
-              p_move_to_municipality: onboardingData["Wohin ziehst du um? (Stadt und Bundesland)"]?.split(' ')[0] || '',
-              p_has_children: profileUpdates.has_children || false,
-              p_has_pets: profileUpdates.has_pets || false,
-              p_owns_car: profileUpdates.owns_car || false,
-              p_is_self_employed: profileUpdates.is_self_employed || false,
+              p_move_from_state: onboardingData['move_from'] || '',
+              p_move_to_state: onboardingData['move_to'] || '',
+              p_move_to_municipality: onboardingData['move_to']?.split(' ')[0] || '',
+              p_has_children: onboardingData['has_children'] || false,
+              p_has_pets: onboardingData['has_pets'] || false,
+              p_owns_car: onboardingData['owns_car'] || false,
+              p_is_self_employed: onboardingData['is_self_employed'] || false,
+              p_important_notes: onboardingData['important_notes'] || ''
             })
             if (error) throw error
             console.log('Personalized tasks generated:', data)
@@ -272,7 +264,7 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
         setMessages(prev => [...prev, {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: onboardingQuestions[onboardingStep + 1],
+          content: onboardingQuestions[onboardingStep + 1].text,
           timestamp: new Date()
         }])
       }
@@ -349,7 +341,7 @@ Versuche es gleich nochmal - ich bin normalerweise sofort da! 😊`,
     setMessages(prev => [...prev, {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
-      content: onboardingQuestions[0],
+      content: onboardingQuestions[0].text,
       timestamp: new Date()
     }])
   }

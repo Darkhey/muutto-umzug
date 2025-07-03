@@ -31,11 +31,13 @@ export interface TimelineViewOptions {
 }
 
 export interface VisItem {
-  id: string;
-  content: string;
-  start: Date;
-  type: string;
-  className: string;
+  id: string | number
+  content: string
+  start: Date | string
+  end?: Date | string
+  type?: "box" | "point" | "range" | string
+  className?: string
+  data?: Record<string, unknown>
 }
 
 export interface TimelineHistoryEntry {

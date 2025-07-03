@@ -21,7 +21,7 @@ INSERT INTO public.checklist_templates (
     0,
     '{}'::jsonb, -- No specific conditions for basic registration
     '["Personalausweis", "Mietvertrag"]'::jsonb,
-    'https://example.com/einwohnermeldeamt-online',
+    'https://www.wohnsitzanmeldung.de/',
     'Einwohnermeldeamt',
     'Mo-Fr 08:00-12:00',
     'FIM-ID-Wohnsitzanmeldung'
@@ -35,7 +35,7 @@ INSERT INTO public.checklist_templates (
     7,
     '{"has_pets": true}'::jsonb, -- Condition: user has pets
     '["Hundeimpfpass", "Kaufvertrag Hund"]'::jsonb,
-    'https://example.com/hundesteuer-online',
+    'https://www.hunderegister.berlin.de/login',
     'Ordnungsamt / Steueramt',
     'Mo-Do 09:00-16:00',
     'FIM-ID-Hundesteuer'
@@ -49,7 +49,7 @@ INSERT INTO public.checklist_templates (
     14,
     '{"owns_car": true}'::jsonb, -- Condition: user owns a car
     '["Fahrzeugschein", "Fahrzeugbrief", "Personalausweis", "eVB-Nummer"]'::jsonb,
-    'https://example.com/kfz-ummeldung-online',
+    'https://service.berlin.de/dienstleistung/120918/',
     'Zulassungsstelle',
     'Di-Fr 07:30-12:00',
     'FIM-ID-KFZ-Ummeldung'

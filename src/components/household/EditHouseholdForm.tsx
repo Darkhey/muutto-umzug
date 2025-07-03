@@ -91,6 +91,17 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
     }
   }
 
+  const updateBooleanField = (field: string, value: boolean) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+  }
+
   const parseNumber = (value: string): number | null => {
     if (value === '') return null
     const num = Number(value)
@@ -524,7 +535,7 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
             <Switch
               id="edit-owns-car"
               checked={form.owns_car}
-              onCheckedChange={(checked) => updateField('owns_car', checked)}
+              onCheckedChange={(checked) => updateBooleanField('owns_car', checked)}
             />
           </div>
         </div>
@@ -538,7 +549,7 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
             <Switch
               id="edit-self-employed"
               checked={form.is_self_employed}
-              onCheckedChange={(checked) => updateField('is_self_employed', checked)}
+              onCheckedChange={(checked) => updateBooleanField('is_self_employed', checked)}
             />
           </div>
         </div>

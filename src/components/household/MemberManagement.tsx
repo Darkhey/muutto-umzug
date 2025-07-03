@@ -17,6 +17,14 @@ import QRCode from 'react-qr-code'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
+import { HouseholdMember as BaseMember } from '@/types/household'
+
+interface HouseholdMember extends BaseMember {
+  id: string
+  is_owner: boolean
+  user_id?: string | null
+  joined_at?: string | null
+}
 
 interface MemberManagementProps {
   householdId: string

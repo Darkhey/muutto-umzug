@@ -128,6 +128,14 @@ export function useHouseholds() {
       errors.push('Möbelvolumen kann nicht negativ sein')
     }
 
+    // Validate boolean fields
+    if (data.owns_car !== null && typeof data.owns_car !== 'boolean') {
+      errors.push('Auto-Besitz muss ein gültiger Wert sein')
+    }
+    if (data.is_self_employed !== null && typeof data.is_self_employed !== 'boolean') {
+      errors.push('Selbstständigkeits-Status muss ein gültiger Wert sein')
+    }
+
     return errors
   }
 

@@ -13,3 +13,13 @@ ADD COLUMN online_form_link TEXT,
 ADD COLUMN zuständige_stelle TEXT,
 ADD COLUMN opening_hours TEXT,
 ADD COLUMN source_reference TEXT;
+
+-- Optional: Add constraints for data integrity
+ALTER TABLE public.checklist_templates
+ADD CONSTRAINT valid_online_form_link 
+CHECK (online_form_link IS NULL OR online_form_link ~* '^https?://.*');
+
+-- Optional: Add index for performance if needed
+CREATE INDEX IF NOT EXISTS idx_checklist_templates_online_form_link 
+ON public.checklist_templates(online_form_link) 
+WHERE online_form_link IS NOT NULL;

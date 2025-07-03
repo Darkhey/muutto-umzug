@@ -47,6 +47,9 @@ interface OnboardingFlowProps {
   onBackToDrafts?: () => void;
 }
 
+const ALLOWED_PROPERTY_SITES = ['immobilienscout24.de', 'kleinanzeigen.de', 'immonet.de'];
+const pattern = new RegExp(`^https?:\/\/(www\.)?(${ALLOWED_PROPERTY_SITES.join('|')})\/.*$`);
+
 export const OnboardingFlow = ({ 
   initialData, 
   initialStep = 1, 
@@ -228,7 +231,7 @@ export const OnboardingFlow = ({
         }
 
         // Validate adUrl if provided
-        if (data.adUrl && !/^https?:\/\/(www\.)?(immobilienscout24\.de|kleinanzeigen\.de|immonet\.de)\/.*$/.test(data.adUrl)) {
+        if (data.adUrl && !pattern.test(data.adUrl)) {
           newErrors.adUrl = 'Ungültiger Link zur Immobilienanzeige. Nur ImmoScout24, Kleinanzeigen und Immonet werden unterstützt.'
         }
         break

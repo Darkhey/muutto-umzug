@@ -3,14 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { GripVertical, Maximize2, Minimize2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type HTMLAttributes } from 'react';
 import { DashboardModule } from '@/hooks/useEnhancedDashboardModules';
 
 interface ModuleCardProps {
   module: DashboardModule;
   onToggle: (id: string) => void;
   isDraggable?: boolean;
-  dragHandleProps?: Record<string, unknown>;
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
 }
 
 export const ModuleCard = ({ 
