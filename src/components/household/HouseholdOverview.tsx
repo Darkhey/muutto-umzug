@@ -8,6 +8,7 @@ import { useTasks } from '@/hooks/useTasks'
 import { PROPERTY_TYPES } from '@/config/app'
 import { Users, Calendar, MapPin, Home, Settings, Square } from 'lucide-react'
 import { TimelineButton } from '@/components/timeline/TimelineButton'
+import { MapModule } from '@/components/maps/MapModule'
 
 interface HouseholdOverviewProps {
   household: ExtendedHousehold
@@ -224,6 +225,16 @@ export const HouseholdOverview = ({
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Map Module */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Umgebungskarte</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MapModule household={household} />
         </CardContent>
       </Card>
     </div>

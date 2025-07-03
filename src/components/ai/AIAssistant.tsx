@@ -55,7 +55,7 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
   const onboardingQuestions = [
     { id: 'move_to', text: 'Wohin ziehst du um? (Stadt und Bundesland)', field: 'move_to' },
     { id: 'move_from', text: 'Von wo ziehst du weg? (Stadt und Bundesland)', field: 'move_from' },
-    { id: 'has_dog', text: 'Hast du einen Hund? (Ja/Nein)', field: 'has_pets', parser: (a: string) => a.trim().toLowerCase() === 'ja' },
+    { id: 'has_pets', text: 'Hast du Haustiere? (Ja/Nein)', field: 'has_pets', parser: (a: string) => a.trim().toLowerCase() === 'ja' },
     { id: 'has_children', text: 'Hast du Kinder? (Ja/Nein)', field: 'has_children', parser: (a: string) => a.trim().toLowerCase() === 'ja' },
     { id: 'owns_car', text: 'Hast du ein Auto? (Ja/Nein)', field: 'owns_car', parser: (a: string) => a.trim().toLowerCase() === 'ja' },
     { id: 'notes', text: 'Gibt es sonst noch etwas, das wir beachten sollten? (z.B. Zweitwohnsitz, Auslandsumzug, Pflegefall)', field: 'important_notes' }
@@ -113,9 +113,12 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
     if (!hasConsent || !household || isInitialized) return
 
     // Check if profile data is complete for onboarding questions
-    const isProfileComplete = user?.user_metadata?.has_children !== undefined &&
+    const isProfileComplete = user?.user_metadata?.move_to !== undefined &&
+                              user?.user_metadata?.move_from !== undefined &&
+                              user?.user_metadata?.has_children !== undefined &&
                               user?.user_metadata?.has_pets !== undefined &&
-                              user?.user_metadata?.owns_car !== undefined
+                              user?.user_metadata?.owns_car !== undefined &&
+                              user?.user_metadata?.important_notes !== undefined
 
     if (!isProfileComplete) {
       // Start onboarding questions
@@ -239,11 +242,15 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
         // Call the Supabase function to generate personalized tasks
         if (user && household) {
           try {
+            // Extract municipality more reliably by taking the first part before any comma or parentheses
+            const moveToLocation = updatedOnboardingData['move_to'] || ''
+            const municipality = moveToLocation.split(/[,\s(]/)[0].trim()
+            
             const { data, error } = await supabase.rpc('generate_personalized_tasks', {
               p_user_id: user.id,
               p_move_from_state: updatedOnboardingData['move_from'] || '',
               p_move_to_state: updatedOnboardingData['move_to'] || '',
-              p_move_to_municipality: updatedOnboardingData['move_to']?.split(' ')[0] || '',
+              p_move_to_municipality: municipality,
               p_has_children: updatedOnboardingData['has_children'] || false,
               p_has_pets: updatedOnboardingData['has_pets'] || false,
               p_owns_car: updatedOnboardingData['owns_car'] || false,
@@ -251,7 +258,6 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
               p_important_notes: updatedOnboardingData['important_notes'] || ''
             })
             if (error) throw error
-            console.log('Personalized tasks generated:', data)
           } catch (error) {
             console.error('Error generating personalized tasks:', error)
             toast({
