@@ -14,13 +14,15 @@ interface HouseholdOverviewProps {
   onManageMembers: () => void
   onEditHousehold: () => void
   onViewTasks: () => void
+  onRestartOnboarding: () => void
 }
 
 export const HouseholdOverview = ({
   household,
   onManageMembers,
   onEditHousehold,
-  onViewTasks
+  onViewTasks,
+  onRestartOnboarding
 }: HouseholdOverviewProps) => {
   const { tasks } = useTasks(household.id)
   const completedTasks = tasks.filter(t => t.completed).length
@@ -121,6 +123,11 @@ export const HouseholdOverview = ({
                 </div>
               </div>
             )}
+          </div>
+          <div className="mt-6 text-center">
+            <Button variant="link" onClick={onRestartOnboarding} className="text-blue-600 hover:text-blue-800">
+              Onboarding neu starten
+            </Button>
           </div>
         </CardContent>
       </Card>

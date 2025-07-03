@@ -60,7 +60,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
       return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     }
 
-    let filtered = items.filter(item => showCompleted || !item.completed)
+    const filtered = items.filter(item => showCompleted || !item.completed)
     
     return filtered.map((item, index) => {
       const taskDate = item.start ? new Date(item.start) : new Date(household.move_date)
@@ -77,7 +77,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
         height: 60
       } as TimelineTaskExtended
     })
-  }, [timelineItems, showCompleted, zoomLevel, timelineStart, household.move_date])
+  }, [showCompleted, zoomLevel, timelineStart, household.move_date])
 
   useEffect(() => {
     setFilteredTasks(convertToTimelineTasks(timelineItems))
