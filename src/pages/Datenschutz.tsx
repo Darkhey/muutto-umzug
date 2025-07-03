@@ -22,7 +22,7 @@ const Datenschutz = () => {
       <p>
         Bei der Registrierung erfassen wir Ihren Namen, Ihre E-Mail-Adresse und
         ein Passwort. Innerhalb der Anwendung können Sie weitere Angaben zu Ihrem
-        Haushalt und geplanten Umzug machen (z. B. Umzugsdatum,
+        Haushalt und geplanten Umzug machen (z. B. Umzugsdatum,
         Haushaltsgröße, Aufgaben und Notizen).
       </p>
 
@@ -76,8 +76,8 @@ const Datenschutz = () => {
       <h2 className="text-xl font-semibold mt-4">6. Lokale Speicherung</h2>
       <p>
         Zur Verbesserung der Benutzerfreundlichkeit speichert die Anwendung
-        bestimmte Einstellungen (z. B. Modulpositionen) lokal in Ihrem
-        Browser (localStorage). Diese Informationen werden nicht an uns
+        bestimmte Einstellungen (z. B. Modulpositionen) lokal in Ihrem
+        Browser (localStorage). Diese Informationen werden nicht an uns
         übermittelt.
       </p>
 
@@ -96,7 +96,7 @@ const Datenschutz = () => {
 
       <h2 className="text-xl font-semibold mt-4">9. Aktualität</h2>
       <p>
-        Diese Datenschutzerklärung hat den Stand Juni 2025. Durch die
+        Diese Datenschutzerklärung hat den Stand Juni 2025. Durch die
         Weiterentwicklung unserer Website oder gesetzliche Änderungen kann
         eine Anpassung erforderlich werden.
       </p>

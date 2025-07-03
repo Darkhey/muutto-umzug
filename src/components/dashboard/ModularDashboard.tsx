@@ -19,6 +19,7 @@ import { MemberManagement } from '../household/MemberManagement'
 import { ChecklistView } from '../checklist/ChecklistView'
 import SimpleModuleCard from './SimpleModuleCard'
 import type { DashboardModule } from '@/hooks/useEnhancedDashboardModules'
+import type { OnboardingData } from '@/components/onboarding/OnboardingFlow'
 
 export const ModularDashboard = () => {
   const { user, signOut } = useAuth()
@@ -26,7 +27,7 @@ export const ModularDashboard = () => {
   const { toast } = useToast()
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success' | 'household-overview' | 'member-management'>('dashboard')
-  const [onboardingData, setOnboardingData] = useState<any>(null)
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
 
   const [modules, setModules] = useState<DashboardModule[]>([])
 
@@ -177,7 +178,7 @@ export const ModularDashboard = () => {
     }
   }, [households])
 
-  const handleOnboardingComplete = async (data: any) => {
+  const handleOnboardingComplete = async (data: OnboardingData) => {
     try {
       setOnboardingData(data)
 
@@ -197,7 +198,7 @@ export const ModularDashboard = () => {
       })
 
       if (data.members && data.members.length > 0) {
-        const validMembers = data.members.filter((m: any) => m.name.trim() && m.email.trim())
+        const validMembers = data.members.filter(m => m.name.trim() && m.email.trim())
         if (validMembers.length > 0) {
           await addMembers(household.id, validMembers)
         }
