@@ -10,7 +10,7 @@ interface ModuleCardProps {
   module: DashboardModule;
   onToggle: (id: string) => void;
   isDraggable?: boolean;
-  dragHandleProps?: any;
+  dragHandleProps?: Record<string, unknown>;
 }
 
 export const ModuleCard = ({ 

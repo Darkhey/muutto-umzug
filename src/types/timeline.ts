@@ -30,6 +30,14 @@ export interface TimelineViewOptions {
   filterCategory?: string
 }
 
+export interface VisItem {
+  id: string;
+  content: string;
+  start: Date;
+  type: string;
+  className: string;
+}
+
 export interface TimelineHistoryEntry {
   id: string
   task_id: string
