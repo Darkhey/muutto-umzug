@@ -19,14 +19,20 @@ const getMinHeight = (size: 'small' | 'medium' | 'large') => {
 }
 
 export const SimpleModuleCard = ({ module }: SimpleModuleCardProps) => (
-  <Card className={`bg-white shadow-lg flex flex-col ${getMinHeight(module.size)}`}>
-    <CardHeader className="flex flex-row items-center space-y-0 pb-2">
+  <Card 
+    className={`bg-white shadow-lg flex flex-col ${getMinHeight(module.size)}`}
+    role="article"
+    aria-label={`${module.title} module`}
+  >
+    <CardHeader className="flex flex-row items-center pb-2">
       <div className="flex items-center gap-2">
-        {module.icon}
+        <span aria-hidden="true">{module.icon}</span>
         <CardTitle className="text-sm font-medium">{module.title}</CardTitle>
       </div>
     </CardHeader>
-    <CardContent className="flex-1 overflow-auto">{module.component}</CardContent>
+    <CardContent className="flex-1 overflow-auto">
+      {module.component}
+    </CardContent>
   </Card>
 )
 
