@@ -46,11 +46,11 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
       const currentLayout = allLayouts[bp] || [];
       
       // Validate layout
-      const validation = validateLayout(currentLayout, bp as any);
+      const validation = validateLayout(currentLayout, bp);
       
       if (!validation.isValid) {
         // Repair layout if invalid
-        repairedLayouts[bp] = repairLayout(currentLayout, bp as any);
+        repairedLayouts[bp] = repairLayout(currentLayout, bp);
       } else {
         repairedLayouts[bp] = currentLayout;
       }
@@ -167,7 +167,7 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
             opacity: 0.8,
             transition: 'none',
           }
-        } as any}
+        } as React.CSSProperties}
       >
         {children}
       </ResponsiveGridLayout>
