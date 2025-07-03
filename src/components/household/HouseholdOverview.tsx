@@ -8,19 +8,22 @@ import { useTasks } from '@/hooks/useTasks'
 import { PROPERTY_TYPES } from '@/config/app'
 import { Users, Calendar, MapPin, Home, Settings, Square } from 'lucide-react'
 import { TimelineButton } from '@/components/timeline/TimelineButton'
+import { MapModule } from '@/components/maps/MapModule'
 
 interface HouseholdOverviewProps {
   household: ExtendedHousehold
   onManageMembers: () => void
   onEditHousehold: () => void
   onViewTasks: () => void
+  onRestartOnboarding: () => void
 }
 
 export const HouseholdOverview = ({
   household,
   onManageMembers,
   onEditHousehold,
-  onViewTasks
+  onViewTasks,
+  onRestartOnboarding
 }: HouseholdOverviewProps) => {
   const { tasks } = useTasks(household.id)
   const completedTasks = tasks.filter(t => t.completed).length
@@ -122,6 +125,11 @@ export const HouseholdOverview = ({
               </div>
             )}
           </div>
+          <div className="mt-6 text-center">
+            <Button variant="link" onClick={onRestartOnboarding} className="text-blue-600 hover:text-blue-800">
+              Onboarding neu starten
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -217,6 +225,16 @@ export const HouseholdOverview = ({
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Map Module */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Umgebungskarte</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MapModule household={household} />
         </CardContent>
       </Card>
     </div>

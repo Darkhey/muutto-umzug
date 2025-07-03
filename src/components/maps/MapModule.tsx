@@ -1,6 +1,6 @@
 
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
 import L from 'leaflet'
@@ -15,6 +15,8 @@ import {
   RadiusOption
 } from '@/config/map'
 import { usePOIs } from './usePOIs'
+import { useGeocoding } from '@/hooks/useGeocoding'
+import { ExtendedHousehold } from '@/types/household'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -41,11 +43,12 @@ const categoryIcons = CATEGORY_CONFIG.reduce<Record<Category, L.DivIcon>>(
 )
 
 interface MapModuleProps {
-  latitude: number
-  longitude: number
+  household: ExtendedHousehold
 }
 
-export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
+export const MapModule = ({ household }: MapModuleProps) => {
+  const { coords, loading: geocodingLoading, error: geocodingError } = useGeocoding(household.new_address || '')
+
   const [selected, setSelected] = useState<Category[]>([
     'kita',
     'arzt',
@@ -54,8 +57,8 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
   ])
   const [radius, setRadius] = useState<RadiusOption>(RADIUS_OPTIONS[1])
   const { pois, loading, error } = usePOIs(
-    latitude,
-    longitude,
+    coords?.lat || 0,
+    coords?.lon || 0,
     selected,
     radius.radius
   )
@@ -66,7 +69,14 @@ export const MapModule = ({ latitude, longitude }: MapModuleProps) => {
     )
   }
 
-  const centerPosition: LatLngExpression = [latitude, longitude]
+  const centerPosition: LatLngExpression = [
+    coords?.lat || 0,
+    coords?.lon || 0
+  ]
+
+  if (geocodingLoading) return <p>Lade Adresse...</p>
+  if (geocodingError) return <p className="text-red-600">Fehler beim Laden der Adresse: {geocodingError}</p>
+  if (!coords) return <p>Keine Adresse verfügbar oder konnte nicht gefunden werden.</p>
 
   return (
     <div className="space-y-2">

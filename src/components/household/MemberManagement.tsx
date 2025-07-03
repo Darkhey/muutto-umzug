@@ -17,6 +17,14 @@ import QRCode from 'react-qr-code'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
+import { HouseholdMember as BaseMember } from '@/types/household'
+
+interface HouseholdMember extends BaseMember {
+  id: string
+  is_owner: boolean
+  user_id?: string | null
+  joined_at?: string | null
+}
 
 interface MemberManagementProps {
   householdId: string
@@ -114,7 +122,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
-  const getStatusBadge = (member: any) => {
+  const getStatusBadge = (member: HouseholdMember) => {
     if (member.is_owner) {
       return <Badge variant="default" className="bg-yellow-100 text-yellow-800"><Crown className="h-3 w-3 mr-1" />Besitzer</Badge>
     }

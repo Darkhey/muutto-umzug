@@ -90,6 +90,14 @@ export const buildHouseholdContext = (household: ExtendedHousehold) => {
     newAddress: household.new_address,
     livingSpace: household.living_space,
     rooms: household.rooms,
-    furnitureVolume: household.furniture_volume
+    furnitureVolume: household.furniture_volume,
+    progress: household.progress,
+    nextDeadline: household.nextDeadline,
+    memberCount: household.members?.length || 0,
+    hasChildren: household.created_by_user_profile?.has_children,
+    hasPets: household.created_by_user_profile?.has_pets,
+    ownsCar: household.created_by_user_profile?.owns_car,
+    isSelfEmployed: household.created_by_user_profile?.is_self_employed,
+    wantsNotifications: household.created_by_user_profile?.wants_notifications,
   }
 }

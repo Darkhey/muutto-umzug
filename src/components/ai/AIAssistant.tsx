@@ -1,5 +1,4 @@
-
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,6 +27,16 @@ interface AIAssistantProps {
   className?: string
 }
 
+interface OnboardingData {
+  move_to?: string
+  move_from?: string
+  has_pets?: boolean
+  has_children?: boolean
+  owns_car?: boolean
+  is_self_employed?: boolean
+  important_notes?: string
+}
+
 export const AIAssistant = ({ household, className }: AIAssistantProps) => {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -40,34 +49,41 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false)
   const [taskMessage, setTaskMessage] = useState<string>('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const [onboardingStep, setOnboardingStep] = useState(0)
+  const [onboardingData, setOnboardingData] = useState<OnboardingData>({})
 
-  // Initialize with personalized welcome message when consent is given
-  useEffect(() => {
-    if (!hasConsent || !household || isInitialized) return
+  const onboardingQuestions = [
+    { id: 'move_to', text: 'Wohin ziehst du um? (Stadt und Bundesland)', field: 'move_to' },
+    { id: 'move_from', text: 'Von wo ziehst du weg? (Stadt und Bundesland)', field: 'move_from' },
+    { id: 'has_pets', text: 'Hast du Haustiere? (Ja/Nein)', field: 'has_pets', parser: (a: string) => a.trim().toLowerCase() === 'ja' },
+    { id: 'has_children', text: 'Hast du Kinder? (Ja/Nein)', field: 'has_children', parser: (a: string) => a.trim().toLowerCase() === 'ja' },
+    { id: 'owns_car', text: 'Hast du ein Auto? (Ja/Nein)', field: 'owns_car', parser: (a: string) => a.trim().toLowerCase() === 'ja' },
+    { id: 'notes', text: 'Gibt es sonst noch etwas, das wir beachten sollten? (z.B. Zweitwohnsitz, Auslandsumzug, Pflegefall)', field: 'important_notes' }
+  ]
 
-    const welcomeContent = generatePersonalizedWelcomeMessage(household)
-    
-    const welcomeMessage: Message = {
-      id: '1',
-      role: 'assistant',
-      content: welcomeContent,
-      timestamp: new Date(),
-      suggestions: [
-        'Was muss ich diese Woche erledigen?',
-        'Welche Fristen sind kritisch?',
-        'Tipps für den Umzugstag?',
-        'Wie kann ich Kosten sparen?'
-      ]
+  const updateProfile = async (profileUpdates: Partial<OnboardingData>) => {
+    if (!user) return
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('id', user.id)
+      if (error) throw error
+      toast({
+        title: "Profil aktualisiert",
+        description: "Deine Angaben wurden gespeichert.",
+      })
+    } catch (error) {
+      console.error("Error updating profile:", error)
+      toast({
+        title: "Fehler beim Aktualisieren des Profils",
+        description: "Bitte versuche es erneut.",
+        variant: "destructive",
+      })
     }
-    
-    setMessages([welcomeMessage])
-    setIsInitialized(true)
-    
-    // Create or get chat session
-    createChatSession()
-  }, [hasConsent, household, isInitialized])
+  }
 
-  const createChatSession = async () => {
+  const createChatSession = useCallback(async () => {
     if (!user || !household) return
 
     try {
@@ -90,7 +106,53 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
     } catch (error) {
       console.error('Error creating chat session:', error)
     }
-  }
+  }, [user, household])
+
+  // Initialize with personalized welcome message when consent is given
+  useEffect(() => {
+    if (!hasConsent || !household || isInitialized) return
+
+    // Check if profile data is complete for onboarding questions
+    const isProfileComplete = user?.user_metadata?.move_to !== undefined &&
+                              user?.user_metadata?.move_from !== undefined &&
+                              user?.user_metadata?.has_children !== undefined &&
+                              user?.user_metadata?.has_pets !== undefined &&
+                              user?.user_metadata?.owns_car !== undefined &&
+                              user?.user_metadata?.important_notes !== undefined
+
+    if (!isProfileComplete) {
+      // Start onboarding questions
+      setMessages([{
+        id: '1',
+        role: 'assistant',
+        content: onboardingQuestions[0].text,
+        timestamp: new Date()
+      }])
+      setOnboardingStep(0)
+      setIsInitialized(true)
+    } else {
+      const welcomeContent = generatePersonalizedWelcomeMessage(household)
+      
+      const welcomeMessage: Message = {
+        id: '1',
+        role: 'assistant',
+        content: welcomeContent,
+        timestamp: new Date(),
+        suggestions: [
+          'Was muss ich diese Woche erledigen?',
+          'Welche Fristen sind kritisch?',
+          'Tipps für den Umzugstag?',
+          'Wie kann ich Kosten sparen?'
+        ]
+      }
+      
+      setMessages([welcomeMessage])
+      setIsInitialized(true)
+      
+      // Create or get chat session
+      createChatSession()
+    }
+  }, [hasConsent, household, isInitialized, user, createChatSession])
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -162,6 +224,69 @@ export const AIAssistant = ({ household, className }: AIAssistantProps) => {
     setInput('')
     setIsLoading(true)
 
+    if (onboardingStep < onboardingQuestions.length) {
+      const questionObj = onboardingQuestions[onboardingStep]
+      const answer = userMessage.content
+      const updatedOnboardingData = { ...onboardingData, [questionObj.field]: questionObj.parser ? questionObj.parser(answer) : answer }
+      setOnboardingData(updatedOnboardingData)
+
+      if (onboardingStep === onboardingQuestions.length - 1) {
+        // Last question, process all data
+        const profileUpdates: Partial<OnboardingData> = {}
+        onboardingQuestions.forEach(q => {
+          if (q.field && updatedOnboardingData[q.field] !== undefined) {
+            profileUpdates[q.field] = updatedOnboardingData[q.field]
+          }
+        })
+        await updateProfile(profileUpdates)
+        // Call the Supabase function to generate personalized tasks
+        if (user && household) {
+          try {
+            // Extract municipality more reliably by taking the first part before any comma or parentheses
+            const moveToLocation = updatedOnboardingData['move_to'] || ''
+            const municipality = moveToLocation.split(/[,\s(]/)[0].trim()
+            
+            const { data, error } = await supabase.rpc('generate_personalized_tasks', {
+              p_user_id: user.id,
+              p_move_from_state: updatedOnboardingData['move_from'] || '',
+              p_move_to_state: updatedOnboardingData['move_to'] || '',
+              p_move_to_municipality: municipality,
+              p_has_children: updatedOnboardingData['has_children'] || false,
+              p_has_pets: updatedOnboardingData['has_pets'] || false,
+              p_owns_car: updatedOnboardingData['owns_car'] || false,
+              p_is_self_employed: updatedOnboardingData['is_self_employed'] || false,
+              p_important_notes: updatedOnboardingData['important_notes'] || ''
+            })
+            if (error) throw error
+          } catch (error) {
+            console.error('Error generating personalized tasks:', error)
+            toast({
+              title: "Fehler beim Generieren der Aufgaben",
+              description: "Bitte versuche es erneut.",
+              variant: "destructive",
+            })
+          }
+        }
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: "Vielen Dank für deine Angaben! Ich habe dein Profil aktualisiert. Wie kann ich dir sonst noch helfen?",
+          timestamp: new Date()
+        }])
+        setOnboardingStep(onboardingQuestions.length) // Mark onboarding as complete
+      } else {
+        setOnboardingStep(prev => prev + 1)
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: onboardingQuestions[onboardingStep + 1].text,
+          timestamp: new Date()
+        }])
+      }
+      setIsLoading(false)
+      return
+    }
+
     try {
       const response = await callAIAssistant(userMessage.content)
       
@@ -227,6 +352,13 @@ Versuche es gleich nochmal - ich bin normalerweise sofort da! 😊`,
 
   const handleConsent = () => {
     updateConsent(true)
+    // Start onboarding questions after consent
+    setMessages(prev => [...prev, {
+      id: (Date.now() + 1).toString(),
+      role: 'assistant',
+      content: onboardingQuestions[0].text,
+      timestamp: new Date()
+    }])
   }
 
   // Show loading state

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,12 +28,12 @@ export const ReminderSystem = ({ householdId, className }: ReminderSystemProps) 
   const [reminders, setReminders] = useState<Reminder[]>([])
   const { tasks, loading: tasksLoading } = useTasks(householdId)
 
-  const priorityMap: Record<TaskPriority, Reminder['priority']> = {
+  const priorityMap: Record<TaskPriority, Reminder['priority']> = useMemo(() => ({
     niedrig: 'low',
     mittel: 'medium',
     hoch: 'high',
     kritisch: 'critical'
-  }
+  }), [])
 
   useEffect(() => {
     const mapped = tasks
@@ -48,7 +48,7 @@ export const ReminderSystem = ({ householdId, className }: ReminderSystemProps) 
         completed: t.completed
       }))
     setReminders(mapped)
-  }, [tasks])
+  }, [tasks, priorityMap])
 
   if (tasksLoading) {
     return (
@@ -180,53 +180,54 @@ export const ReminderSystem = ({ householdId, className }: ReminderSystemProps) 
             {urgentReminders.map((reminder) => (
               <div
                 key={reminder.id}
-                className="bg-white p-4 rounded-lg border border-red-200 shadow-sm"
+                className="bg-white p-4 rounded-lg border border-red-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all hover:shadow-md"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-gray-900">{reminder.title}</h4>
-                      <Badge className={getPriorityColor(reminder.priority)}>
-                        {getPriorityIcon(reminder.priority)}
-                        <span className="ml-1 capitalize">{reminder.priority}</span>
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-2">{reminder.description}</p>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDueDate(reminder.dueDate)}
-                      </span>
-                      <span>{reminder.category}</span>
-                    </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-medium text-gray-900">{reminder.title}</h4>
+                    <Badge className={getPriorityColor(reminder.priority)}>
+                      {getPriorityIcon(reminder.priority)}
+                      <span className="ml-1 capitalize">{reminder.priority}</span>
+                    </Badge>
                   </div>
-                  
-                  <div className="flex items-center gap-1 ml-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCompleteReminder(reminder.id)}
-                      className="h-8 px-2"
-                    >
-                      <CheckCircle className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleSnoozeReminder(reminder.id)}
-                      className="h-8 px-2"
-                    >
-                      <Snooze className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDismissReminder(reminder.id)}
-                      className="h-8 px-2"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
+                  <p className="text-sm text-gray-600 mb-2">{reminder.description}</p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {formatDueDate(reminder.dueDate)}
+                    </span>
+                    {reminder.category && <span>{reminder.category}</span>}
                   </div>
+                </div>
+                
+                <div className="flex items-center gap-2 sm:ml-4 mt-3 sm:mt-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleCompleteReminder(reminder.id)}
+                    className="h-8 px-2"
+                    title="Als erledigt markieren"
+                  >
+                    <CheckCircle className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleSnoozeReminder(reminder.id)}
+                    className="h-8 px-2"
+                    title="Erinnerung verschieben"
+                  >
+                    <Snooze className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDismissReminder(reminder.id)}
+                    className="h-8 px-2"
+                    title="Erinnerung entfernen"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -247,45 +248,45 @@ export const ReminderSystem = ({ householdId, className }: ReminderSystemProps) 
             {upcomingReminders.map((reminder) => (
               <div
                 key={reminder.id}
-                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="p-4 border border-gray-200 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all hover:bg-gray-50 hover:shadow-md"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-gray-900">{reminder.title}</h4>
-                      <Badge variant="outline" className={getPriorityColor(reminder.priority)}>
-                        {getPriorityIcon(reminder.priority)}
-                        <span className="ml-1 capitalize">{reminder.priority}</span>
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-2">{reminder.description}</p>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDueDate(reminder.dueDate)}
-                      </span>
-                      <span>{reminder.category}</span>
-                    </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-medium text-gray-900">{reminder.title}</h4>
+                    <Badge variant="outline" className={getPriorityColor(reminder.priority)}>
+                      {getPriorityIcon(reminder.priority)}
+                      <span className="ml-1 capitalize">{reminder.priority}</span>
+                    </Badge>
                   </div>
-                  
-                  <div className="flex items-center gap-1 ml-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCompleteReminder(reminder.id)}
-                      className="h-8 px-2"
-                    >
-                      <CheckCircle className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDismissReminder(reminder.id)}
-                      className="h-8 px-2"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
+                  <p className="text-sm text-gray-600 mb-2">{reminder.description}</p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {formatDueDate(reminder.dueDate)}
+                    </span>
+                    {reminder.category && <span>{reminder.category}</span>}
                   </div>
+                </div>
+                
+                <div className="flex items-center gap-2 sm:ml-4 mt-3 sm:mt-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleCompleteReminder(reminder.id)}
+                    className="h-8 px-2"
+                    title="Als erledigt markieren"
+                  >
+                    <CheckCircle className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDismissReminder(reminder.id)}
+                    className="h-8 px-2"
+                    title="Erinnerung entfernen"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               </div>
             ))}

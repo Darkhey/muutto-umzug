@@ -26,7 +26,7 @@ export const ModularDashboard = () => {
   const { toast } = useToast()
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success' | 'household-overview' | 'member-management'>('dashboard')
-  const [onboardingData, setOnboardingData] = useState<any>(null)
+  const [onboardingData, setOnboardingData] = useState<CreateHouseholdData | null>(null)
 
   const [modules, setModules] = useState<DashboardModule[]>([])
 
@@ -177,7 +177,7 @@ export const ModularDashboard = () => {
     }
   }, [households])
 
-  const handleOnboardingComplete = async (data: any) => {
+  const handleOnboardingComplete = async (data: CreateHouseholdData) => {
     try {
       setOnboardingData(data)
 
@@ -197,7 +197,7 @@ export const ModularDashboard = () => {
       })
 
       if (data.members && data.members.length > 0) {
-        const validMembers = data.members.filter((m: any) => m.name.trim() && m.email.trim())
+        const validMembers = data.members.filter((m: { name: string; email: string }) => m.name.trim() && m.email.trim())
         if (validMembers.length > 0) {
           await addMembers(household.id, validMembers)
         }
@@ -233,6 +233,10 @@ export const ModularDashboard = () => {
   const backToDashboard = () => {
     setViewMode('dashboard')
     setActiveHousehold(null)
+  }
+
+  const handleRestartOnboarding = () => {
+    setViewMode('onboarding')
   }
 
   if (!user && !loading) {
@@ -274,6 +278,7 @@ export const ModularDashboard = () => {
                 onManageMembers={showMemberManagement}
                 onEditHousehold={() => {}}
                 onViewTasks={() => {}}
+                onRestartOnboarding={handleRestartOnboarding}
               />
             </div>
 
@@ -368,7 +373,7 @@ export const ModularDashboard = () => {
 
         <DashboardStats households={households} totalTasks={0} completedTasks={0} averageProgress={0} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
           {modules.map(m => (
             <SimpleModuleCard key={m.id} module={m} />
           ))}
