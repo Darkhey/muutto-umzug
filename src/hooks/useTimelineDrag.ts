@@ -32,7 +32,7 @@ export const useTimelineDrag = ({
   const [draggedTask, setDraggedTask] = useState<TimelineTask | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
-  const handleMouseDown = (e: React.MouseEvent, task: TimelineTask) => {
+  const handlePointerDown = (e: React.PointerEvent, task: TimelineTask) => {
     if (task.completed) return
     
     const rect = timelineRef.current?.getBoundingClientRect()
@@ -47,7 +47,7 @@ export const useTimelineDrag = ({
     e.preventDefault()
   }
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handlePointerMove = useCallback((e: PointerEvent) => {
     if (!draggedTask || !timelineRef.current) return
 
     const rect = timelineRef.current.getBoundingClientRect()
@@ -63,7 +63,7 @@ export const useTimelineDrag = ({
     )
   }, [draggedTask, dragOffset, setFilteredTasks])
 
-  const handleMouseUp = useCallback(() => {
+  const handlePointerUp = useCallback(() => {
     if (!draggedTask) return
 
     const task = filteredTasks.find(t => t.id === draggedTask.id)
@@ -78,18 +78,18 @@ export const useTimelineDrag = ({
 
   useEffect(() => {
     if (draggedTask) {
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
-      
+      document.addEventListener('pointermove', handlePointerMove)
+      document.addEventListener('pointerup', handlePointerUp)
+
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
+        document.removeEventListener('pointermove', handlePointerMove)
+        document.removeEventListener('pointerup', handlePointerUp)
       }
     }
-  }, [draggedTask, handleMouseMove, handleMouseUp])
+  }, [draggedTask, handlePointerMove, handlePointerUp])
 
   return {
     draggedTask,
-    handleMouseDown
+    handlePointerDown
   }
 }
