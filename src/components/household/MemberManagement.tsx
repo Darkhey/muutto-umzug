@@ -114,7 +114,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
-  const getStatusBadge = (member: any) => {
+  const getStatusBadge = (member: HouseholdMember) => {
     if (member.is_owner) {
       return <Badge variant="default" className="bg-yellow-100 text-yellow-800"><Crown className="h-3 w-3 mr-1" />Besitzer</Badge>
     }
