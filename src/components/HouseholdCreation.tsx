@@ -6,9 +6,21 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 
 interface HouseholdCreationProps {
-  onSubmit: (household: { name: string; members: string[]; nextDeadline: string }) => void;
+  onSubmit: (household: {
+    name: string;
+    members: string[];
+    nextDeadline: string;
+    oldAddress: string;
+    newAddress: string;
+    childrenCount: number;
+    petsCount: number;
+    ownsCar: boolean;
+    isSelfEmployed: boolean;
+  }) => void;
   onCancel: () => void;
 }
 
@@ -17,6 +29,12 @@ export const HouseholdCreation = ({ onSubmit, onCancel }: HouseholdCreationProps
   const [newMember, setNewMember] = useState('');
   const [members, setMembers] = useState<string[]>(['']);
   const [moveDate, setMoveDate] = useState('');
+  const [oldAddress, setOldAddress] = useState('');
+  const [newAddress, setNewAddress] = useState('');
+  const [childrenCount, setChildrenCount] = useState(0);
+  const [petsCount, setPetsCount] = useState(0);
+  const [ownsCar, setOwnsCar] = useState(false);
+  const [isSelfEmployed, setIsSelfEmployed] = useState(false);
 
   const addMember = () => {
     if (newMember.trim()) {
@@ -31,11 +49,17 @@ export const HouseholdCreation = ({ onSubmit, onCancel }: HouseholdCreationProps
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (householdName.trim() && moveDate) {
+    if (householdName.trim() && moveDate && newAddress.trim()) {
       onSubmit({
         name: householdName.trim(),
         members: members.filter(member => member.trim()),
-        nextDeadline: moveDate
+        nextDeadline: moveDate,
+        oldAddress: oldAddress.trim(),
+        newAddress: newAddress.trim(),
+        childrenCount: childrenCount,
+        petsCount: petsCount,
+        ownsCar: ownsCar,
+        isSelfEmployed: isSelfEmployed,
       });
     }
   };
@@ -82,6 +106,70 @@ export const HouseholdCreation = ({ onSubmit, onCancel }: HouseholdCreationProps
                   value={moveDate}
                   onChange={(e) => setMoveDate(e.target.value)}
                   required
+                />
+              </div>
+
+              {/* Old Address */}
+              <div className="space-y-2">
+                <Label htmlFor="oldAddress">Alte Adresse (optional)</Label>
+                <AddressAutocomplete
+                  value={oldAddress}
+                  onChange={setOldAddress}
+                  helpText="Deine aktuelle Wohnadresse"
+                />
+              </div>
+
+              {/* New Address */}
+              <div className="space-y-2">
+                <Label htmlFor="newAddress">Neue Adresse</Label>
+                <AddressAutocomplete
+                  value={newAddress}
+                  onChange={setNewAddress}
+                  helpText="Deine zukünftige Wohnadresse"
+                />
+              </div>
+
+              {/* Children Count */}
+              <div className="space-y-2">
+                <Label htmlFor="childrenCount">Anzahl der Kinder</Label>
+                <Input
+                  id="childrenCount"
+                  type="number"
+                  min={0}
+                  value={childrenCount}
+                  onChange={(e) => setChildrenCount(Number(e.target.value))}
+                />
+              </div>
+
+              {/* Pets Count */}
+              <div className="space-y-2">
+                <Label htmlFor="petsCount">Anzahl der Haustiere</Label>
+                <Input
+                  id="petsCount"
+                  type="number"
+                  min={0}
+                  value={petsCount}
+                  onChange={(e) => setPetsCount(Number(e.target.value))}
+                />
+              </div>
+
+              {/* Owns Car */}
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="ownsCar">Besitzt ein Auto?</Label>
+                <Switch
+                  id="ownsCar"
+                  checked={ownsCar}
+                  onCheckedChange={setOwnsCar}
+                />
+              </div>
+
+              {/* Is Self Employed */}
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="isSelfEmployed">Ist selbstständig?</Label>
+                <Switch
+                  id="isSelfEmployed"
+                  checked={isSelfEmployed}
+                  onCheckedChange={setIsSelfEmployed}
                 />
               </div>
 

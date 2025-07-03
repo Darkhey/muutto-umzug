@@ -30,6 +30,16 @@ export interface TimelineViewOptions {
   filterCategory?: string
 }
 
+export interface VisItem {
+  id: string | number
+  content: string
+  start: Date | string
+  end?: Date | string
+  type?: "box" | "point" | "range" | string
+  className?: string
+  data?: Record<string, unknown>
+}
+
 export interface TimelineHistoryEntry {
   id: string
   task_id: string
