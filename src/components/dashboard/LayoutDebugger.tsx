@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Grid, Eye, EyeOff, RefreshCw, AlertTriangle, CheckCircle, Wrench, Activity } from 'lucide-react';
 import { Layout, Layouts } from 'react-grid-layout';
-import { validateLayout, repairLayout, optimizeSpacing, LayoutValidationResult } from '@/utils/layoutValidator';
+import { validateLayout, repairLayout, optimizeSpacing, LayoutValidationResult, type GridConstraints } from '@/utils/layoutValidator';
 
 interface LayoutDebuggerProps {
   layouts: Layouts;
@@ -28,9 +28,11 @@ export const LayoutDebugger: React.FC<LayoutDebuggerProps> = ({
   debugMode = false,
   onToggleDebug
 }) => {
-  const getLayoutValidation = (breakpoint: keyof Layouts): LayoutValidationResult => {
+  const getLayoutValidation = (
+    breakpoint: keyof Layouts
+  ): LayoutValidationResult => {
     const layout = layouts[breakpoint] || [];
-    return validateLayout(layout, breakpoint as any);
+    return validateLayout(layout, breakpoint as keyof GridConstraints['maxCols']);
   };
 
   const getAllValidations = () => {
@@ -62,7 +64,10 @@ export const LayoutDebugger: React.FC<LayoutDebuggerProps> = ({
     Object.keys(layouts).forEach(breakpoint => {
       const bp = breakpoint as keyof Layouts;
       const layout = layouts[bp] || [];
-      repairedLayouts[bp] = repairLayout(layout, bp as any);
+      repairedLayouts[bp] = repairLayout(
+        layout,
+        bp as keyof GridConstraints['maxCols']
+      );
     });
     
     onRepairLayout(repairedLayouts);
@@ -76,7 +81,10 @@ export const LayoutDebugger: React.FC<LayoutDebuggerProps> = ({
     Object.keys(layouts).forEach(breakpoint => {
       const bp = breakpoint as keyof Layouts;
       const layout = layouts[bp] || [];
-      optimizedLayouts[bp] = optimizeSpacing(layout, bp as any);
+      optimizedLayouts[bp] = optimizeSpacing(
+        layout,
+        bp as keyof GridConstraints['maxCols']
+      );
     });
     
     onOptimizeLayout(optimizedLayouts);

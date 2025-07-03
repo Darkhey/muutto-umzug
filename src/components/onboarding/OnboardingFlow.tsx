@@ -14,7 +14,7 @@ import { HOUSEHOLD_ROLES } from '@/config/roles'
 import { PROPERTY_TYPES } from '@/config/app'
 import { validateName, validateFutureDate, validatePostalCode } from '@/utils/validation'
 
-interface OnboardingData {
+export interface OnboardingData {
   householdName: string
   moveDate: string
   householdSize: number
@@ -158,19 +158,20 @@ export const OnboardingFlow = ({
     const newErrors: Record<string, string> = {}
     
     switch (step) {
-      case 1:
+      case 1: {
         // Validate household name
         const nameValidation = validateName(data.householdName, 'Haushaltsname')
         if (!nameValidation.isValid) {
           newErrors.householdName = Object.values(nameValidation.errors)[0]
         }
-        
+
         // Validate move date
         const dateValidation = validateFutureDate(data.moveDate, 'Umzugsdatum')
         if (!dateValidation.isValid) {
           newErrors.moveDate = Object.values(dateValidation.errors)[0]
         }
         break
+      }
         
       case 2:
         // Validate household size
@@ -189,33 +190,34 @@ export const OnboardingFlow = ({
         }
         break
         
-      case 3:
+      case 3: {
         // Validate property type
         if (!data.propertyType) {
           newErrors.propertyType = 'Wohnform ist erforderlich'
         }
-        
+
         // Validate postal code
         const postalValidation = validatePostalCode(data.postalCode)
         if (!postalValidation.isValid) {
           newErrors.postalCode = Object.values(postalValidation.errors)[0]
         }
-        
+
         // Validate new address
         if (!data.newAddress.trim()) {
           newErrors.newAddress = 'Neue Adresse ist erforderlich'
         }
-        
+
         // Validate living space
         if (data.livingSpace < 0) {
           newErrors.livingSpace = 'Wohnfläche kann nicht negativ sein'
         }
-        
+
         // Validate rooms
         if (data.rooms < 0) {
           newErrors.rooms = 'Anzahl Zimmer kann nicht negativ sein'
         }
         break
+      }
         
       case 4:
         // Validate members if any
