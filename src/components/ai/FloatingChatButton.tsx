@@ -23,7 +23,7 @@ export const FloatingChatButton = ({ household }: FloatingChatButtonProps) => {
   }
 
   const ChatContent = () => (
-    <AIAssistant household={household} className="border-0 shadow-none h-[500px] md:h-[600px]" />
+    <AIAssistant household={household} className="border-0 shadow-none h-full" />
   )
 
   return (
@@ -53,7 +53,7 @@ export const FloatingChatButton = ({ household }: FloatingChatButtonProps) => {
       {/* Mobile Sheet */}
       {isMobile && (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetContent side="bottom" className="h-[90vh] p-0">
+          <SheetContent side="bottom" className="h-[90vh] p-0 flex flex-col overflow-y-auto">
             <SheetHeader className="p-4 border-b">
               <SheetTitle className="flex items-center gap-2">
                 <div className="relative">
@@ -66,7 +66,7 @@ export const FloatingChatButton = ({ household }: FloatingChatButtonProps) => {
                 </Badge>
               </SheetTitle>
             </SheetHeader>
-            <div className="h-[calc(100%-80px)]">
+            <div className="flex-1 overflow-y-auto">
               <ChatContent />
             </div>
           </SheetContent>
@@ -76,7 +76,7 @@ export const FloatingChatButton = ({ household }: FloatingChatButtonProps) => {
       {/* Desktop Dialog */}
       {!isMobile && (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogContent className="max-w-2xl h-[700px] p-0 gap-0">
+          <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-y-auto">
             <DialogHeader className="p-4 border-b">
               <DialogTitle className="flex items-center gap-2">
                 <div className="relative">
@@ -89,7 +89,7 @@ export const FloatingChatButton = ({ household }: FloatingChatButtonProps) => {
                 </Badge>
               </DialogTitle>
             </DialogHeader>
-            <div className="h-[calc(100%-80px)]">
+            <div className="flex-1 overflow-y-auto">
               <ChatContent />
             </div>
           </DialogContent>
