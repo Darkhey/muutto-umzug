@@ -461,44 +461,6 @@ export type Database = {
           },
         ]
       }
-      premium_status: {
-        Row: {
-          user_id: string
-          is_premium: boolean
-          premium_mode: 'one-time' | 'monthly' | null
-          purchase_date: string | null
-          valid_until: string | null
-          stripe_subscription_id: string | null
-          features_enabled: Json | null
-        }
-        Insert: {
-          user_id: string
-          is_premium?: boolean
-          premium_mode?: 'one-time' | 'monthly' | null
-          purchase_date?: string | null
-          valid_until?: string | null
-          stripe_subscription_id?: string | null
-          features_enabled?: Json | null
-        }
-        Update: {
-          user_id?: never
-          is_premium?: boolean
-          premium_mode?: 'one-time' | 'monthly' | null
-          purchase_date?: string | null
-          valid_until?: string | null
-          stripe_subscription_id?: string | null
-          features_enabled?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "premium_status_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "auth.users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       timeline_preferences: {
         Row: {
           created_at: string
