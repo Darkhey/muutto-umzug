@@ -108,7 +108,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
     setTimelineEnd(addDays(latest, 10))
   }, [timelineItems, household.move_date])
 
-  const { draggedTask, handleMouseDown } = useTimelineDrag({
+  const { draggedTask, handlePointerDown } = useTimelineDrag({
     timelineRef,
     filteredTasks,
     setFilteredTasks,
@@ -168,7 +168,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
                   isDragged={draggedTask?.id === task.id}
                   colors={COLORS}
                   phaseColors={PHASE_COLORS}
-                  onMouseDown={handleMouseDown}
+                  onPointerDown={handlePointerDown}
                   onDoubleClick={handleTaskDoubleClick}
                 />
               ))}
