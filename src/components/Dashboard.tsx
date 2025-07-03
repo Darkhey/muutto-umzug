@@ -50,7 +50,7 @@ export const Dashboard = () => {
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [dailyTip] = useState(getRandomTip())
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [onboardingData, setOnboardingData] = useState<any>(null)
+  const [onboardingData, setOnboardingData] = useState<CreateHouseholdData | null>(null)
   const [householdProgress, setHouseholdProgress] = useState<Record<string, number>>({})
   const { invitations, loading: inviteLoading, error: inviteError, refetch: refetchInvites } = usePendingInvitations()
 
@@ -137,7 +137,7 @@ export const Dashboard = () => {
     )
   }
 
-  const handleOnboardingComplete = async (data: any) => {
+  const handleOnboardingComplete = async (data: CreateHouseholdData) => {
     try {
       setOnboardingData(data)
       
@@ -155,17 +155,45 @@ export const Dashboard = () => {
         new_address: data.newAddress,
         living_space: data.livingSpace,
         rooms: data.rooms,
-        furniture_volume: data.furnitureVolume
+        furniture_volume: data.furnitureVolume,
+        owns_car: data.ownsCar,
+        is_self_employed: data.isSelfEmployed,
+        ad_url: data.adUrl || null
       })
 
       console.log("Household created:", household);
+
+      // Generate personalized tasks
+      if (user?.id) {
+        const { data: generatedTasks, error: rpcError } = await supabase.rpc('generate_personalized_tasks', {
+          p_user_id: user.id,
+          p_move_from_state: data.oldAddress || '', // Assuming state can be derived or is not critical for now
+          p_move_to_state: data.newAddress || '', // Assuming state can be derived or is not critical for now
+          p_move_to_municipality: data.postalCode || '', // Using postal code as municipality for now
+          p_has_children: data.childrenCount > 0,
+          p_has_pets: data.petsCount > 0,
+          p_owns_car: data.ownsCar,
+          p_is_self_employed: data.isSelfEmployed
+        })
+
+        if (rpcError) {
+          console.error("Error generating personalized tasks:", rpcError);
+          toast({
+            title: "Fehler bei der Aufgabengenerierung",
+            description: rpcError.message,
+            variant: "destructive"
+          })
+        } else {
+          console.log("Personalized tasks generated:", generatedTasks);
+        }
+      }
 
       // Set the newly created household as active so we can show its tasks
       setActiveHousehold(household)
 
       // Add members if any
       if (data.members && data.members.length > 0) {
-        const validMembers = data.members.filter((m: any) => m.name.trim() && m.email.trim())
+        const validMembers = data.members.filter((m: { name: string; email: string }) => m.name.trim() && m.email.trim())
         if (validMembers.length > 0) {
           await addMembers(household.id, validMembers)
         }
@@ -203,7 +231,7 @@ export const Dashboard = () => {
     await signOut()
   }
 
-  const handleHouseholdUpdate = async (updates: any) => {
+  const handleHouseholdUpdate = async (updates: Partial<CreateHouseholdData>) => {
     if (!activeHousehold) return
 
     try {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, Sparkles, Home, Users, Calendar, ArrowRight, Star } from 'lucide-react'
@@ -13,7 +13,7 @@ export const OnboardingSuccess = ({ householdName, moveDate, onContinue }: Onboa
   const [showContent, setShowContent] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
 
-  const steps = [
+  const steps = useMemo(() => [
     {
       icon: <CheckCircle className="h-8 w-8 text-green-600" />,
       title: 'Haushalt erstellt',
@@ -29,7 +29,7 @@ export const OnboardingSuccess = ({ householdName, moveDate, onContinue }: Onboa
       title: 'Team bereit',
       description: 'Alle Mitglieder können jetzt mithelfen'
     }
-  ]
+  ], [householdName])
 
   useEffect(() => {
     // Show content with delay for smooth animation
@@ -44,7 +44,7 @@ export const OnboardingSuccess = ({ householdName, moveDate, onContinue }: Onboa
         setTimeout(() => setCurrentStep(index + 1), (index + 1) * 800)
       })
     }
-  }, [showContent])
+  }, [showContent, steps])
 
   const getDaysUntilMove = () => {
     const today = new Date()

@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useTimeline } from '@/hooks/useTimeline'
 import { useTasks } from '@/hooks/useTasks'
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog'
-import { TimelineItem, TimelineViewOptions } from '@/types/timeline'
+import { TimelineItem, TimelineViewOptions, VisItem } from '@/types/timeline'
 import { ExtendedHousehold } from '@/types/household'
 import { 
   Calendar, 
@@ -48,9 +48,11 @@ import { Timeline, DataSet } from 'vis-timeline/standalone'
 import 'vis-timeline/styles/vis-timeline-graph2d.css'
 
 interface TimelineViewProps {
-  household: ExtendedHousehold
-  onBack?: () => void
+  household: ExtendedHousehold;
+  onBack?: () => void;
 }
+
+
 
 export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
   const { toast } = useToast()
@@ -160,12 +162,12 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
       max: viewOptions.end,
       zoomMin: 1000 * 60 * 60 * 24 * 7, // One week
       zoomMax: 1000 * 60 * 60 * 24 * 365, // One year
-      snap: preferences.snap_to_grid ? (item: any) => {
+      snap: preferences.snap_to_grid ? (item: VisItem) => {
         const date = new Date(item.start)
         date.setHours(0, 0, 0, 0)
         return date
       } : null,
-      onMove: (item: any, callback: (item?: any) => void) => {
+      onMove: (item: VisItem, callback: (item?: VisItem) => void) => {
         // Store the old date for undo functionality
         const oldItem = filteredItems.find(i => i.id === item.id)
         if (oldItem) {
@@ -177,7 +179,7 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
         updateTaskDueDate(item.id, newDate)
         callback(item) // confirm the change
       },
-      template: (item: any) => {
+      template: (item: VisItem) => {
         return item.content
       }
     }
@@ -198,7 +200,7 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
       )
       
       // Add event listeners
-      timelineInstanceRef.current.on('click', (properties: any) => {
+      timelineInstanceRef.current.on('click', (properties: { item: string }) => {
         if (properties.item) {
           const item = filteredItems.find(i => i.id === properties.item)
           if (item) {
@@ -222,7 +224,7 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
         timelineInstanceRef.current = null
       }
     }
-  }, [filteredItems, loading, preferences.snap_to_grid, viewOptions.start, viewOptions.end, household.move_date])
+  }, [filteredItems, loading, preferences.snap_to_grid, viewOptions.start, viewOptions.end, household.move_date, updateTaskDueDate, setUndoStack, toast])
 
   // Handle drag end for backlog items
   const handleDragEnd = (event: DragEndEvent) => {

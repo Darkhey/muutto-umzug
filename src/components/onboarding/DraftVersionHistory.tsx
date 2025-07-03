@@ -12,7 +12,7 @@ interface DraftVersion {
   id: string;
   draft_id: string;
   version: number;
-  data: any;
+  data: Partial<CreateHouseholdData>;
   created_at: string;
   user_id: string;
 }
@@ -48,7 +48,7 @@ export const DraftVersionHistory = ({ draftId, onBack, onRestore }: DraftVersion
     };
 
     fetchVersions();
-  }, [draftId]);
+  }, [draftId, getDraftVersions, toast]);
 
   const formatDate = (dateString: string) => {
     try {

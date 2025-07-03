@@ -7,6 +7,7 @@ import { useDistanceCalculation } from '@/hooks/useDistanceCalculation'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import { Progress } from '@/components/ui/progress'
 import { Calendar, Users, Home, MapPin, CreditCard, ArrowRight, ArrowLeft, CheckCircle, Star, Sparkles, Mail, User, Building, Ruler, DoorOpen, Package2, AlertTriangle, Save } from 'lucide-react'
 import { PropertyType, HouseholdRole } from '@/types/database'
@@ -20,6 +21,8 @@ interface OnboardingData {
   householdSize: number
   childrenCount: number
   petsCount: number
+  ownsCar: boolean;
+  isSelfEmployed: boolean;
   propertyType: PropertyType | ''
   postalCode: string
   oldAddress: string
@@ -27,6 +30,7 @@ interface OnboardingData {
   livingSpace: number
   rooms: number
   furnitureVolume: number
+  adUrl?: string | null;
   members: Array<{
     name: string
     email: string
@@ -58,6 +62,8 @@ export const OnboardingFlow = ({
     householdSize: 1,
     childrenCount: 0,
     petsCount: 0,
+    ownsCar: false,
+    isSelfEmployed: false,
     propertyType: '',
     postalCode: '',
     oldAddress: '',
@@ -65,6 +71,7 @@ export const OnboardingFlow = ({
     livingSpace: 0,
     rooms: 0,
     furnitureVolume: 0,
+    adUrl: '',
     members: []
   });
   const { setOldCoords, setNewCoords, distanceKm, distanceFact } = useDistanceCalculation()
@@ -85,13 +92,16 @@ export const OnboardingFlow = ({
         householdSize: initialData.householdSize || 1,
         childrenCount: initialData.childrenCount || 0,
         petsCount: initialData.petsCount || 0,
-        propertyType: initialData.propertyType || '',
+      ownsCar: initialData.ownsCar || false,
+      isSelfEmployed: initialData.isSelfEmployed || false,
+      propertyType: initialData.propertyType || '',
         postalCode: initialData.postalCode || '',
         oldAddress: initialData.oldAddress || '',
         newAddress: initialData.newAddress || '',
         livingSpace: initialData.livingSpace || 0,
         rooms: initialData.rooms || 0,
         furnitureVolume: initialData.furnitureVolume || 0,
+        adUrl: initialData.adUrl || '',
         members: initialData.members || []
       }));
     }
@@ -158,7 +168,7 @@ export const OnboardingFlow = ({
     const newErrors: Record<string, string> = {}
     
     switch (step) {
-      case 1:
+      case 1: {
         // Validate household name
         const nameValidation = validateName(data.householdName, 'Haushaltsname')
         if (!nameValidation.isValid) {
@@ -171,6 +181,7 @@ export const OnboardingFlow = ({
           newErrors.moveDate = Object.values(dateValidation.errors)[0]
         }
         break
+      }
         
       case 2:
         // Validate household size
@@ -189,7 +200,7 @@ export const OnboardingFlow = ({
         }
         break
         
-      case 3:
+      case 3: {
         // Validate property type
         if (!data.propertyType) {
           newErrors.propertyType = 'Wohnform ist erforderlich'
@@ -215,9 +226,15 @@ export const OnboardingFlow = ({
         if (data.rooms < 0) {
           newErrors.rooms = 'Anzahl Zimmer kann nicht negativ sein'
         }
+
+        // Validate adUrl if provided
+        if (data.adUrl && !/^https?:\/\/(www\.)?(immobilienscout24\.de|kleinanzeigen\.de|immonet\.de)\/.*$/.test(data.adUrl)) {
+          newErrors.adUrl = 'Ungültiger Link zur Immobilienanzeige. Nur ImmoScout24, Kleinanzeigen und Immonet werden unterstützt.'
+        }
         break
+      }
         
-      case 4:
+      case 4: {
         // Validate members if any
         data.members.forEach((member, index) => {
           if (member.name.trim() || member.email.trim()) {
@@ -233,6 +250,7 @@ export const OnboardingFlow = ({
           }
         })
         break
+      }
     }
     
     setErrors(newErrors)
@@ -735,6 +753,25 @@ export const OnboardingFlow = ({
                   </div>
                 </div>
 
+                <div className="space-y-3">
+                  <Label htmlFor="adUrl" className="text-lg font-medium flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-blue-600" />
+                    Link zur Immobilienanzeige (optional)
+                  </Label>
+                  <Input
+                    id="adUrl"
+                    type="url"
+                    value={data.adUrl || ''}
+                    onChange={(e) => updateData({ adUrl: e.target.value })}
+                    placeholder="https://www.immobilienscout24.de/expose/..."
+                    className="h-12 pl-10 border-2 focus:border-blue-500"
+                    aria-describedby="ad-url-hint"
+                  />
+                  <p id="ad-url-hint" className="text-sm text-gray-600">
+                    Füge einen Link zu einer Immobilienanzeige hinzu, um Details automatisch zu übernehmen.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-3">
                     <Label htmlFor="livingSpace" className="text-lg font-medium flex items-center gap-2">
@@ -830,6 +867,35 @@ export const OnboardingFlow = ({
                     <p id="volume-hint" className="text-sm text-gray-600">
                       Hilft bei der Planung des Transportvolumens
                     </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="ownsCar" className="text-lg font-medium flex items-center gap-2">
+                      <span className="text-2xl">🚗</span> Besitzt du ein Auto?
+                    </Label>
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                      <p className="text-gray-700">Ich besitze ein Auto</p>
+                      <Switch
+                        id="ownsCar"
+                        checked={data.ownsCar}
+                        onCheckedChange={(checked) => updateData({ ownsCar: checked })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <Label htmlFor="isSelfEmployed" className="text-lg font-medium flex items-center gap-2">
+                      <span className="text-2xl">💼</span> Bist du selbstständig?
+                    </Label>
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                      <p className="text-gray-700">Ich bin selbstständig</p>
+                      <Switch
+                        id="isSelfEmployed"
+                        checked={data.isSelfEmployed}
+                        onCheckedChange={(checked) => updateData({ isSelfEmployed: checked })}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

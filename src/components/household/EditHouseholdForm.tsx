@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PROPERTY_TYPES } from '@/config/app'
 import { ExtendedHousehold } from '@/types/household'
+import { Switch } from '@/components/ui/switch'
 import { Home, Calendar, Users, MapPin, Ruler, DoorOpen, Package2, AlertTriangle } from 'lucide-react'
 
 interface EditHouseholdFormProps {
@@ -24,6 +25,8 @@ interface EditHouseholdFormProps {
     living_space: number | null
     rooms: number | null
     furniture_volume: number | null
+    owns_car: boolean | null
+    is_self_employed: boolean | null
   }) => void
   onCancel: () => void
 }
@@ -54,7 +57,9 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
     furniture_volume:
       household.furniture_volume != null
         ? String(household.furniture_volume)
-        : ''
+        : '',
+    owns_car: household.owns_car ?? false,
+    is_self_employed: household.is_self_employed ?? false
   })
   const {
     oldCoords,
@@ -194,7 +199,9 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
       rooms: parseNumber(form.rooms),
       furniture_volume: parseNumber(form.furniture_volume),
       old_address: form.old_address || null,
-      new_address: form.new_address || null
+      new_address: form.new_address || null,
+      owns_car: form.owns_car,
+      is_self_employed: form.is_self_employed
     })
   }
 
@@ -503,6 +510,37 @@ export const EditHouseholdForm = ({ household, onSubmit, onCancel }: EditHouseho
               {errors.furniture_volume}
             </p>
           )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="edit-owns-car" className="flex items-center gap-2">
+            <span className="text-lg">🚗</span>
+            Besitzt ein Auto?
+          </Label>
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <p className="text-gray-700">Ich besitze ein Auto</p>
+            <Switch
+              id="edit-owns-car"
+              checked={form.owns_car}
+              onCheckedChange={(checked) => updateField('owns_car', checked)}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="edit-self-employed" className="flex items-center gap-2">
+            <span className="text-lg">💼</span>
+            Ist selbstständig?
+          </Label>
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <p className="text-gray-700">Ich bin selbstständig</p>
+            <Switch
+              id="edit-self-employed"
+              checked={form.is_self_employed}
+              onCheckedChange={(checked) => updateField('is_self_employed', checked)}
+            />
+          </div>
         </div>
       </div>
 

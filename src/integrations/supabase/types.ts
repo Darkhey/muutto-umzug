@@ -95,6 +95,11 @@ export type Database = {
           priority: Database["public"]["Enums"]["task_priority"]
           title: string
           updated_at: string
+          required_documents: Json | null
+          online_form_link: string | null
+          zuständige_stelle: string | null
+          opening_hours: string | null
+          source_reference: string | null
         }
         Insert: {
           assigned_role?: Database["public"]["Enums"]["household_role"] | null
@@ -108,6 +113,11 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"]
           title: string
           updated_at?: string
+          required_documents?: Json | null
+          online_form_link?: string | null
+          zuständige_stelle?: string | null
+          opening_hours?: string | null
+          source_reference?: string | null
         }
         Update: {
           assigned_role?: Database["public"]["Enums"]["household_role"] | null
@@ -121,6 +131,35 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"]
           title?: string
           updated_at?: string
+          required_documents?: Json | null
+          online_form_link?: string | null
+          zuständige_stelle?: string | null
+          opening_hours?: string | null
+          source_reference?: string | null
+        }
+        Relationships: []
+      }
+      fim_leistungen: {
+        Row: {
+          fim_id: string
+          titel: string | null
+          beschreibung: string | null
+          daten: Json | null
+          last_updated: string | null
+        }
+        Insert: {
+          fim_id: string
+          titel?: string | null
+          beschreibung?: string | null
+          daten?: Json | null
+          last_updated?: string | null
+        }
+        Update: {
+          fim_id?: string
+          titel?: string | null
+          beschreibung?: string | null
+          daten?: Json | null
+          last_updated?: string | null
         }
         Relationships: []
       }
@@ -314,6 +353,11 @@ export type Database = {
           full_name: string | null
           id: string
           updated_at: string
+          has_children: boolean | null
+          has_pets: boolean | null
+          owns_car: boolean | null
+          is_self_employed: boolean | null
+          wants_notifications: boolean | null
         }
         Insert: {
           ai_assistant_consent?: boolean | null
@@ -323,6 +367,11 @@ export type Database = {
           full_name?: string | null
           id: string
           updated_at?: string
+          has_children?: boolean | null
+          has_pets?: boolean | null
+          owns_car?: boolean | null
+          is_self_employed?: boolean | null
+          wants_notifications?: boolean | null
         }
         Update: {
           ai_assistant_consent?: boolean | null
@@ -332,6 +381,11 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+          has_children?: boolean | null
+          has_pets?: boolean | null
+          owns_car?: boolean | null
+          is_self_employed?: boolean | null
+          wants_notifications?: boolean | null
         }
         Relationships: []
       }

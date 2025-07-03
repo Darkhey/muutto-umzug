@@ -30,7 +30,7 @@ export const LayoutDebugger: React.FC<LayoutDebuggerProps> = ({
 }) => {
   const getLayoutValidation = (breakpoint: keyof Layouts): LayoutValidationResult => {
     const layout = layouts[breakpoint] || [];
-    return validateLayout(layout, breakpoint as any);
+    return validateLayout(layout, breakpoint);
   };
 
   const getAllValidations = () => {
@@ -62,7 +62,7 @@ export const LayoutDebugger: React.FC<LayoutDebuggerProps> = ({
     Object.keys(layouts).forEach(breakpoint => {
       const bp = breakpoint as keyof Layouts;
       const layout = layouts[bp] || [];
-      repairedLayouts[bp] = repairLayout(layout, bp as any);
+      repairedLayouts[bp] = repairLayout(layout, bp);
     });
     
     onRepairLayout(repairedLayouts);
@@ -76,7 +76,7 @@ export const LayoutDebugger: React.FC<LayoutDebuggerProps> = ({
     Object.keys(layouts).forEach(breakpoint => {
       const bp = breakpoint as keyof Layouts;
       const layout = layouts[bp] || [];
-      optimizedLayouts[bp] = optimizeSpacing(layout, bp as any);
+      optimizedLayouts[bp] = optimizeSpacing(layout, bp);
     });
     
     onOptimizeLayout(optimizedLayouts);
