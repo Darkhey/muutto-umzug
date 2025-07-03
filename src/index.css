@@ -74,11 +74,13 @@
 /* React Grid Layout Styles */
 .react-grid-layout {
   position: relative;
+  width: 100%;
 }
 
 .react-grid-item {
   transition: all 200ms ease;
   transition-property: left, top, width, height;
+  box-sizing: border-box;
 }
 
 .react-grid-item img {
@@ -88,6 +90,17 @@
 
 .react-grid-item.cssTransforms {
   transition-property: transform, width, height;
+}
+
+/* Ensure proper spacing on mobile */
+@media (max-width: 768px) {
+  .react-grid-item {
+    margin-bottom: 12px !important;
+  }
+  
+  .react-grid-layout {
+    padding: 12px;
+  }
 }
 
 .react-grid-item > .react-resizable-handle {

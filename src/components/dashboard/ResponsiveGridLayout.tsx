@@ -26,7 +26,15 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
 }) => {
   // Enhanced breakpoints for better responsive behavior
   const breakpoints = { lg: 1200, md: 996, sm: 768, xs: 480 };
-  const cols = { lg: 4, md: 2, sm: 1, xs: 1 }; // Increased lg to 4 columns
+  const cols = { lg: 4, md: 2, sm: 1, xs: 1 };
+  
+  // Responsive margins and row heights for better spacing
+  const responsiveConfig = {
+    lg: { margin: [16, 16], rowHeight: 120, containerPadding: [20, 20] },
+    md: { margin: [14, 14], rowHeight: 110, containerPadding: [18, 18] },
+    sm: { margin: [12, 12], rowHeight: 100, containerPadding: [16, 16] },
+    xs: { margin: [10, 10], rowHeight: 90, containerPadding: [12, 12] }
+  };
 
   // Enhanced layout change handler with validation
   const handleLayoutChange = (layout: Layout[], allLayouts: Layouts) => {
@@ -101,34 +109,43 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
     handleLayoutChange(updatedLayout, currentLayouts);
   };
 
+  // Get current config based on screen size
+  const getCurrentConfig = () => {
+    const width = window.innerWidth;
+    if (width < breakpoints.xs) return responsiveConfig.xs;
+    if (width < breakpoints.sm) return responsiveConfig.sm;
+    if (width < breakpoints.md) return responsiveConfig.md;
+    return responsiveConfig.lg;
+  };
+
+  const currentConfig = getCurrentConfig();
+
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <ResponsiveGridLayout
         className={className}
         layouts={layouts}
         breakpoints={breakpoints}
         cols={cols}
-        rowHeight={100} // Reduced for better granularity
+        rowHeight={currentConfig.rowHeight}
         onLayoutChange={handleLayoutChange}
         onDragStop={handleDragStop}
         onResizeStop={handleResizeStop}
-        compactType="vertical" // Changed back to vertical for predictable behavior
-        preventCollision={true} // Enable collision prevention
-        allowOverlap={false} // Prevent overlapping
-        margin={[12, 12]} // Optimized spacing
-        containerPadding={[16, 16]}
+        compactType="vertical"
+        preventCollision={true}
+        allowOverlap={false}
+        margin={currentConfig.margin}
+        containerPadding={currentConfig.containerPadding}
         draggableHandle=".drag-handle"
         resizeHandles={['se']}
         useCSSTransforms={true}
         isDraggable={isDraggable}
         isResizable={isResizable}
         autoSize={true}
-        verticalCompact={true}
+        verticalCompact={false} // Disable for better spacing control
         measureBeforeMount={false}
-        style={{ minHeight: '600px' }}
-        // Enhanced drag and resize behavior
-        isBounded={true} // Keep items within bounds
-        transformScale={1}
+        style={{ minHeight: '400px', width: '100%' }}
+        isBounded={true}
         // Animation settings
         css={{
           '.react-grid-item.react-grid-placeholder': {
