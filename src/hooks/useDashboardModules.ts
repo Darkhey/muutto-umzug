@@ -98,8 +98,8 @@ export const useDashboardModules = (initialModules: DashboardModule[]) => {
     const moduleHeight = 1;
 
     // Find available position using magnetic snapping
-    let bestX = Math.max(0, Math.min(gridX, GRID_SIZE - moduleWidth));
-    let bestY = gridY;
+    const bestX = Math.max(0, Math.min(gridX, GRID_SIZE - moduleWidth));
+    const bestY = gridY;
 
     // Check for collisions and snap to available positions
     const occupiedPositions = Object.entries(modulePositions)

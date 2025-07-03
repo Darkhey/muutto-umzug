@@ -4,6 +4,11 @@ import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { TimelineItem, TimelinePreferences } from '@/types/timeline'
+import type { Database } from '@/types/database'
+
+type TaskRow = Database['public']['Tables']['tasks']['Row'] & {
+  assignee?: { name: string } | null
+}
 
 export function useTimeline(householdId?: string) {
   const { user } = useAuth()
@@ -48,7 +53,7 @@ export function useTimeline(householdId?: string) {
       }
 
       // Format tasks for timeline
-      const formattedItems: TimelineItem[] = (tasks || []).map((task: any) => ({
+        const formattedItems: TimelineItem[] = (tasks || []).map((task: TaskRow) => ({
         id: task.id,
         title: task.title,
         description: task.description || '',

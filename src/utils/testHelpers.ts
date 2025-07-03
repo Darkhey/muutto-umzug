@@ -108,7 +108,9 @@ export const delay = (ms: number): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export const mockSupabaseResponse = <T>(data: T, error: any = null) => {
+import type { PostgrestError } from '@supabase/postgrest-js'
+
+export const mockSupabaseResponse = <T>(data: T, error: PostgrestError | null = null) => {
   return {
     data: error ? null : data,
     error,

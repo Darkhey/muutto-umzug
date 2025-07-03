@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useHouseholdMembers } from '@/hooks/useHouseholdMembers'
 import { useAuth } from '@/contexts/AuthContext'
 import { HOUSEHOLD_ROLES, getRoleIcon, getRoleColor } from '@/config/roles'
-import { HouseholdRole } from '@/types/household'
+import { HouseholdRole, HouseholdMember } from '@/types/household'
 import { Users, UserPlus, Mail, Crown, Clock, CheckCircle, Trash2, Settings, Copy, Link2, MessageCircle, QrCode } from 'lucide-react'
 import QRCode from 'react-qr-code'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
@@ -114,7 +114,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
-  const getStatusBadge = (member: any) => {
+  const getStatusBadge = (member: HouseholdMember) => {
     if (member.is_owner) {
       return <Badge variant="default" className="bg-yellow-100 text-yellow-800"><Crown className="h-3 w-3 mr-1" />Besitzer</Badge>
     }
