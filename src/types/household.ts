@@ -11,6 +11,15 @@ export interface ExtendedHousehold extends Household {
   progress?: number;
   nextDeadline?: string;
   daysUntilMove?: number;
+  owns_car?: boolean;
+  is_self_employed?: boolean;
+  created_by_user_profile?: {
+    full_name?: string;
+    has_children?: boolean;
+    has_pets?: boolean;
+    owns_car?: boolean;
+    is_self_employed?: boolean;
+  };
 }
 
 export interface HouseholdWithProgress extends Household {
@@ -21,4 +30,27 @@ export interface HouseholdWithProgress extends Household {
     daysRemaining: number;
   };
   memberCount: number;
+}
+
+export interface CreateHouseholdData {
+  householdName: string;
+  moveDate: string;
+  householdSize: number;
+  childrenCount: number;
+  petsCount: number;
+  propertyType: 'miete' | 'eigentum';
+  postalCode?: string;
+  oldAddress?: string;
+  newAddress?: string;
+  livingSpace?: number;
+  rooms?: number;
+  furnitureVolume?: number;
+  ownsCar?: boolean;
+  isSelfEmployed?: boolean;
+  adUrl?: string;
+  members?: Array<{
+    name: string;
+    email: string;
+    role?: string;
+  }>;
 }

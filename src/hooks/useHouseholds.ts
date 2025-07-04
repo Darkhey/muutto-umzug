@@ -4,13 +4,12 @@ import { Database } from '@/types/database'
 import { useAuth } from '@/contexts/AuthContext'
 import { APP_CONFIG } from '@/config/app'
 import { useToast } from '@/hooks/use-toast'
-
 import { ExtendedHousehold } from '@/types/household'
 
 type Household = ExtendedHousehold
 type HouseholdInsert = Database['public']['Tables']['households']['Insert']
 
-export interface CreateHouseholdData {
+export interface CreateHouseholdFormData {
   name: string
   move_date: string
   household_size: number
@@ -71,7 +70,7 @@ export function useHouseholds() {
     }
   }
 
-  const validateHouseholdData = (data: CreateHouseholdData): string[] => {
+  const validateHouseholdData = (data: CreateHouseholdFormData): string[] => {
     const errors: string[] = []
 
     // Required fields
@@ -139,7 +138,7 @@ export function useHouseholds() {
     return errors
   }
 
-  const createHousehold = async (householdData: CreateHouseholdData) => {
+  const createHousehold = async (householdData: CreateHouseholdFormData) => {
     if (!user) throw new Error('Benutzer ist nicht angemeldet')
 
     // Validate input data
@@ -305,7 +304,7 @@ export function useHouseholds() {
 
   const updateHousehold = async (
     householdId: string,
-    updates: Partial<CreateHouseholdData>
+    updates: Partial<CreateHouseholdFormData>
   ) => {
     try {
       // Validate updates if provided
@@ -316,7 +315,7 @@ export function useHouseholds() {
         }
 
         const updatedData = { ...currentHousehold, ...updates }
-        const validationErrors = validateHouseholdData(updatedData as CreateHouseholdData)
+        const validationErrors = validateHouseholdData(updatedData as CreateHouseholdFormData)
         if (validationErrors.length > 0) {
           throw new Error(validationErrors.join(', '))
         }

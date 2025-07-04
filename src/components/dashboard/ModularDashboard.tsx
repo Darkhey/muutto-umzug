@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -6,7 +7,7 @@ import { Home, CheckCircle, Bell, TrendingUp, MapPin, Map as DashboardMap, Truck
 import { useAuth } from '@/contexts/AuthContext'
 import { useHouseholds } from '@/hooks/useHouseholds'
 import { useToast } from '@/hooks/use-toast'
-import { ExtendedHousehold } from '@/types/household'
+import { ExtendedHousehold, CreateHouseholdData } from '@/types/household'
 import { APP_CONFIG } from '@/config/app'
 import MapModule from '@/components/maps/MapModule'
 import { DashboardStats } from './DashboardStats'

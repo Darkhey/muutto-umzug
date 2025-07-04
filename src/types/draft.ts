@@ -1,4 +1,5 @@
-export interface CreateHouseholdData {
+
+export interface CreateHouseholdFormData {
   name: string;
   move_date: string;
   household_size: number;
@@ -17,7 +18,7 @@ export interface CreateHouseholdData {
 
 export interface HouseholdDraft {
   id: string;
-  data: Partial<CreateHouseholdData>;
+  data: Partial<CreateHouseholdFormData>;
   createdAt: string;
   updatedAt: string;
   status: 'draft' | 'completed' | 'abandoned';

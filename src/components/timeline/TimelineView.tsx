@@ -129,7 +129,7 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
       filteredItems.map(item => {
         const dateText = item.start ? format(new Date(item.start), 'dd.MM') : ''
         return {
-          id: item.id,
+          id: String(item.id), // Ensure ID is string
           content: `
           <div class="timeline-item ${item.is_overdue ? 'overdue' : ''} ${item.completed ? 'completed' : ''} priority-${item.priority}">
             <div class="timeline-item-header" style="background-color: var(--${item.module_color}-100);">
@@ -162,12 +162,12 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
       max: viewOptions.end,
       zoomMin: 1000 * 60 * 60 * 24 * 7, // One week
       zoomMax: 1000 * 60 * 60 * 24 * 365, // One year
-      snap: preferences.snap_to_grid ? (item: VisItem) => {
+      snap: preferences.snap_to_grid ? (item: any) => {
         const date = new Date(item.start)
         date.setHours(0, 0, 0, 0)
         return date
       } : null,
-      onMove: (item: VisItem, callback: (item?: VisItem) => void) => {
+      onMove: (item: any, callback: (item?: any) => void) => {
         // Store the old date for undo functionality
         const oldItem = filteredItems.find(i => i.id === item.id)
         if (oldItem) {
@@ -178,9 +178,6 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
         const newDate = new Date(item.start)
         updateTaskDueDate(item.id, newDate)
         callback(item) // confirm the change
-      },
-      template: (item: VisItem) => {
-        return item.content
       }
     }
     

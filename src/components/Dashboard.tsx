@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AuthPage } from './auth/AuthPage'
 import { HouseholdCard } from './households/HouseholdCard'
 import { useToast } from '@/hooks/use-toast'
-import { ExtendedHousehold } from '@/types/household'
+import { ExtendedHousehold, CreateHouseholdData } from '@/types/household'
 import { APP_CONFIG, getRandomTip } from '@/config/app'
 import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
 import { getDaysUntilMove, getUrgencyColor, getUrgencyIcon } from '@/utils/moveDate'
@@ -209,7 +209,6 @@ export const Dashboard = () => {
         description: error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten',
         variant: "destructive"
       })
-      // Stay on onboarding screen
     }
   }
 
