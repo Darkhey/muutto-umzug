@@ -342,6 +342,7 @@ export const Dashboard = () => {
                 onManageMembers={showMemberManagement}
                 onEditHousehold={() => setShowEditDialog(true)}
                 onViewTasks={() => openTaskList(activeHousehold)}
+                onRestartOnboarding={() => setViewMode('onboarding')}
               />
             </div>
             

@@ -91,15 +91,15 @@ export type Database = {
           days_before_move: number | null
           description: string | null
           id: string
+          online_form_link: string | null
+          opening_hours: string | null
           phase: Database["public"]["Enums"]["task_phase"]
           priority: Database["public"]["Enums"]["task_priority"]
+          required_documents: Json | null
+          source_reference: string | null
           title: string
           updated_at: string
-          required_documents: Json | null
-          online_form_link: string | null
           zuständige_stelle: string | null
-          opening_hours: string | null
-          source_reference: string | null
         }
         Insert: {
           assigned_role?: Database["public"]["Enums"]["household_role"] | null
@@ -109,15 +109,15 @@ export type Database = {
           days_before_move?: number | null
           description?: string | null
           id?: string
+          online_form_link?: string | null
+          opening_hours?: string | null
           phase: Database["public"]["Enums"]["task_phase"]
           priority?: Database["public"]["Enums"]["task_priority"]
+          required_documents?: Json | null
+          source_reference?: string | null
           title: string
           updated_at?: string
-          required_documents?: Json | null
-          online_form_link?: string | null
           zuständige_stelle?: string | null
-          opening_hours?: string | null
-          source_reference?: string | null
         }
         Update: {
           assigned_role?: Database["public"]["Enums"]["household_role"] | null
@@ -127,39 +127,39 @@ export type Database = {
           days_before_move?: number | null
           description?: string | null
           id?: string
+          online_form_link?: string | null
+          opening_hours?: string | null
           phase?: Database["public"]["Enums"]["task_phase"]
           priority?: Database["public"]["Enums"]["task_priority"]
+          required_documents?: Json | null
+          source_reference?: string | null
           title?: string
           updated_at?: string
-          required_documents?: Json | null
-          online_form_link?: string | null
           zuständige_stelle?: string | null
-          opening_hours?: string | null
-          source_reference?: string | null
         }
         Relationships: []
       }
       fim_leistungen: {
         Row: {
-          fim_id: string
-          titel: string | null
           beschreibung: string | null
           daten: Json | null
+          fim_id: string
           last_updated: string | null
+          titel: string
         }
         Insert: {
-          fim_id: string
-          titel?: string | null
           beschreibung?: string | null
           daten?: Json | null
+          fim_id: string
           last_updated?: string | null
+          titel: string
         }
         Update: {
-          fim_id?: string
-          titel?: string | null
           beschreibung?: string | null
           daten?: Json | null
+          fim_id?: string
           last_updated?: string | null
+          titel?: string
         }
         Relationships: []
       }
@@ -292,12 +292,14 @@ export type Database = {
           furniture_volume: number | null
           household_size: number
           id: string
+          important_notes: string | null
           invitation_code: string
           living_space: number | null
           move_date: string
           name: string
           new_address: string | null
           old_address: string | null
+          pet_types: string | null
           pets_count: number
           postal_code: string | null
           property_type: Database["public"]["Enums"]["property_type"]
@@ -311,12 +313,14 @@ export type Database = {
           furniture_volume?: number | null
           household_size?: number
           id?: string
+          important_notes?: string | null
           invitation_code: string
           living_space?: number | null
           move_date: string
           name: string
           new_address?: string | null
           old_address?: string | null
+          pet_types?: string | null
           pets_count?: number
           postal_code?: string | null
           property_type: Database["public"]["Enums"]["property_type"]
@@ -330,12 +334,14 @@ export type Database = {
           furniture_volume?: number | null
           household_size?: number
           id?: string
+          important_notes?: string | null
           invitation_code?: string
           living_space?: number | null
           move_date?: string
           name?: string
           new_address?: string | null
           old_address?: string | null
+          pet_types?: string | null
           pets_count?: number
           postal_code?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
@@ -351,12 +357,12 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           full_name: string | null
-          id: string
-          updated_at: string
           has_children: boolean | null
           has_pets: boolean | null
-          owns_car: boolean | null
+          id: string
           is_self_employed: boolean | null
+          owns_car: boolean | null
+          updated_at: string
           wants_notifications: boolean | null
         }
         Insert: {
@@ -365,12 +371,12 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
-          id: string
-          updated_at?: string
           has_children?: boolean | null
           has_pets?: boolean | null
-          owns_car?: boolean | null
+          id: string
           is_self_employed?: boolean | null
+          owns_car?: boolean | null
+          updated_at?: string
           wants_notifications?: boolean | null
         }
         Update: {
@@ -379,12 +385,12 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
-          id?: string
-          updated_at?: string
           has_children?: boolean | null
           has_pets?: boolean | null
-          owns_car?: boolean | null
+          id?: string
           is_self_employed?: boolean | null
+          owns_car?: boolean | null
+          updated_at?: string
           wants_notifications?: boolean | null
         }
         Relationships: []
@@ -573,6 +579,42 @@ export type Database = {
       generate_invitation_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      generate_personalized_tasks: {
+        Args: {
+          p_user_id: string
+          p_move_from_state: string
+          p_move_to_state: string
+          p_move_to_municipality: string
+          p_has_children: boolean
+          p_has_pets: boolean
+          p_owns_car: boolean
+          p_is_self_employed: boolean
+          p_pet_types: string
+          p_important_notes: string
+        }
+        Returns: {
+          actual_duration: number | null
+          assigned_to: string | null
+          attachments: Json | null
+          category: string | null
+          completed: boolean
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          dependencies: string[] | null
+          description: string | null
+          due_date: string | null
+          estimated_duration: number | null
+          household_id: string
+          id: string
+          notes: string | null
+          phase: Database["public"]["Enums"]["task_phase"]
+          priority: Database["public"]["Enums"]["task_priority"]
+          template_id: string | null
+          title: string
+          updated_at: string
+        }[]
       }
       generate_unique_invitation_code: {
         Args: Record<PropertyKey, never>

@@ -162,7 +162,7 @@ export const ModularDashboard = () => {
           id: 'map',
           title: 'Karte',
           icon: <DashboardMap className="h-5 w-5 text-green-600" />,
-          component: <MapModule latitude={52.52} longitude={13.405} />,
+          component: <MapModule household={firstHousehold} />,
           enabled: true,
           category: 'primary',
           description: 'Interaktive Karte mit wichtigen Orten',

@@ -45,12 +45,12 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
       const bp = breakpoint as keyof Layouts;
       const currentLayout = allLayouts[bp] || [];
       
-      // Validate layout
-      const validation = validateLayout(currentLayout, bp);
+      // Validate layout  
+      const validation = validateLayout(currentLayout, bp as "lg" | "md" | "sm" | "xs");
       
       if (!validation.isValid) {
         // Repair layout if invalid
-        repairedLayouts[bp] = repairLayout(currentLayout, bp);
+        repairedLayouts[bp] = repairLayout(currentLayout, bp as "lg" | "md" | "sm" | "xs");
       } else {
         repairedLayouts[bp] = currentLayout;
       }
@@ -146,28 +146,6 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
         measureBeforeMount={false}
         style={{ minHeight: '400px', width: '100%' }}
         isBounded={true}
-        // Animation settings
-        css={{
-          '.react-grid-item.react-grid-placeholder': {
-            background: 'rgba(59, 130, 246, 0.15)',
-            border: '2px dashed rgb(59, 130, 246)',
-            borderRadius: '8px',
-            opacity: 0.8,
-            transition: 'all 200ms ease',
-          },
-          '.react-grid-item.cssTransforms': {
-            transition: 'transform 200ms ease',
-          },
-          '.react-grid-item.react-draggable-dragging': {
-            transition: 'none',
-            zIndex: 1000,
-            opacity: 0.8,
-          },
-          '.react-grid-item.resizing': {
-            opacity: 0.8,
-            transition: 'none',
-          }
-        } as React.CSSProperties}
       >
         {children}
       </ResponsiveGridLayout>
