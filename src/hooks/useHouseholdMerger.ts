@@ -60,8 +60,8 @@ export function useHouseholdMerger() {
       await refetch()
 
       toast({
-        title: 'Haushalte zusammengeführt',
-        description: `${sourceHouseholdIds.length} Haushalte wurden erfolgreich zusammengeführt.`
+        title: 'Haushalte verknüpft',
+        description: `${sourceHouseholdIds.length} Haushalte wurden erfolgreich für einen gemeinsamen Umzug verknüpft.`
       })
 
       return data

@@ -13,6 +13,8 @@ export interface TimelineItem {
   is_overdue: boolean;
   module_color: string;
   className?: string;
+  comment_count?: number;
+  is_sticky?: boolean;
 }
 
 export interface VisItem {

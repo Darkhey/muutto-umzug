@@ -14,6 +14,8 @@ import { useTimelineDrag } from '@/hooks/useTimelineDrag'
 import { useTimelineExport } from '@/hooks/useTimelineExport'
 import { addDays, subDays } from 'date-fns'
 
+import { AISuggestionsDialog } from './AISuggestionsDialog';
+
 interface HorizontalTimelineViewProps {
   household: ExtendedHousehold
   onBack?: () => void
@@ -42,7 +44,7 @@ const PHASE_COLORS = {
 }
 
 export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimelineViewProps) => {
-  const { timelineItems, loading, updateTaskDueDate } = useTimeline(household.id)
+  const { timelineItems, loading, updateTaskDueDate, updateTask, addTask } = useTimeline(household.id)
   const timelineRef = useRef<HTMLDivElement>(null)
   const [zoomLevel, setZoomLevel] = useState(30)
   const [showCompleted, setShowCompleted] = useState(false)
@@ -50,6 +52,37 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
   const [timelineStart, setTimelineStart] = useState(new Date())
   const [timelineEnd, setTimelineEnd] = useState(new Date())
   const [filteredTasks, setFilteredTasks] = useState<TimelineTaskExtended[]>([])
+
+  const [aiSuggestions, setAiSuggestions] = useState<TimelineItem[]>([]);
+  const [showSuggestionsDialog, setShowSuggestionsDialog] = useState(false);
+
+  const handleCreateStickyNote = async () => {
+    if (!household.id) return;
+    await addTask({
+      household_id: household.id,
+      title: 'Neue Sticky Note',
+      description: '',
+      phase: 'langzeit',
+      priority: 'niedrig',
+      start: null, // Sticky notes don't have a specific due date
+      is_sticky: true,
+    });
+  };
+
+  const handleGenerateAISuggestions = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-timeline-suggestions', {
+        body: { householdId: household.id },
+      });
+
+      if (error) throw error;
+
+      setAiSuggestions(data.suggestions);
+      setShowSuggestionsDialog(true);
+    } catch (error) {
+      console.error('Error generating AI suggestions:', error);
+    }
+  };
 
   const { exportToICal } = useTimelineExport(timelineItems, household.name)
 
@@ -145,6 +178,8 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
           onZoomOut={() => setZoomLevel(prev => Math.max(10, prev - 10))}
           onToggleCompleted={setShowCompleted}
           onExportToICal={exportToICal}
+          onGenerateAISuggestions={handleGenerateAISuggestions}
+          onCreateStickyNote={handleCreateStickyNote}
         />
         
         <CardContent>
@@ -170,6 +205,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
                   phaseColors={PHASE_COLORS}
                   onPointerDown={handlePointerDown}
                   onDoubleClick={handleTaskDoubleClick}
+                  onUpdateTask={(task, newTitle) => updateTask(task.id, { title: newTitle })}
                 />
               ))}
             </div>
@@ -186,6 +222,16 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
         onOpenChange={(open) => !open && setSelectedTask(null)}
         householdId={household.id}
         task={selectedTask}
+      />
+
+      <AISuggestionsDialog
+        open={showSuggestionsDialog}
+        onOpenChange={setShowSuggestionsDialog}
+        suggestions={aiSuggestions}
+        onAccept={(suggestion) => {
+          addTask({ ...suggestion, household_id: household.id });
+          setShowSuggestionsDialog(false);
+        }}
       />
     </>
   )

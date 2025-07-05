@@ -77,7 +77,7 @@ export const InviteOnboarding = ({ invitation, onComplete }: InviteOnboardingPro
         <CardHeader>
           <CardTitle className="text-lg">Haushaltseinladung</CardTitle>
           <CardDescription>
-            Du wurdest zu "{invitation.households.name}" eingeladen
+            Du wurdest zu &quot;{invitation.households.name}&quot; eingeladen
             <br />
             <span className="text-sm text-gray-600">
               Umzug am {new Date(invitation.households.move_date).toLocaleDateString('de-DE')}

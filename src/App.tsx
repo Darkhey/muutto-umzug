@@ -4,16 +4,19 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import LoadingScreen from "@/components/LoadingScreen";
 import Index from "./pages/Index";
 import Timeline from "./pages/Timeline";
 import Settings from "./pages/Settings";
+import Moves from "./pages/Moves";
 import NotFound from "./pages/NotFound";
 import Impressum from "./pages/Impressum";
 import Datenschutz from "./pages/Datenschutz";
 import AGB from "./pages/AGB";
 import Kontakt from "./pages/Kontakt";
 import Premium from "./pages/Premium";
+import HouseholdModulePage from "./pages/HouseholdModulePage";
 import { AppShell } from "@/components/layout/AppShell";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -29,25 +32,7 @@ const App = () => {
           <TooltipProvider>
             <ErrorBoundary>
               <AuthProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <ErrorBoundary>
-                    <AppShell>
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/timeline" element={<Timeline />} />
-                        <Route path="/premium" element={<Premium />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/impressum" element={<Impressum />} />
-                        <Route path="/datenschutz" element={<Datenschutz />} />
-                        <Route path="/agb" element={<AGB />} />
-                        <Route path="/kontakt" element={<Kontakt />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </AppShell>
-                  </ErrorBoundary>
-                </BrowserRouter>
+                <AppContent />
               </AuthProvider>
             </ErrorBoundary>
           </TooltipProvider>
@@ -55,6 +40,40 @@ const App = () => {
       </HelmetProvider>
     </ErrorBoundary>
   )
+}
+
+const AppContent = () => {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <ErrorBoundary>
+          <AppShell>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/timeline" element={<Timeline />} />
+              <Route path="/premium" element={<Premium />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/moves" element={<Moves />} />
+              <Route path="/impressum" element={<Impressum />} />
+              <Route path="/datenschutz" element={<Datenschutz />} />
+              <Route path="/agb" element={<AGB />} />
+              <Route path="/kontakt" element={<Kontakt />} />
+              <Route path="/household-module" element={<HouseholdModulePage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AppShell>
+        </ErrorBoundary>
+      </BrowserRouter>
+    </>
+  );
 }
 
 export default App;
