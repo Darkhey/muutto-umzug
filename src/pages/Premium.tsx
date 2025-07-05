@@ -169,7 +169,7 @@ export default function Premium() {
   const monthlyProduct = products.find(p => p.default_price?.recurring?.interval === 'month')
   const oneTimeProduct = products.find(p => !p.default_price?.recurring)
 
-  function formatPrice(price: any) {
+  function formatPrice(price: { unit_amount: number | null; currency: string } | undefined) {
     if (!price) return ''
     const amount = (price.unit_amount || 0) / 100
     return amount.toLocaleString('de-DE', { style: 'currency', currency: price.currency?.toUpperCase() || 'EUR' })
