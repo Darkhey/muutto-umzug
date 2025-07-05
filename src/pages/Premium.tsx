@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -12,9 +13,18 @@ import { Crown, Check, ArrowLeft, CreditCard, Calendar, Loader2 } from 'lucide-r
 import CustomerPortal from '@/components/premium/CustomerPortal'
 import { SUPABASE_URL } from '@/integrations/supabase/client'
 
-const PRODUCT_IDS = {
-  oneTime: 'prod_ScKZPhag4lGIVl', // Produkt-ID für Einmalzahlung
-  monthly: 'prod_ScKZQvAXCiDNPc', // Produkt-ID für monatliches Abo
+interface StripeProduct {
+  id: string
+  name: string
+  description?: string
+  default_price?: {
+    id: string
+    unit_amount: number
+    currency: string
+    recurring?: {
+      interval: string
+    }
+  }
 }
 
 export default function Premium() {
@@ -24,7 +34,7 @@ export default function Premium() {
   const { status, loading } = usePremiumStatus()
   const [showCheckout, setShowCheckout] = useState(false)
   const [selectedMode, setSelectedMode] = useState<'monthly' | 'one-time'>('monthly')
-  const [products, setProducts] = useState<any[]>([])
+  const [products, setProducts] = useState<StripeProduct[]>([])
   const [priceIds, setPriceIds] = useState<{ monthly?: string; oneTime?: string }>({})
   const [loadingProducts, setLoadingProducts] = useState(true)
 
@@ -32,23 +42,46 @@ export default function Premium() {
     const fetchProducts = async () => {
       setLoadingProducts(true)
       try {
+        console.log('Lade Stripe Produkte...')
         const res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-products`)
-        if (!res.ok) throw new Error('Failed to fetch products')
+        
+        if (!res.ok) {
+          const errorText = await res.text()
+          console.error('HTTP Fehler:', res.status, errorText)
+          throw new Error(`HTTP ${res.status}: ${errorText}`)
+        }
+        
         const data = await res.json()
+        console.log('Stripe Produkte erhalten:', data)
+        
         if (data.error) throw new Error(data.error)
 
-        const filtered = data.filter((p: any) => 
-          p.id === PRODUCT_IDS.oneTime || p.id === PRODUCT_IDS.monthly
-        )
-        setProducts(filtered)
+        setProducts(data)
 
-        const monthlyId = filtered.find((p: any) => p.id === PRODUCT_IDS.monthly)?.default_price?.id
-        const oneTimeId = filtered.find((p: any) => p.id === PRODUCT_IDS.oneTime)?.default_price?.id
-        setPriceIds({ monthly: monthlyId, oneTime: oneTimeId })
+        // Automatisch Monthly und One-Time Preise identifizieren
+        const monthlyProduct = data.find((p: StripeProduct) => 
+          p.default_price?.recurring?.interval === 'month'
+        )
+        const oneTimeProduct = data.find((p: StripeProduct) => 
+          !p.default_price?.recurring
+        )
+
+        console.log('Monthly Produkt:', monthlyProduct)
+        console.log('One-Time Produkt:', oneTimeProduct)
+
+        setPriceIds({
+          monthly: monthlyProduct?.default_price?.id,
+          oneTime: oneTimeProduct?.default_price?.id
+        })
 
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : 'Unbekannter Fehler'
-        toast({ title: 'Fehler beim Laden der Preise', description: errorMessage, variant: 'destructive' })
+        console.error('Fehler beim Laden der Produkte:', errorMessage)
+        toast({ 
+          title: 'Fehler beim Laden der Preise', 
+          description: errorMessage, 
+          variant: 'destructive' 
+        })
       } finally {
         setLoadingProducts(false)
       }
@@ -133,10 +166,8 @@ export default function Premium() {
     'Individuelle Rollenvergabe & Exportmöglichkeiten',
   ]
 
-  const monthlyProduct = products.find((p) => p.id === PRODUCT_IDS.monthly)
-  const oneTimeProduct = products.find((p) => p.id === PRODUCT_IDS.oneTime)
-  const monthlyPrice = monthlyProduct?.default_price
-  const oneTimePrice = oneTimeProduct?.default_price
+  const monthlyProduct = products.find(p => p.default_price?.recurring?.interval === 'month')
+  const oneTimeProduct = products.find(p => !p.default_price?.recurring)
 
   function formatPrice(price: any) {
     if (!price) return ''
@@ -215,9 +246,9 @@ export default function Premium() {
                       <CardTitle className="text-2xl">{monthlyProduct?.name || 'Monatliches Abo'}</CardTitle>
                       <div className="flex items-center justify-center gap-2">
                         <Badge variant="outline" className="text-2xl font-bold">
-                          {formatPrice(monthlyPrice)}
+                          {formatPrice(monthlyProduct?.default_price)}
                         </Badge>
-                        <span className="text-muted-foreground">/ {monthlyPrice?.recurring?.interval === 'month' ? 'Monat' : monthlyPrice?.recurring?.interval}</span>
+                        <span className="text-muted-foreground">/ Monat</span>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {monthlyProduct?.description || 'Jederzeit kündbar • Automatische Verlängerung'}
@@ -240,7 +271,7 @@ export default function Premium() {
                       <CardTitle className="text-2xl">{oneTimeProduct?.name || 'Einmalzahlung'}</CardTitle>
                       <div className="flex items-center justify-center gap-2">
                         <Badge variant="outline" className="text-2xl font-bold">
-                          {formatPrice(oneTimePrice)}
+                          {formatPrice(oneTimeProduct?.default_price)}
                         </Badge>
                         <span className="text-muted-foreground">einmalig</span>
                       </div>

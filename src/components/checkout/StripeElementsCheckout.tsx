@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { Button } from '@/components/ui/button'
@@ -46,8 +47,16 @@ export const StripeElementsCheckout = ({
     setLoading(true)
     setError(null)
 
+    console.log('Stripe Checkout gestartet:', { mode, priceId })
+
     if (!stripe || !elements) {
       setError('Stripe ist nicht verfügbar')
+      setLoading(false)
+      return
+    }
+
+    if (!priceId) {
+      setError('Preis-ID nicht verfügbar')
       setLoading(false)
       return
     }
@@ -61,12 +70,14 @@ export const StripeElementsCheckout = ({
 
     try {
       // 1. PaymentMethod erstellen
+      console.log('Erstelle PaymentMethod...')
       const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
       })
 
       if (pmError) {
+        console.error('PaymentMethod Fehler:', pmError)
         setError(pmError.message || 'Fehler bei der Kartenerstellung')
         setLoading(false)
         return
@@ -78,6 +89,8 @@ export const StripeElementsCheckout = ({
         return
       }
 
+      console.log('PaymentMethod erstellt:', paymentMethod.id)
+
       // 2. Session Token holen
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
@@ -88,6 +101,7 @@ export const StripeElementsCheckout = ({
       }
 
       // 3. Payment/Subscription im Backend erstellen
+      console.log('Rufe stripe-elements Function auf...')
       const res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-elements`, {
         method: 'POST',
         headers: {
@@ -102,15 +116,18 @@ export const StripeElementsCheckout = ({
       })
 
       const data = await res.json()
+      console.log('Stripe Elements Response:', data)
 
       if (!res.ok) {
-        throw new Error(data.error || 'Fehler beim Erstellen der Zahlung')
+        throw new Error(data.error || `HTTP ${res.status}: Fehler beim Erstellen der Zahlung`)
       }
 
       // 4. Falls erforderlich: Payment bestätigen
       if (data.clientSecret) {
+        console.log('Bestätige Payment...')
         const { error: confirmError } = await stripe.confirmCardPayment(data.clientSecret)
         if (confirmError) {
+          console.error('Payment Confirmation Fehler:', confirmError)
           setError(confirmError.message || 'Zahlung fehlgeschlagen')
           setLoading(false)
           return
@@ -118,6 +135,7 @@ export const StripeElementsCheckout = ({
       }
 
       // Erfolg!
+      console.log('Zahlung erfolgreich!')
       toast({
         title: 'Zahlung erfolgreich!',
         description: mode === 'monthly' 
@@ -129,6 +147,7 @@ export const StripeElementsCheckout = ({
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unbekannter Fehler'
+      console.error('Stripe Checkout Fehler:', errorMessage)
       setError(errorMessage)
       toast({
         title: 'Fehler bei der Zahlung',
@@ -195,7 +214,7 @@ export const StripeElementsCheckout = ({
             </Button>
             <Button
               type="submit"
-              disabled={loading || !stripe}
+              disabled={loading || !stripe || !priceId}
               className="flex-1 bg-yellow-500 hover:bg-yellow-600"
             >
               {loading ? (
@@ -218,4 +237,4 @@ export const StripeElementsCheckout = ({
   )
 }
 
-export default StripeElementsCheckout 
+export default StripeElementsCheckout

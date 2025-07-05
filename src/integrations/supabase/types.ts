@@ -299,6 +299,7 @@ export type Database = {
           name: string
           new_address: string | null
           old_address: string | null
+          parent_household_id: string | null
           pet_types: string | null
           pets_count: number
           postal_code: string | null
@@ -320,6 +321,7 @@ export type Database = {
           name: string
           new_address?: string | null
           old_address?: string | null
+          parent_household_id?: string | null
           pet_types?: string | null
           pets_count?: number
           postal_code?: string | null
@@ -341,12 +343,147 @@ export type Database = {
           name?: string
           new_address?: string | null
           old_address?: string | null
+          parent_household_id?: string | null
           pet_types?: string | null
           pets_count?: number
           postal_code?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
           rooms?: number | null
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "households_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "households_parent_household_id_fkey"
+            columns: ["parent_household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      move_households: {
+        Row: {
+          household_id: string
+          move_id: string
+        }
+        Insert: {
+          household_id: string
+          move_id: string
+        }
+        Update: {
+          household_id?: string
+          move_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "move_households_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "move_households_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "moves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      move_members_roles: {
+        Row: {
+          assigned_at: string
+          id: string
+          move_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          move_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          move_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "move_members_roles_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "moves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moves: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          move_date: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          move_date: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          move_date?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      premium_status: {
+        Row: {
+          features_enabled: Json | null
+          is_premium: boolean
+          premium_mode: string | null
+          purchase_date: string | null
+          stripe_subscription_id: string | null
+          user_id: string
+          valid_until: string | null
+        }
+        Insert: {
+          features_enabled?: Json | null
+          is_premium?: boolean
+          premium_mode?: string | null
+          purchase_date?: string | null
+          stripe_subscription_id?: string | null
+          user_id: string
+          valid_until?: string | null
+        }
+        Update: {
+          features_enabled?: Json | null
+          is_premium?: boolean
+          premium_mode?: string | null
+          purchase_date?: string | null
+          stripe_subscription_id?: string | null
+          user_id?: string
+          valid_until?: string | null
         }
         Relationships: []
       }
@@ -395,6 +532,65 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_customers: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          stripe_customer_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          stripe_customer_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          stripe_customer_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      task_comments: {
+        Row: {
+          comment_text: string
+          created_at: string | null
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          comment_text: string
+          created_at?: string | null
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          comment_text?: string
+          created_at?: string | null
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_history: {
         Row: {
           changed_at: string
@@ -434,6 +630,7 @@ export type Database = {
         Row: {
           actual_duration: number | null
           assigned_to: string | null
+          attachment_url: string | null
           attachments: Json | null
           category: string | null
           completed: boolean
@@ -446,6 +643,7 @@ export type Database = {
           estimated_duration: number | null
           household_id: string
           id: string
+          link_url: string | null
           notes: string | null
           phase: Database["public"]["Enums"]["task_phase"]
           priority: Database["public"]["Enums"]["task_priority"]
@@ -456,6 +654,7 @@ export type Database = {
         Insert: {
           actual_duration?: number | null
           assigned_to?: string | null
+          attachment_url?: string | null
           attachments?: Json | null
           category?: string | null
           completed?: boolean
@@ -468,6 +667,7 @@ export type Database = {
           estimated_duration?: number | null
           household_id: string
           id?: string
+          link_url?: string | null
           notes?: string | null
           phase: Database["public"]["Enums"]["task_phase"]
           priority?: Database["public"]["Enums"]["task_priority"]
@@ -478,6 +678,7 @@ export type Database = {
         Update: {
           actual_duration?: number | null
           assigned_to?: string | null
+          attachment_url?: string | null
           attachments?: Json | null
           category?: string | null
           completed?: boolean
@@ -490,6 +691,7 @@ export type Database = {
           estimated_duration?: number | null
           household_id?: string
           id?: string
+          link_url?: string | null
           notes?: string | null
           phase?: Database["public"]["Enums"]["task_phase"]
           priority?: Database["public"]["Enums"]["task_priority"]
@@ -596,6 +798,7 @@ export type Database = {
         Returns: {
           actual_duration: number | null
           assigned_to: string | null
+          attachment_url: string | null
           attachments: Json | null
           category: string | null
           completed: boolean
@@ -608,6 +811,7 @@ export type Database = {
           estimated_duration: number | null
           household_id: string
           id: string
+          link_url: string | null
           notes: string | null
           phase: Database["public"]["Enums"]["task_phase"]
           priority: Database["public"]["Enums"]["task_priority"]
