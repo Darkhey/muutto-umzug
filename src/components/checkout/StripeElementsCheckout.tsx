@@ -115,11 +115,17 @@ export const StripeElementsCheckout = ({
         }),
       })
 
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error('HTTP Fehler:', res.status, errorText)
+        throw new Error(`HTTP ${res.status}: ${errorText}`)
+      }
+
       const data = await res.json()
       console.log('Stripe Elements Response:', data)
 
-      if (!res.ok) {
-        throw new Error(data.error || `HTTP ${res.status}: Fehler beim Erstellen der Zahlung`)
+      if (data.error) {
+        throw new Error(data.error)
       }
 
       // 4. Falls erforderlich: Payment bestätigen
@@ -163,7 +169,7 @@ export const StripeElementsCheckout = ({
     if (mode === 'monthly') {
       return { amount: '9,99', period: 'Monat' }
     }
-    return { amount: '9,99', period: 'einmalig' }
+    return { amount: '49,99', period: 'einmalig' }
   }
 
   const priceDisplay = getPriceDisplay()

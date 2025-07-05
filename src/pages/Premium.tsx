@@ -34,7 +34,7 @@ export default function Premium() {
   const [showCheckout, setShowCheckout] = useState(false)
   const [selectedMode, setSelectedMode] = useState<'monthly' | 'one-time'>('monthly')
   const [products, setProducts] = useState<StripeProduct[]>([])
-  const [priceIds, setPriceIds] = useState<{ monthly?: string; oneTime?: string }>({})
+  const [selectedPriceId, setSelectedPriceId] = useState<string>('')
   const [loadingProducts, setLoadingProducts] = useState(true)
 
   useEffect(() => {
@@ -43,7 +43,6 @@ export default function Premium() {
       try {
         console.log('Lade Stripe Produkte ohne Auth...')
         
-        // Direkter Aufruf ohne Authorization Header für öffentliche Produktdaten
         const res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-products`, {
           method: 'GET',
           headers: {
@@ -64,7 +63,7 @@ export default function Premium() {
 
         setProducts(data)
 
-        // Automatisch Monthly und One-Time Preise identifizieren
+        // Preise für Standard-Modi setzen
         const monthlyProduct = data.find((p: StripeProduct) => 
           p.default_price?.recurring?.interval === 'month'
         )
@@ -75,10 +74,10 @@ export default function Premium() {
         console.log('Monthly Produkt:', monthlyProduct)
         console.log('One-Time Produkt:', oneTimeProduct)
 
-        setPriceIds({
-          monthly: monthlyProduct?.default_price?.id,
-          oneTime: oneTimeProduct?.default_price?.id
-        })
+        // Initial die Monthly-Preis-ID setzen
+        if (monthlyProduct?.default_price?.id) {
+          setSelectedPriceId(monthlyProduct.default_price.id)
+        }
 
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : 'Unbekannter Fehler'
@@ -94,6 +93,20 @@ export default function Premium() {
     }
     fetchProducts()
   }, [toast])
+
+  // Preis-ID aktualisieren wenn Mode gewechselt wird
+  useEffect(() => {
+    if (products.length > 0) {
+      const monthlyProduct = products.find(p => p.default_price?.recurring?.interval === 'month')
+      const oneTimeProduct = products.find(p => !p.default_price?.recurring)
+      
+      if (selectedMode === 'monthly' && monthlyProduct?.default_price?.id) {
+        setSelectedPriceId(monthlyProduct.default_price.id)
+      } else if (selectedMode === 'one-time' && oneTimeProduct?.default_price?.id) {
+        setSelectedPriceId(oneTimeProduct.default_price.id)
+      }
+    }
+  }, [selectedMode, products])
 
   useEffect(() => {
     const success = searchParams.get('success')
@@ -194,6 +207,23 @@ export default function Premium() {
     </Card>
   )
 
+  const handleCheckoutClick = (mode: 'monthly' | 'one-time') => {
+    setSelectedMode(mode)
+    
+    // Korrekte Preis-ID für den gewählten Modus setzen
+    const product = mode === 'monthly' ? monthlyProduct : oneTimeProduct
+    if (product?.default_price?.id) {
+      setSelectedPriceId(product.default_price.id)
+      setShowCheckout(true)
+    } else {
+      toast({
+        title: 'Preis nicht verfügbar',
+        description: 'Der gewählte Preis ist momentan nicht verfügbar.',
+        variant: 'destructive'
+      })
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
@@ -262,11 +292,11 @@ export default function Premium() {
                     </CardHeader>
                     <CardContent>
                       <Button 
-                        onClick={() => setShowCheckout(true)}
+                        onClick={() => handleCheckoutClick('monthly')}
                         className="w-full bg-yellow-500 hover:bg-yellow-600"
-                        disabled={!priceIds.monthly}
+                        disabled={!monthlyProduct?.default_price?.id}
                       >
-                        {priceIds.monthly ? 'Monatliches Abo starten' : 'Nicht verfügbar'}
+                        {monthlyProduct?.default_price?.id ? 'Monatliches Abo starten' : 'Nicht verfügbar'}
                       </Button>
                     </CardContent>
                   </Card>
@@ -287,11 +317,11 @@ export default function Premium() {
                     </CardHeader>
                     <CardContent>
                       <Button 
-                        onClick={() => setShowCheckout(true)}
+                        onClick={() => handleCheckoutClick('one-time')}
                         className="w-full bg-yellow-500 hover:bg-yellow-600"
-                        disabled={!priceIds.oneTime}
+                        disabled={!oneTimeProduct?.default_price?.id}
                       >
-                        {priceIds.oneTime ? 'Einmalzahlung tätigen' : 'Nicht verfügbar'}
+                        {oneTimeProduct?.default_price?.id ? 'Einmalzahlung tätigen' : 'Nicht verfügbar'}
                       </Button>
                     </CardContent>
                   </Card>
@@ -307,7 +337,7 @@ export default function Premium() {
             </DialogHeader>
             <StripeElementsCheckout
               mode={selectedMode}
-              priceId={selectedMode === 'monthly' ? priceIds.monthly : priceIds.oneTime}
+              priceId={selectedPriceId}
               onSuccess={() => {
                 setShowCheckout(false)
                 navigate('/premium?success=true', { replace: true })
