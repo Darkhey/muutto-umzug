@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -42,8 +41,15 @@ export default function Premium() {
     const fetchProducts = async () => {
       setLoadingProducts(true)
       try {
-        console.log('Lade Stripe Produkte...')
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-products`)
+        console.log('Lade Stripe Produkte ohne Auth...')
+        
+        // Direkter Aufruf ohne Authorization Header für öffentliche Produktdaten
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-products`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
         
         if (!res.ok) {
           const errorText = await res.text()

@@ -21,7 +21,7 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  console.log('Stripe Products Function aufgerufen')
+  console.log('Stripe Products Function aufgerufen - öffentlicher Zugriff')
 
   try {
     // Alle aktiven Produkte mit ihren Preisen laden
