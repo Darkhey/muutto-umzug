@@ -84,7 +84,7 @@ const JoinHousehold = ({ code }: { code: string }) => {
         <CardHeader>
           <CardTitle className="text-lg">Haushalt beitreten</CardTitle>
           <CardDescription>
-            Du wurdest zu "{household.name}" eingeladen.
+            Du wurdest zu &quot;{household.name}&quot; eingeladen.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

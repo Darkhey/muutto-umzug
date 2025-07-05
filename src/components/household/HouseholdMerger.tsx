@@ -316,7 +316,7 @@ export const HouseholdMerger = ({
                 Konfliktlösung
               </h4>
               <p className="text-sm text-yellow-800 mb-2">
-                Bei Konflikten (z.B. gleiche E-Mail-Adresse) gilt das Prinzip "first come wins":
+                Bei Konflikten (z.B. gleiche E-Mail-Adresse) gilt das Prinzip &quot;first come wins&quot;:
               </p>
               <ul className="text-sm text-yellow-800 list-disc pl-5 space-y-1">
                 <li>Mitglieder, die bereits im Ziel-Haushalt existieren, bleiben unverändert</li>

@@ -52,7 +52,7 @@ export function useHouseholds() {
       
       const { data, error } = await supabase
         .from('households')
-        .select('*, created_by_user_profile:profiles(*)')
+        .select('*, created_by_user_profile:profiles(*), parent_household_id')
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -203,8 +203,19 @@ export function useHouseholds() {
 
       // Create initial tasks from templates
       try {
-        const { data: taskCount, error: taskError } = await supabase.rpc('create_initial_tasks', {
-          p_household_id: household.id
+        const { data: taskCount, error: taskError } = await supabase.rpc('generate_personalized_tasks', {
+          p_household_id: household.id,
+          p_move_from_state: householdData.old_address ? '' : '', // Placeholder
+          p_move_to_state: householdData.new_address ? '' : '', // Placeholder
+          p_move_to_municipality: householdData.postal_code ? '' : '', // Placeholder
+          p_has_children: householdData.children_count > 0,
+          p_has_pets: householdData.pets_count > 0,
+          p_owns_car: householdData.owns_car || false,
+          p_is_self_employed: householdData.is_self_employed || false,
+          p_property_type: householdData.property_type,
+          p_living_space: householdData.living_space || 0,
+          p_rooms: householdData.rooms || 0,
+          p_furniture_volume: householdData.furniture_volume || 0,
         })
 
         if (taskError) {

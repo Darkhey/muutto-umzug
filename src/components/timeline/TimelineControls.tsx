@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Download, ZoomIn, ZoomOut } from 'lucide-react'
+import { Calendar, Download, ZoomIn, ZoomOut, Sparkles, Pin } from 'lucide-react'
 import { ExtendedHousehold } from '@/types/household'
 
 interface TimelineControlsProps {
@@ -14,6 +14,8 @@ interface TimelineControlsProps {
   onZoomOut: () => void
   onToggleCompleted: (checked: boolean) => void
   onExportToICal: () => void
+  onGenerateAISuggestions: () => void;
+  onCreateStickyNote: () => void;
 }
 
 export const TimelineControls = ({
@@ -23,7 +25,9 @@ export const TimelineControls = ({
   onZoomIn,
   onZoomOut,
   onToggleCompleted,
-  onExportToICal
+  onExportToICal,
+  onGenerateAISuggestions,
+  onCreateStickyNote
 }: TimelineControlsProps) => {
   return (
     <Card>
@@ -35,9 +39,17 @@ export const TimelineControls = ({
           </CardTitle>
           
           <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" onClick={onGenerateAISuggestions}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              KI-Vorschläge
+            </Button>
             <Button variant="outline" size="sm" onClick={onExportToICal}>
               <Download className="h-4 w-4 mr-2" />
               iCal Export
+            </Button>
+            <Button variant="outline" size="sm" onClick={onCreateStickyNote}>
+              <Pin className="h-4 w-4 mr-2" />
+              Sticky Note
             </Button>
             
             <div className="flex items-center gap-2">

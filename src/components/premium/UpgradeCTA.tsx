@@ -1,58 +1,41 @@
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { usePremiumStatus } from '@/hooks/usePremiumStatus'
-import { SUPABASE_URL, supabase } from '@/integrations/supabase/client'
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Crown } from 'lucide-react'
 
 export const UpgradeCTA = () => {
   const { status, loading } = usePremiumStatus()
-  const [upgrading, setUpgrading] = useState(false)
-
-  const handleUpgrade = async () => {
-    setUpgrading(true)
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      const token = session?.access_token
-      if (!token) {
-        throw new Error('No access token found')
-      }
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000)
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ mode: 'one-time' }),
-        signal: controller.signal,
-      })
-      clearTimeout(timeoutId)
-      if (!res.ok) throw new Error('Request failed')
-      const data = await res.json()
-      if (data.url && typeof data.url === 'string') {
-        window.location.href = data.url
-      }
-    } catch (err) {
-      console.error('Upgrade error', err)
-    } finally {
-      setUpgrading(false)
-    }
-  }
+  const navigate = useNavigate()
 
   if (loading) return null
   if (status?.is_premium) {
     return <Badge variant="outline">Premium aktiviert</Badge>
   }
+
   return (
-    <Button
-      onClick={handleUpgrade}
-      disabled={upgrading}
-      className="bg-yellow-500 text-white"
-    >
-      {upgrading ? 'Lädt...' : 'Premium freischalten'}
-    </Button>
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Schalte alle Funktionen frei, um deinen Umzug noch reibungsloser zu gestalten:
+      </p>
+      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+        <li>Mehrere Haushalte pro Umzug</li>
+        <li>KI-gestützte Aufgabenplanung</li>
+        <li>Merge-Analyse und Vergleich von Haushalten</li>
+        <li>Smart-Timeline mit Drag&Drop</li>
+        <li>Automatische Vertragsanalyse (via Banking API)</li>
+        <li>Individuelle Rollenvergabe & Exportmöglichkeiten</li>
+      </ul>
+
+      <Button
+        onClick={() => navigate('/premium')}
+        className="w-full bg-yellow-500 hover:bg-yellow-600 text-white"
+      >
+        <Crown className="h-4 w-4 mr-2" />
+        Premium freischalten
+      </Button>
+    </div>
   )
 }
+
+export default UpgradeCTA 

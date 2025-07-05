@@ -291,7 +291,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                       {HOUSEHOLD_ROLES.map((role) => (
                         <SelectItem key={role.key} value={role.key}>
                           <div className="flex items-center">
-                            <span className="mr-2">{role.icon}</span>
+                            {role.icon && <role.icon className="mr-2" />}
                             {role.name}
                           </div>
                         </SelectItem>
@@ -339,7 +339,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                     {member.role && (
                       <div className="flex items-center mt-1">
                         <Badge className={getRoleColor(member.role)}>
-                          <span className="mr-1">{getRoleIcon(member.role)}</span>
+                          {member.role && <span className="mr-1">{getRoleIcon(member.role)}</span>}
                           {HOUSEHOLD_ROLES.find(r => r.key === member.role)?.name}
                         </Badge>
                       </div>
@@ -363,7 +363,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                         {HOUSEHOLD_ROLES.map((role) => (
                           <SelectItem key={role.key} value={role.key}>
                             <div className="flex items-center">
-                              <span className="mr-2">{role.icon}</span>
+                              {role.icon && <role.icon className="mr-2" />}
                               {role.name}
                             </div>
                           </SelectItem>
@@ -417,7 +417,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
             {HOUSEHOLD_ROLES.map((role) => (
               <div key={role.key} className="p-4 border rounded-lg">
                 <div className="flex items-center mb-2">
-                  <span className="text-2xl mr-2">{role.icon}</span>
+                  {role.icon && <role.icon className="text-2xl mr-2" />}
                   <h4 className="font-semibold">{role.name}</h4>
                 </div>
                 <p className="text-sm text-gray-600 mb-2">{role.description}</p>

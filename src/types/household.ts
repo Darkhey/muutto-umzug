@@ -13,6 +13,7 @@ export interface ExtendedHousehold extends Household {
   daysUntilMove?: number;
   owns_car?: boolean;
   is_self_employed?: boolean;
+  parent_household_id?: string | null; // New field for linking households to a parent move
   created_by_user_profile?: {
     full_name?: string;
     has_children?: boolean;

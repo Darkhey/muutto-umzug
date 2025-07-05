@@ -1,35 +1,64 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, Session } from '@supabase/supabase-js'
+import { User, Session, AuthResponse } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
+import { Database } from '@/types/database'
+
+type Profile = Database['public']['Tables']['profiles']['Row']
+
+interface ExtendedUser extends User {
+  profile?: Profile | null;
+}
 
 interface AuthContextType {
-  user: User | null
+  user: ExtendedUser | null
   session: Session | null
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any; data: any }>
-  signIn: (email: string, password: string) => Promise<{ error: any }>
-  signOut: () => Promise<{ error: any }>
+  signUp: (email: string, password: string, fullName?: string) => Promise<AuthResponse>
+  signIn: (email: string, password: string) => Promise<AuthResponse>
+  signOut: () => Promise<{ error: Error | null }>
   loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<ExtendedUser | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     console.log('AuthContext: Initializing...')
     
+    const fetchUserProfile = async (userId: string) => {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error) {
+        console.error('Error fetching user profile:', error)
+        return null
+      }
+      return profile
+    }
+
+    const handleAuthChange = async (session: Session | null) => {
+      if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id)
+        setUser({ ...session.user, profile })
+      } else {
+        setUser(null)
+      }
+      setSession(session)
+      setLoading(false)
+    }
+
     try {
       // Set up auth state listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
           console.log('AuthContext: Auth state changed:', event, session?.user?.email)
-          setSession(session)
-          setUser(session?.user ?? null)
-          setLoading(false)
+          handleAuthChange(session)
         }
       )
 
@@ -40,9 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           console.log('AuthContext: Initial session:', session?.user?.email)
         }
-        setSession(session)
-        setUser(session?.user ?? null)
-        setLoading(false)
+        handleAuthChange(session)
       }).catch((error) => {
         console.error('AuthContext: Failed to get session:', error)
         setLoading(false)

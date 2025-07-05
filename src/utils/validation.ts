@@ -140,7 +140,7 @@ export const validateRange = (
 }
 
 export const validateHouseholdData = (
-  data: Partial<any>,
+  data: Partial<CreateHouseholdData>,
   isDraft: boolean = false
 ): ValidationResult => {
   const errors: Record<string, string> = {}

@@ -12,8 +12,11 @@ import {
   Clock,
   Target,
   Lightbulb,
-  Star
+  Star,
+  Crown
 } from 'lucide-react'
+import { usePremiumStatus } from '@/hooks/usePremiumStatus'
+import { UpgradeCTA } from '@/components/premium/UpgradeCTA'
 
 interface MovingInsightsProps {
   household: ExtendedHousehold
@@ -112,6 +115,55 @@ export const MovingInsights = ({ household, className }: MovingInsightsProps) =>
         title: 'Notfall-Karton packen',
         description: 'Packe wichtige Dinge für die ersten Tage in einen separaten Karton.'
       })
+    }
+
+    // Neue Tipps basierend auf Haushaltskonfiguration
+    if (household.household_size === 1) {
+      tips.push({
+        icon: <Lightbulb className="h-4 w-4 text-purple-600" />,
+        title: 'Einzelumzug: Weniger ist mehr',
+        description: 'Als Einzelperson hast du oft mehr Flexibilität. Überlege, ob ein kleiner Transporter oder ein Umzugshelfer ausreicht.'
+      });
+    } else if (household.household_size > 1 && household.children_count === 0 && household.pets_count === 0) {
+      tips.push({
+        icon: <Lightbulb className="h-4 w-4 text-indigo-600" />,
+        title: 'Paare/Mehrere Erwachsene: Aufgaben verteilen',
+        description: 'Teilt die Umzugsaufgaben klar auf, um Doppelarbeit zu vermeiden und den Prozess zu beschleunigen.'
+      });
+    } else if (household.household_size > 1 && (household.children_count > 0 || household.pets_count > 0)) {
+      tips.push({
+        icon: <Lightbulb className="h-4 w-4 text-pink-600" />,
+        title: 'Familienumzug: Alle Bedürfnisse berücksichtigen',
+        description: 'Plane ausreichend Pausen und Unterhaltung für Kinder und Haustiere ein, um den Umzug stressfreier zu gestalten.'
+      });
+    }
+
+    if (household.is_self_employed) {
+      tips.push({
+        icon: <Lightbulb className="h-4 w-4 text-teal-600" />,
+        title: 'Selbstständige: Geschäftsumzug planen',
+        description: 'Denke an die Ummeldung deines Gewerbes, die Anpassung von Geschäftsadressen und die Information deiner Kunden.'
+      });
+    }
+
+    if (household.owns_car) {
+      tips.push({
+        icon: <Lightbulb className="h-4 w-4 text-gray-600" />,
+        title: 'Autobesitzer: Ummeldung nicht vergessen',
+        description: 'Melde dein Fahrzeug rechtzeitig am neuen Wohnort um und informiere deine Versicherung über die Adressänderung.'
+      });
+    }
+
+    // Tipp für Umzug in ein neues Bundesland (vereinfachte Prüfung)
+    // Dies ist eine sehr grundlegende Prüfung. Eine robustere Lösung würde eine Zuordnung von Postleitzahlen zu Bundesländern erfordern.
+    // Fürs Erste füge ich einen allgemeinen Tipp zu Umzügen zwischen Bundesländern hinzu.
+    // Ich prüfe, ob alte und neue Adresse vorhanden und unterschiedlich sind.
+    if (household.old_address && household.new_address && household.old_address !== household.new_address) {
+      tips.push({
+        icon: <Lightbulb className="h-4 w-4 text-red-600" />,
+        title: 'Umzug in ein neues Bundesland',
+        description: 'Informiere dich über spezifische Anmeldefristen, Schulsysteme und regionale Besonderheiten im neuen Bundesland.'
+      });
     }
     
     return tips.slice(0, 3)
@@ -273,6 +325,24 @@ export const MovingInsights = ({ household, className }: MovingInsightsProps) =>
           </div>
         </CardContent>
       </Card>
+
+      {/* Premium CTA */}
+      {!loading && !status?.is_premium && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-yellow-500" />
+              Mehr Umzugs-Power mit Premium!
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-gray-700">
+              Schalte erweiterte Funktionen frei, wie z.B. personalisierte Checklisten, erweiterte Analysen und exklusive Partnerangebote, um deinen Umzug noch reibungsloser zu gestalten.
+            </p>
+            <UpgradeCTA />
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

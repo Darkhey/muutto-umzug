@@ -108,7 +108,7 @@ export const delay = (ms: number): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export const mockSupabaseResponse = <T>(data: T, error: any = null) => {
+export const mockSupabaseResponse = <T>(data: T, error: Error | null = null) => {
   return {
     data: error ? null : data,
     error,

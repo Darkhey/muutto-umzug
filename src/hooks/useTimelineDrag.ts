@@ -9,7 +9,6 @@ interface TimelineTask {
   width: number
   height: number
   completed: boolean
-  [key: string]: any
 }
 
 interface UseTimelineDragProps {
@@ -52,12 +51,11 @@ export const useTimelineDrag = ({
 
     const rect = timelineRef.current.getBoundingClientRect()
     const newX = e.clientX - rect.left - dragOffset.x
-    const newY = e.clientY - rect.top - dragOffset.y
 
     setFilteredTasks(prev => 
       prev.map(task => 
         task.id === draggedTask.id 
-          ? { ...task, x: Math.max(0, newX), y: Math.max(0, newY) }
+          ? { ...task, x: Math.max(0, newX) }
           : task
       )
     )

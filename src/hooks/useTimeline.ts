@@ -30,15 +30,85 @@ export const useTimeline = (householdId: string) => {
     }
   }
 
+  const updateTask = async (taskId: string, updates: Partial<TimelineItem>) => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update(updates)
+        .eq('id', taskId)
+        .select();
+
+      if (error) throw error;
+
+      if (data) {
+        setTimelineItems(prev =>
+          prev.map(item => (item.id === taskId ? { ...item, ...data[0] } : item))
+        );
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
+  const addTask = async (task: Omit<TimelineItem, 'id' | 'created_at' | 'completed' | 'is_overdue'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([task])
+        .select();
+
+      if (error) throw error;
+
+      if (data) {
+        setTimelineItems(prev => [...prev, ...data]);
+      }
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
+  };
+
+  const fetchTimelineItems = async () => {
+    if (!householdId) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*, task_comments(count)')
+        .eq('household_id', householdId)
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+
+      const itemsWithCommentCount = data.map(item => ({
+        ...item,
+        comment_count: item.task_comments ? item.task_comments.length : 0,
+      }));
+
+      setTimelineItems(itemsWithCommentCount);
+    } catch (error) {
+      console.error('Error fetching timeline items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTimelineItems();
+  }, [householdId]);
+
   const updatePreferences = async (updates: Partial<TimelinePreferences>) => {
-    setPreferences(prev => ({ ...prev, ...updates }))
-  }
+    setPreferences(prev => ({ ...prev, ...updates }));
+  };
 
   return {
     timelineItems,
     preferences,
     loading,
     updateTaskDueDate,
-    updatePreferences
-  }
+    updateTask,
+    addTask,
+    updatePreferences,
+    refetchTimelineItems: fetchTimelineItems,
+  };
 }
