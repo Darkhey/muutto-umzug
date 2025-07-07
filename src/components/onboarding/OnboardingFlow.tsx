@@ -513,9 +513,9 @@ export const OnboardingFlow = ({
       case 9:
         // Simplified member invitation for now
         return (
-            <StepCard title="Lade deine Crew ein" description="Füge die E-Mail-Adressen deiner Mitziehenden hinzu. (Optional)">
-                <p>Die Einladung von Mitgliedern wird im nächsten Schritt verfügbar sein.</p>
-            </StepCard>
+      case 9:
+        // Remove validation if step is not implemented
+        break;
         );
 
       case 10:
