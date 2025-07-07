@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,17 +23,25 @@ import { analyzeHouseholdOverlaps, type HouseholdOverlap } from '@/utils/househo
 import { useToast } from '@/hooks/use-toast'
 
 const HouseholdOverlaps = () => {
+  const navigate = useNavigate()
   const { households, loading } = useHouseholds()
   const { toast } = useToast()
   const [selectedHouseholdIds, setSelectedHouseholdIds] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState('overview')
 
-  // Analysiere alle Haushalte
-  const allHouseholdsAnalysis = analyzeHouseholdOverlaps(households)
+  // Analysiere alle Haushalte (memoized)
+  const allHouseholdsAnalysis = useMemo(() => {
+    return analyzeHouseholdOverlaps(households)
+  }, [households])
   
-  // Analysiere nur ausgewählte Haushalte
-  const selectedHouseholds = households.filter(h => selectedHouseholdIds.includes(h.id))
-  const selectedAnalysis = analyzeHouseholdOverlaps(selectedHouseholds)
+  // Analysiere nur ausgewählte Haushalte (memoized)
+  const selectedHouseholds = useMemo(() => {
+    return households.filter(h => selectedHouseholdIds.includes(h.id))
+  }, [households, selectedHouseholdIds])
+  
+  const selectedAnalysis = useMemo(() => {
+    return analyzeHouseholdOverlaps(selectedHouseholds)
+  }, [selectedHouseholds])
 
   const handleHouseholdSelection = (householdId: string, isSelected: boolean) => {
     setSelectedHouseholdIds(prev => {
@@ -91,7 +100,7 @@ const HouseholdOverlaps = () => {
             Analysieren und lösen Sie Konflikte zwischen mehreren Haushalten
           </p>
         </div>
-        <Button variant="outline" onClick={() => window.history.back()}>
+        <Button variant="outline" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Zurück
         </Button>
@@ -271,24 +280,30 @@ const HouseholdOverlaps = () => {
                   {households.map(household => (
                     <div 
                       key={household.id} 
-                      className={`p-3 border rounded-lg flex items-center justify-between cursor-pointer transition-colors ${
+                      className={`p-3 border rounded-lg flex items-center justify-between transition-colors ${
                         selectedHouseholdIds.includes(household.id) 
                           ? 'bg-blue-50 border-blue-200' 
                           : 'hover:bg-gray-50'
                       }`}
-                      onClick={() => handleHouseholdSelection(
-                        household.id, 
-                        !selectedHouseholdIds.includes(household.id)
-                      )}
                     >
                       <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
                           checked={selectedHouseholdIds.includes(household.id)}
-                          onChange={() => {}}
-                          className="rounded"
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleHouseholdSelection(household.id, e.target.checked);
+                          }}
+                          className="rounded cursor-pointer"
+                          aria-label={`Haushalt ${household.name} auswählen`}
                         />
-                        <div>
+                        <div 
+                          className="flex-1 cursor-pointer"
+                          onClick={() => handleHouseholdSelection(
+                            household.id, 
+                            !selectedHouseholdIds.includes(household.id)
+                          )}
+                        >
                           <p className="font-medium">{household.name}</p>
                           <p className="text-sm text-gray-600">
                             Umzug: {new Date(household.move_date).toLocaleDateString('de-DE')}

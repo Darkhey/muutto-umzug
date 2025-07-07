@@ -338,8 +338,9 @@ export const HouseholdMerger = ({
                   <HouseholdOverlapViewer
                     selectedHouseholdIds={allSelectedHouseholds.map(h => h.id)}
                     onResolveOverlap={(overlap) => {
-                      // Hier könnte man eine Dialog zum Lösen der Überlappung öffnen
-                      console.log('Resolve overlap:', overlap)
+                      // TODO: Dialog zum Lösen der Überlappung implementieren
+                      // Beispiel: openOverlapResolutionDialog(overlap)
+                      // oder: handleOverlapResolution(overlap)
                     }}
                   />
                 )}

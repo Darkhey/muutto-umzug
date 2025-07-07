@@ -11,7 +11,6 @@ interface CreateBoxDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateBoxData) => Promise<void>;
-  householdId: string;
 }
 
 const boxCategories: { value: BoxCategory; label: string; icon: string }[] = [
@@ -27,7 +26,7 @@ const boxCategories: { value: BoxCategory; label: string; icon: string }[] = [
   { value: 'sonstiges', label: 'Sonstiges', icon: '📦' }
 ];
 
-export function CreateBoxDialog({ open, onOpenChange, onSubmit, householdId }: CreateBoxDialogProps) {
+export function CreateBoxDialog({ open, onOpenChange, onSubmit }: CreateBoxDialogProps) {
   const [formData, setFormData] = useState<CreateBoxData>({
     box_number: '',
     name: '',

@@ -12,7 +12,7 @@ import {
   Plus,
   Search
 } from 'lucide-react';
-import { BoxManagementModule } from '../boxes/BoxManagementModule';
+import { useBoxes } from '@/hooks/useBoxes';
 
 interface BoxManagementDashboardModuleProps {
   householdId: string;
@@ -23,6 +23,9 @@ export function BoxManagementDashboardModule({
   householdId, 
   onExpand 
 }: BoxManagementDashboardModuleProps) {
+  const { boxes, loading } = useBoxes(householdId);
+  const totalBoxes = boxes.length;
+  const unpackedBoxes = boxes.filter(box => box.status === 'ausgepackt').length;
   return (
     <Card className="h-full">
       <CardHeader>
@@ -36,7 +39,7 @@ export function BoxManagementDashboardModule({
               <Search className="h-4 w-4 mr-2" />
               Suche
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={() => { /* TODO: Dialog zum Erstellen eines neuen Kartons öffnen */ }}>
               <Plus className="h-4 w-4 mr-2" />
               Neuer Karton
             </Button>
@@ -48,11 +51,11 @@ export function BoxManagementDashboardModule({
           {/* Schnellstatistiken */}
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-3 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">0</div>
+              <div className="text-2xl font-bold text-blue-600">{loading ? '...' : totalBoxes}</div>
               <div className="text-sm text-gray-600">Gesamt Kartons</div>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">0</div>
+              <div className="text-2xl font-bold text-green-600">{loading ? '...' : unpackedBoxes}</div>
               <div className="text-sm text-gray-600">Ausgepackt</div>
             </div>
           </div>
@@ -72,11 +75,11 @@ export function BoxManagementDashboardModule({
           <div className="space-y-3">
             <h4 className="font-semibold text-sm">Schnellaktionen</h4>
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" className="h-auto p-3 flex-col">
+              <Button variant="outline" size="sm" className="h-auto p-3 flex-col" onClick={() => { /* TODO: Foto-Upload-Dialog öffnen */ }}>
                 <Camera className="h-4 w-4 mb-1" />
                 <span className="text-xs">Foto hinzufügen</span>
               </Button>
-              <Button variant="outline" size="sm" className="h-auto p-3 flex-col">
+              <Button variant="outline" size="sm" className="h-auto p-3 flex-col" onClick={() => { /* TODO: Kommentar-Dialog öffnen */ }}>
                 <MessageSquare className="h-4 w-4 mb-1" />
                 <span className="text-xs">Kommentar</span>
               </Button>

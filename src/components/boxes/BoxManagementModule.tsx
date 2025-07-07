@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Plus, 
   Search, 
@@ -12,11 +13,14 @@ import {
   MapPin, 
   MessageSquare,
   Filter,
-  BarChart3
+  BarChart3,
+  X,
+  ExternalLink
 } from 'lucide-react';
 import { useBoxes } from '@/hooks/useBoxes';
-import { BoxWithDetails, BoxStatus, BoxCategory } from '@/types/box';
+import { BoxWithDetails, BoxStatus, BoxCategory, CreateBoxData, BoxSearchResult } from '@/types/box';
 import { CreateBoxDialog } from './CreateBoxDialog';
+import { useToast } from '@/hooks/use-toast';
 import { BoxList } from './BoxList';
 import { BoxSearch } from './BoxSearch';
 import { BoxStatistics } from './BoxStatistics';
@@ -63,31 +67,84 @@ export function BoxManagementModule({ householdId }: BoxManagementModuleProps) {
     getStatistics
   } = useBoxes(householdId);
 
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<BoxSearchResult[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const handleCreateBox = async (boxData: any) => {
-    const result = await createBox(boxData);
-    if (result) {
-      setShowCreateDialog(false);
+  const handleCreateBox = async (boxData: CreateBoxData) => {
+    try {
+      const result = await createBox(boxData);
+      if (result) {
+        setShowCreateDialog(false);
+        toast({
+          title: "Karton erstellt",
+          description: `Karton "${result.box_number}" wurde erfolgreich erstellt.`,
+          variant: "default",
+        });
+      } else {
+        throw new Error('Karton konnte nicht erstellt werden');
+      }
+    } catch (error) {
+      console.error('Fehler beim Erstellen des Kartons:', error);
+      toast({
+        title: "Fehler beim Erstellen",
+        description: error instanceof Error ? error.message : 'Ein unerwarteter Fehler ist aufgetreten.',
+        variant: "destructive",
+      });
     }
   };
 
   const handleSearch = async () => {
-    if (searchTerm.trim()) {
+    if (!searchTerm.trim()) {
+      toast({
+        title: "Suchbegriff erforderlich",
+        description: "Bitte geben Sie einen Suchbegriff ein.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsSearching(true);
       const results = await searchItems(searchTerm);
-      // Hier könnten wir die Ergebnisse in einem Modal oder separaten Tab anzeigen
-      console.log('Suchergebnisse:', results);
+      setSearchResults(results);
+      setShowSearchResults(true);
+      
+      if (results.length === 0) {
+        toast({
+          title: "Keine Ergebnisse",
+          description: `Keine Kartons oder Gegenstände für "${searchTerm}" gefunden.`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Suche abgeschlossen",
+          description: `${results.length} Ergebnis${results.length === 1 ? '' : 'se'} für "${searchTerm}" gefunden.`,
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      console.error('Fehler bei der Suche:', error);
+      toast({
+        title: "Fehler bei der Suche",
+        description: error instanceof Error ? error.message : 'Ein unerwarteter Fehler ist aufgetreten.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
     }
   };
 
   const getStatusCount = (status: BoxStatus) => {
-    return boxes.filter(box => box.status === status).length;
+    return boxes.filter(box => (box as any).status === status).length;
   };
 
   const getCategoryCount = (category: BoxCategory) => {
-    return boxes.filter(box => box.category === category).length;
+    return boxes.filter(box => (box as any).category === category).length;
   };
 
   if (loading) {
@@ -179,9 +236,14 @@ export function BoxManagementModule({ householdId }: BoxManagementModuleProps) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              disabled={isSearching}
             />
-            <Button onClick={handleSearch}>
-              <Search className="h-4 w-4" />
+            <Button onClick={handleSearch} disabled={isSearching || !searchTerm.trim()}>
+              {isSearching ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </CardContent>
@@ -235,8 +297,130 @@ export function BoxManagementModule({ householdId }: BoxManagementModuleProps) {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onSubmit={handleCreateBox}
-        householdId={householdId}
       />
+
+      {/* Search Results Dialog */}
+      <Dialog open={showSearchResults} onOpenChange={setShowSearchResults}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Suchergebnisse für "{searchTerm}"</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSearchResults(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto">
+            {searchResults.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Keine Ergebnisse gefunden</p>
+                <p className="text-sm">Versuchen Sie einen anderen Suchbegriff</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {searchResults.map((result, index) => (
+                  <Card key={`${result.box_id}-${index}`} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline" className="text-xs">
+                              {result.box_number}
+                            </Badge>
+                            {result.box_status && (
+                              <Badge 
+                                variant="secondary" 
+                                className={`text-xs ${statusColors[result.box_status]}`}
+                              >
+                                {result.box_status}
+                              </Badge>
+                            )}
+                            {result.category && (
+                              <Badge variant="outline" className="text-xs">
+                                {categoryIcons[result.category]} {result.category}
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-1">
+                            {result.box_name && (
+                              <h4 className="font-medium text-sm">{result.box_name}</h4>
+                            )}
+                            {result.item_name && (
+                              <p className="text-sm font-medium text-blue-600">
+                                📦 {result.item_name}
+                              </p>
+                            )}
+                            {result.item_description && (
+                              <p className="text-xs text-gray-600">{result.item_description}</p>
+                            )}
+                            {result.room && (
+                              <p className="text-xs text-gray-500">
+                                🏠 Raum: {result.room}
+                              </p>
+                            )}
+                            {result.current_location && (
+                              <p className="text-xs text-gray-500">
+                                📍 Standort: {result.current_location}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 ml-4">
+                          {result.photos && result.photos.length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              📷 {result.photos.length}
+                            </Badge>
+                          )}
+                          {result.comments && result.comments.length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              💬 {result.comments.length}
+                            </Badge>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              // TODO: Navigate to box detail view
+                              toast({
+                                title: "Karton öffnen",
+                                description: `Karton ${result.box_number} wird geöffnet...`,
+                                variant: "default",
+                              });
+                            }}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <span>{searchResults.length} Ergebnis{searchResults.length === 1 ? '' : 'se'} gefunden</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSearchResults(false)}
+              >
+                Schließen
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

@@ -1,4 +1,4 @@
-import { Database } from './database';
+import { Database } from 'src/types/database';
 
 // Basis-Typen aus der Datenbank
 export type Box = Database['public']['Tables']['boxes']['Row'];
@@ -21,26 +21,22 @@ export type BoxLocationInsert = Database['public']['Tables']['box_locations']['I
 export type BoxStatus = Database['public']['Enums']['box_status'];
 export type BoxCategory = Database['public']['Enums']['box_category'];
 
-// Erweiterte Typen
-export interface ExtendedBox extends Box {
+// Vereinheitlichte Schnittstelle für Box mit Details
+export interface BoxWithDetails extends Box {
   photos?: BoxPhoto[];
   contents?: BoxContent[];
   comments?: BoxComment[];
-  current_location?: BoxLocation;
+  current_location?: BoxLocation | null;
   location_history?: BoxLocation[];
-}
-
-export interface BoxWithDetails extends Box {
-  photos: BoxPhoto[];
-  contents: BoxContent[];
-  comments: BoxComment[];
-  current_location: BoxLocation | null;
   _count?: {
     photos: number;
     contents: number;
     comments: number;
   };
 }
+
+// Für Rückwärtskompatibilität
+export type ExtendedBox = BoxWithDetails;
 
 export interface CreateBoxData {
   box_number: string;
@@ -86,7 +82,10 @@ export interface AIAnalysisResult {
 }
 
 export interface BoxPhotoUpload {
-  file: File;
+  name: string;
+  type: string;
+  size: number;
+  data: ArrayBuffer;
   photo_type?: 'content' | 'label' | 'damage';
 }
 

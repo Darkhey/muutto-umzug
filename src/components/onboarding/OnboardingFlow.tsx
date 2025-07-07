@@ -154,6 +154,40 @@ export const OnboardingFlow = ({
         break;
       case 2:
         if (data.adultsCount < 1) newErrors.adultsCount = 'Es muss mindestens ein Erwachsener umziehen.';
+        if (data.children.some(child => !child.ageGroup)) newErrors.children = 'Bitte gib das Alter der Kinder an.';
+        break;
+      case 3:
+        if (data.pets.some(pet => !pet.type)) newErrors.pets = 'Bitte gib die Tierart für jedes Haustier an.';
+        break;
+      case 4: {
+        const homeKey = 'oldHome';
+        const homeData = data[homeKey] as HomeDetails;
+        const title = "Dein altes Nest";
+        const description = "Beschreibe dein jetziges Zuhause.";
+        if (!homeData.propertyType) newErrors.oldHome_propertyType = 'Bitte gib die Wohnform deines alten Zuhauses an.';
+        if (!homeData.livingSpace || homeData.livingSpace <= 0) newErrors.oldHome_livingSpace = 'Bitte gib die Wohnfläche deines alten Zuhauses an.';
+        if (!homeData.rooms || homeData.rooms <= 0) newErrors.oldHome_rooms = 'Bitte gib die Zimmeranzahl deines alten Zuhauses an.';
+        break;
+      }
+      case 5: {
+        const homeKey = 'newHome';
+        const homeData = data[homeKey] as HomeDetails;
+        const title = "Dein neues Reich";
+        const description = "Wie wird dein neues Zuhause aussehen?";
+        if (!homeData.propertyType) newErrors.newHome_propertyType = 'Bitte gib die Wohnform deines neuen Zuhauses an.';
+        if (!homeData.livingSpace || homeData.livingSpace <= 0) newErrors.newHome_livingSpace = 'Bitte gib die Wohnfläche deines neuen Zuhauses an.';
+        if (!homeData.rooms || homeData.rooms <= 0) newErrors.newHome_rooms = 'Bitte gib die Zimmeranzahl deines neuen Zuhauses an.';
+        break;
+      }
+      case 6:
+        if (!data.inventoryStyle) newErrors.inventoryStyle = 'Bitte wähle deinen Inventar-Stil.';
+        break;
+      case 7:
+        if (!data.moveStyle) newErrors.moveStyle = 'Bitte wähle, wie du umziehen möchtest.';
+        if (!data.members || data.members.length === 0) newErrors.members = 'Bitte füge mindestens ein Mitglied hinzu.';
+        else if (data.members.some(m => !m.name || !m.email)) newErrors.members = 'Bitte gib Name und E-Mail für alle Mitglieder an.';
+        break;
+      default:
         break;
     }
     setErrors(newErrors);
@@ -326,13 +360,11 @@ export const OnboardingFlow = ({
             </StepCard>
         );
 
-      case 4: // Old Home
-      case 5: // New Home
-        const homeKey = currentStep === 4 ? 'oldHome' : 'newHome';
+      case 4: { // Old Home
+        const homeKey = 'oldHome';
         const homeData = data[homeKey] as HomeDetails;
-        const title = currentStep === 4 ? "Dein altes Nest" : "Dein neues Reich";
-        const description = currentStep === 4 ? "Beschreibe dein jetziges Zuhause." : "Wie wird dein neues Zuhause aussehen?";
-        
+        const title = "Dein altes Nest";
+        const description = "Beschreibe dein jetziges Zuhause.";
         return (
             <StepCard title={title} description={description}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -372,7 +404,52 @@ export const OnboardingFlow = ({
                 </div>
             </StepCard>
         );
-
+      }
+      case 5: { // New Home
+        const homeKey = 'newHome';
+        const homeData = data[homeKey] as HomeDetails;
+        const title = "Dein neues Reich";
+        const description = "Wie wird dein neues Zuhause aussehen?";
+        return (
+            <StepCard title={title} description={description}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <Label>Wohnform</Label>
+                        <Select value={homeData.propertyType} onValueChange={(v) => updateHomeData(homeKey, { propertyType: v as PropertyType })}>
+                            <SelectTrigger><SelectValue placeholder="Wähle eine Wohnform" /></SelectTrigger>
+                            <SelectContent>{PROPERTY_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label>Wohnfläche (m², optional)</Label>
+                        <Input type="number" value={homeData.livingSpace} onChange={e => updateHomeData(homeKey, { livingSpace: parseInt(e.target.value) || 0 })} />
+                    </div>
+                    <div>
+                        <Label>Anzahl Zimmer (optional)</Label>
+                        <Input type="number" value={homeData.rooms} onChange={e => updateHomeData(homeKey, { rooms: parseInt(e.target.value) || 0 })} />
+                    </div>
+                    <div>
+                        <Label>Etage (optional)</Label>
+                        <Input type="number" value={homeData.floor} onChange={e => updateHomeData(homeKey, { floor: parseInt(e.target.value) || 0 })} />
+                    </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Switch id={`elevator-${homeKey}`} checked={homeData.hasElevator} onCheckedChange={c => updateHomeData(homeKey, { hasElevator: c })} />
+                    <Label htmlFor={`elevator-${homeKey}`}>Gibt es einen Aufzug?</Label>
+                </div>
+                <div>
+                    <Label>Besonderheiten (optional)</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        {specialHomeFeatures.map(feat => (
+                            <Button key={feat.id} variant={homeData.specialFeatures?.includes(feat.id) ? 'default' : 'outline'} onClick={() => toggleSelection('specialFeatures', feat.id, homeKey)}>
+                                {feat.label}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            </StepCard>
+        );
+      }
       case 6:
         return (
             <StepCard title="Dein Hab und Gut" description="Ein paar Details helfen uns, den Umfang deines Umzugs besser einzuschätzen.">

@@ -26,7 +26,6 @@ interface TimelineEvent {
   type: 'move' | 'overlap'
   household?: ExtendedHousehold
   overlap?: HouseholdOverlap
-  position: number
 }
 
 export const OverlapTimeline = ({
@@ -45,8 +44,7 @@ export const OverlapTimeline = ({
       events.push({
         date: new Date(household.move_date),
         type: 'move',
-        household,
-        position: index
+        household
       })
     })
     
@@ -65,8 +63,7 @@ export const OverlapTimeline = ({
         events.push({
           date: earliestDate,
           type: 'overlap',
-          overlap,
-          position: households.length + index
+          overlap
         })
       }
     })
@@ -90,12 +87,7 @@ export const OverlapTimeline = ({
     return { start, end }
   }, [timelineEvents])
 
-  // Berechne Position für ein Datum
-  const getDatePosition = (date: Date) => {
-    const totalDays = (timelineRange.end.getTime() - timelineRange.start.getTime()) / (1000 * 60 * 60 * 24)
-    const daysFromStart = (date.getTime() - timelineRange.start.getTime()) / (1000 * 60 * 60 * 24)
-    return (daysFromStart / totalDays) * 100
-  }
+
 
   const getOverlapIcon = (type: HouseholdOverlap['type']) => {
     switch (type) {
@@ -158,7 +150,6 @@ export const OverlapTimeline = ({
           {/* Timeline-Events */}
           <div className="space-y-6">
             {timelineEvents.map((event, index) => {
-              const position = getDatePosition(event.date)
               const isOverlap = event.type === 'overlap'
               
               return (

@@ -14,7 +14,19 @@ import {
   Loader2
 } from 'lucide-react';
 import { BoxWithDetails } from '@/types/box';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+
+// Validierungskonstanten
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/jpg', 
+  'image/png',
+  'image/webp',
+  'image/gif'
+];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_FILE_SIZE_MB = MAX_FILE_SIZE / (1024 * 1024);
 
 interface BoxPhotoUploadProps {
   box: BoxWithDetails;
@@ -34,10 +46,28 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      setAnalysisResult(null);
+      try {
+        // Datei validieren
+        validateFile(file);
+        
+        setSelectedFile(file);
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+        setAnalysisResult(null);
+      } catch (error) {
+        // Datei-Auswahl zurücksetzen
+        if (event.target) {
+          event.target.value = '';
+        }
+        
+        // Fehlermeldung anzeigen
+        alert(error instanceof Error ? error.message : 'Ungültige Datei');
+        
+        // State zurücksetzen
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setAnalysisResult(null);
+      }
     }
   };
 
@@ -53,14 +83,49 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
     }
   };
 
+  const validateFile = (file: File): void => {
+    // Dateityp validieren
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      throw new Error(
+        `Ungültiger Dateityp. Erlaubte Formate: ${ALLOWED_MIME_TYPES.map(type => 
+          type.replace('image/', '').toUpperCase()
+        ).join(', ')}`
+      );
+    }
+
+    // Dateigröße validieren
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(
+        `Datei zu groß. Maximale Größe: ${MAX_FILE_SIZE_MB} MB. Aktuelle Größe: ${(file.size / (1024 * 1024)).toFixed(1)} MB`
+      );
+    }
+
+    // Zusätzliche Sicherheitsprüfungen
+    if (file.size === 0) {
+      throw new Error('Datei ist leer');
+    }
+
+    // Dateiname validieren (verhindert path traversal)
+    const fileName = file.name.toLowerCase();
+    if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+      throw new Error('Ungültiger Dateiname');
+    }
+  };
+
   const uploadToStorage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${box.id}/${Date.now()}.${fileExt}`;
+    // Datei validieren
+    validateFile(file);
+
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    const fileName = `${(box as any).id}/${Date.now()}.${fileExt}`;
     const filePath = `box-photos/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('box-photos')
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
     if (uploadError) {
       throw new Error(`Fehler beim Hochladen: ${uploadError.message}`);
@@ -75,20 +140,26 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
 
   const analyzePhotoWithAI = async (photoUrl: string) => {
     try {
-      const response = await fetch('/api/analyze-box-photo', {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Nicht authentifiziert');
+      }
+
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/analyze-box-photo`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           photo_url: photoUrl,
-          box_id: box.id
+          box_id: (box as any).id
         })
       });
 
       if (!response.ok) {
-        throw new Error('Fehler bei der KI-Analyse');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const result = await response.json();
@@ -111,7 +182,7 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
       const { error: photoError } = await supabase
         .from('box_photos')
         .insert({
-          box_id: box.id,
+          box_id: (box as any).id,
           photo_url: photoUrl,
           photo_type: photoType,
           uploaded_by: (await supabase.auth.getUser()).data.user?.id
@@ -152,7 +223,7 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5" />
-            Foto für Karton {box.box_number} hochladen
+            Foto für Karton {(box as any).box_number} hochladen
           </DialogTitle>
           <DialogDescription>
             Lade ein Foto hoch, um den Inhalt deines Kartons zu dokumentieren. Die KI kann den Inhalt automatisch erkennen.
@@ -178,6 +249,11 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
           {/* Datei-Upload */}
           <div className="space-y-2">
             <Label>Foto auswählen</Label>
+            <div className="text-xs text-gray-500 mb-2">
+              Erlaubte Formate: {ALLOWED_MIME_TYPES.map(type => 
+                type.replace('image/', '').toUpperCase()
+              ).join(', ')} | Maximale Größe: {MAX_FILE_SIZE_MB} MB
+            </div>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               {!selectedFile ? (
                 <div className="space-y-2">
@@ -209,7 +285,13 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-sm text-gray-600">{selectedFile.name}</p>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p className="font-medium">{selectedFile.name}</p>
+                    <p className="text-xs">
+                      Größe: {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB | 
+                      Typ: {selectedFile.type || 'Unbekannt'}
+                    </p>
+                  </div>
                 </div>
               )}
               <input

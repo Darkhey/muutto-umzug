@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -178,7 +177,7 @@ export const ModularDashboard = () => {
     }
   }, [households])
 
-  const handleOnboardingComplete = async (data: any) => {
+  const handleOnboardingComplete = async (data: CreateHouseholdData) => {
     try {
       setOnboardingData(data)
 

@@ -6,10 +6,98 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Validierungsfunktionen
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+function isValidUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    // Prüfe, ob es sich um HTTP/HTTPS handelt
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeString(input: string): string {
+  // Entferne gefährliche Zeichen und trimme Whitespace
+  return input
+    .trim()
+    .replace(/[<>]/g, '') // Entferne < und > um XSS zu verhindern
+    .replace(/\0/g, '') // Entferne Null-Bytes
+    .slice(0, 2048); // Begrenze Länge auf 2048 Zeichen
+}
+
+function validateAndSanitizeInput(photoUrl: string, boxId: string): { photoUrl: string; boxId: string } {
+  // Sanitize inputs
+  const sanitizedPhotoUrl = sanitizeString(photoUrl);
+  const sanitizedBoxId = sanitizeString(boxId);
+
+  // Validiere photo_url
+  if (!sanitizedPhotoUrl) {
+    throw new Error('photo_url ist erforderlich und darf nicht leer sein');
+  }
+
+  if (!isValidUrl(sanitizedPhotoUrl)) {
+    throw new Error('photo_url muss eine gültige HTTP/HTTPS URL sein');
+  }
+
+  // Prüfe URL-Länge
+  if (sanitizedPhotoUrl.length > 2048) {
+    throw new Error('photo_url ist zu lang (Maximum: 2048 Zeichen)');
+  }
+
+  // Validiere box_id
+  if (!sanitizedBoxId) {
+    throw new Error('box_id ist erforderlich und darf nicht leer sein');
+  }
+
+  if (!isValidUUID(sanitizedBoxId)) {
+    throw new Error('box_id muss ein gültiges UUID-Format haben');
+  }
+
+  return {
+    photoUrl: sanitizedPhotoUrl,
+    boxId: sanitizedBoxId
+  };
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // Validiere HTTP-Methode
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Nur POST-Anfragen sind erlaubt'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 405,
+      }
+    )
+  }
+
+  // Validiere Content-Type
+  const contentType = req.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Content-Type muss application/json sein'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      }
+    )
   }
 
   try {
@@ -25,9 +113,8 @@ serve(async (req) => {
 
     const { photo_url, box_id } = await req.json()
 
-    if (!photo_url || !box_id) {
-      throw new Error('photo_url und box_id sind erforderlich')
-    }
+    // Umfassende Input-Validierung und Sanitization
+    const { photoUrl, boxId } = validateAndSanitizeInput(photo_url, box_id);
 
     // OpenAI API Key aus Umgebungsvariablen
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
@@ -36,14 +123,14 @@ serve(async (req) => {
     }
 
     // Bildanalyse mit OpenAI Vision API
-    const analysisResult = await analyzeImageWithAI(photo_url, openaiApiKey)
+    const analysisResult = await analyzeImageWithAI(photoUrl, openaiApiKey)
 
     // Speichere die Analyse in der Datenbank
     const { data: photoData, error: photoError } = await supabaseClient
       .from('box_photos')
       .insert({
-        box_id: box_id,
-        photo_url: photo_url,
+        box_id: boxId,
+        photo_url: photoUrl,
         photo_type: 'content',
         uploaded_by: (await supabaseClient.auth.getUser()).data.user?.id,
         ai_analysis: analysisResult
@@ -58,7 +145,7 @@ serve(async (req) => {
     // Erstelle Kartoninhalt basierend auf der KI-Analyse
     if (analysisResult.detected_items && analysisResult.detected_items.length > 0) {
       const contentInserts = analysisResult.detected_items.map((item: any) => ({
-        box_id: box_id,
+        box_id: boxId,
         item_name: item.name,
         description: item.description,
         quantity: item.quantity || 1,
@@ -68,12 +155,13 @@ serve(async (req) => {
         manually_added: false
       }))
 
-      const { error: contentError } = await supabaseClient
-        .from('box_contents')
-        .insert(contentInserts)
+      // Atomar per SQL-Funktion einfügen
+      const { error: contentError } = await supabaseClient.rpc('insert_box_contents_atomic', {
+        contents: JSON.stringify(contentInserts)
+      });
 
       if (contentError) {
-        console.error('Fehler beim Erstellen der Kartoninhalte:', contentError)
+        throw new Error('Fehler beim atomaren Einfügen der Kartoninhalte: ' + contentError.message);
       }
     }
 
@@ -105,6 +193,21 @@ serve(async (req) => {
 })
 
 async function analyzeImageWithAI(imageUrl: string, apiKey: string) {
+  // Zusätzliche URL-Validierung für OpenAI
+  if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+    throw new Error('Ungültige Bild-URL für OpenAI API');
+  }
+
+  // Prüfe, ob die URL auf ein Bild verweist
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+  const hasImageExtension = imageExtensions.some(ext => 
+    imageUrl.toLowerCase().includes(ext)
+  );
+  
+  if (!hasImageExtension) {
+    throw new Error('URL muss auf ein Bild verweisen (jpg, jpeg, png, gif, webp)');
+  }
+
   const prompt = `
     Analysiere dieses Foto eines Umzugskartons und erkenne alle sichtbaren Gegenstände.
     
@@ -141,7 +244,7 @@ async function analyzeImageWithAI(imageUrl: string, apiKey: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4-vision-preview',
+      model: 'gpt-4-turbo-2024-04-09',
       messages: [
         {
           role: 'user',

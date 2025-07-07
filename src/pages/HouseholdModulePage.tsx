@@ -12,13 +12,37 @@ import { Home, Users, PawPrint, Baby, Car, Briefcase, HeartPulse, Languages, Edi
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
+interface HouseholdFormData {
+  name: string;
+  household_size: number;
+  property_type: string;
+  pets_count: number;
+  children_count: number;
+  owns_car: boolean;
+  is_self_employed: boolean;
+  needs_care: boolean;
+  main_language: string;
+  special_needs: string;
+}
+
 const HouseholdModulePage = () => {
   const { households, loading: householdsLoading, updateHousehold } = useHouseholds();
   const currentHousehold = households[0];
   const { members, loading: membersLoading } = useHouseholdMembers(currentHousehold?.id || '');
 
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<HouseholdFormData>({
+    name: '',
+    household_size: 1,
+    property_type: '',
+    pets_count: 0,
+    children_count: 0,
+    owns_car: false,
+    is_self_employed: false,
+    needs_care: false,
+    main_language: '',
+    special_needs: '',
+  });
 
   useEffect(() => {
     if (currentHousehold) {

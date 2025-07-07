@@ -50,6 +50,8 @@ const sortOptions = [
   { value: 'category', label: 'Kategorie' }
 ];
 
+type SortField = 'box_number' | 'name' | 'created_at' | 'updated_at' | 'status' | 'category';
+
 export function BoxFilters({ filters, onFiltersChange, sort, onSortChange }: BoxFiltersProps) {
   const handleStatusChange = (status: BoxStatus, checked: boolean) => {
     const currentStatuses = filters.status || [];
@@ -87,7 +89,7 @@ export function BoxFilters({ filters, onFiltersChange, sort, onSortChange }: Box
     });
   };
 
-  const handleBooleanFilterChange = (key: keyof BoxFiltersType, value: boolean) => {
+  const handleBooleanFilterChange = (key: keyof BoxFiltersType, value: boolean | undefined) => {
     onFiltersChange({
       ...filters,
       [key]: value
@@ -171,7 +173,7 @@ export function BoxFilters({ filters, onFiltersChange, sort, onSortChange }: Box
                   {filters.has_photos ? 'Mit Fotos' : 'Ohne Fotos'}
                   <X 
                     className="h-3 w-3 cursor-pointer" 
-                    onClick={() => handleBooleanFilterChange('has_photos', undefined as any)}
+                    onClick={() => handleBooleanFilterChange('has_photos', undefined)}
                   />
                 </Badge>
               )}
@@ -180,7 +182,7 @@ export function BoxFilters({ filters, onFiltersChange, sort, onSortChange }: Box
                   {filters.has_comments ? 'Mit Kommentaren' : 'Ohne Kommentare'}
                   <X 
                     className="h-3 w-3 cursor-pointer" 
-                    onClick={() => handleBooleanFilterChange('has_comments', undefined as any)}
+                    onClick={() => handleBooleanFilterChange('has_comments', undefined)}
                   />
                 </Badge>
               )}
@@ -189,7 +191,7 @@ export function BoxFilters({ filters, onFiltersChange, sort, onSortChange }: Box
                   {filters.is_fragile ? 'Zerbrechlich' : 'Nicht zerbrechlich'}
                   <X 
                     className="h-3 w-3 cursor-pointer" 
-                    onClick={() => handleBooleanFilterChange('is_fragile', undefined as any)}
+                    onClick={() => handleBooleanFilterChange('is_fragile', undefined)}
                   />
                 </Badge>
               )}
@@ -303,7 +305,7 @@ export function BoxFilters({ filters, onFiltersChange, sort, onSortChange }: Box
                 <Label>Sortieren nach</Label>
                 <Select
                   value={sort.field}
-                  onValueChange={(value) => onSortChange({ ...sort, field: value as any })}
+                  onValueChange={(value: SortField) => onSortChange({ ...sort, field: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
