@@ -17,7 +17,6 @@ import { usePremiumStatus } from '@/hooks/usePremiumStatus';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 
-// Enhanced data structure for AI
 interface HomeDetails {
   propertyType: PropertyType | '';
   livingSpace: number;
@@ -109,7 +108,6 @@ const specialInventoryItems = [
     { id: 'many_plants', label: 'Viele Pflanzen' },
 ];
 
-
 export const OnboardingFlow = ({ 
   initialData, 
   initialStep = 1, 
@@ -162,8 +160,6 @@ export const OnboardingFlow = ({
       case 4: {
         const homeKey = 'oldHome';
         const homeData = data[homeKey] as HomeDetails;
-        const title = "Dein altes Nest";
-        const description = "Beschreibe dein jetziges Zuhause.";
         if (!homeData.propertyType) newErrors.oldHome_propertyType = 'Bitte gib die Wohnform deines alten Zuhauses an.';
         if (!homeData.livingSpace || homeData.livingSpace <= 0) newErrors.oldHome_livingSpace = 'Bitte gib die Wohnfläche deines alten Zuhauses an.';
         if (!homeData.rooms || homeData.rooms <= 0) newErrors.oldHome_rooms = 'Bitte gib die Zimmeranzahl deines alten Zuhauses an.';
@@ -172,8 +168,6 @@ export const OnboardingFlow = ({
       case 5: {
         const homeKey = 'newHome';
         const homeData = data[homeKey] as HomeDetails;
-        const title = "Dein neues Reich";
-        const description = "Wie wird dein neues Zuhause aussehen?";
         if (!homeData.propertyType) newErrors.newHome_propertyType = 'Bitte gib die Wohnform deines neuen Zuhauses an.';
         if (!homeData.livingSpace || homeData.livingSpace <= 0) newErrors.newHome_livingSpace = 'Bitte gib die Wohnfläche deines neuen Zuhauses an.';
         if (!homeData.rooms || homeData.rooms <= 0) newErrors.newHome_rooms = 'Bitte gib die Zimmeranzahl deines neuen Zuhauses an.';
@@ -183,14 +177,13 @@ export const OnboardingFlow = ({
         if (!data.inventoryStyle) newErrors.inventoryStyle = 'Bitte wähle deinen Inventar-Stil.';
         break;
       case 7:
-        // Hier keine moveStyle- oder members-Validierung mehr
+        // No validation for lifestyle step
         break;
       case 8:
         if (!data.moveStyle) newErrors.moveStyle = 'Bitte wähle, wie du umziehen möchtest.';
         break;
       case 9:
-        if (!data.members || data.members.length === 0) newErrors.members = 'Bitte füge mindestens ein Mitglied hinzu.';
-        else if (data.members.some(m => !m.name || !m.email)) newErrors.members = 'Bitte gib Name und E-Mail für alle Mitglieder an.';
+        // Member invitation is optional, so no validation needed
         break;
       default:
         break;
@@ -365,7 +358,7 @@ export const OnboardingFlow = ({
             </StepCard>
         );
 
-      case 4: { // Old Home
+      case 4: {
         const homeKey = 'oldHome';
         const homeData = data[homeKey] as HomeDetails;
         const title = "Dein altes Nest";
@@ -410,7 +403,7 @@ export const OnboardingFlow = ({
             </StepCard>
         );
       }
-      case 5: { // New Home
+      case 5: {
         const homeKey = 'newHome';
         const homeData = data[homeKey] as HomeDetails;
         const title = "Dein neues Reich";
@@ -511,11 +504,18 @@ export const OnboardingFlow = ({
         );
 
       case 9:
-        // Simplified member invitation for now
         return (
-      case 9:
-        // Remove validation if step is not implemented
-        break;
+            <StepCard title="Crew einladen" description="Möchtest du andere Personen zu deinem Haushalt einladen? (Optional)">
+                <div className="text-center p-8">
+                    <Mail className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-4">
+                        Du kannst nach der Erstellung deines Haushalts jederzeit Mitglieder einladen.
+                    </p>
+                    <p className="text-sm text-gray-500">
+                        Für jetzt überspringen wir diesen Schritt.
+                    </p>
+                </div>
+            </StepCard>
         );
 
       case 10:
