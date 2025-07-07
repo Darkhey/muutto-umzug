@@ -1,3 +1,4 @@
+
 import { Database } from './database';
 
 export type Household = Database['public']['Tables']['households']['Row'];
@@ -9,7 +10,7 @@ export type HouseholdMember = {
   id: string;
   invited_at: string | null;
   is_owner: boolean;
-  joined_at: string | null;
+  joined_at: string | null; // Nullable to match database schema
   name: string;
   role: Database["public"]["Enums"]["household_role"] | null;
   user_id: string | null;
@@ -23,7 +24,7 @@ export interface ExtendedHousehold extends Household {
   daysUntilMove?: number;
   owns_car?: boolean;
   is_self_employed?: boolean;
-  parent_household_id?: string | null; // New field for linking households to a parent move
+  parent_household_id?: string | null;
   created_by_user_profile?: {
     full_name?: string;
     has_children?: boolean;
@@ -66,7 +67,7 @@ export interface CreateHouseholdData {
   }>;
 }
 
-// Unified onboarding data type
+// Einheitliche Onboarding-Datenstruktur
 export interface OnboardingData {
   householdName: string;
   moveDate: string;

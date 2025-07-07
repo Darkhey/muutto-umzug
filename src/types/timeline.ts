@@ -1,3 +1,4 @@
+
 export interface TimelineItem {
   id: string;
   title: string;
@@ -36,4 +37,23 @@ export interface TimelineViewOptions {
   filterPhase?: string;
   filterPriority?: string;
   filterCategory?: string;
+}
+
+// Zusätzliche Types für Timeline-Funktionalität
+export interface TimelineTaskData {
+  id: string;
+  title: string;
+  description: string;
+  due_date?: string | null;
+  completed: boolean;
+  priority: string;
+  phase: string;
+  category?: string;
+  module_color: string;
+}
+
+export interface TimelineTaskExtended extends TimelineTaskData {
+  assignee_name?: string;
+  is_overdue: boolean;
+  comment_count?: number;
 }

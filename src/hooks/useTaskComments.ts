@@ -2,11 +2,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Database } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
 
-type TaskComment = Database['public']['Tables']['task_comments']['Row'];
-type TaskCommentInsert = Database['public']['Tables']['task_comments']['Insert'];
+interface TaskComment {
+  id: string;
+  task_id: string;
+  user_id: string;
+  comment_text: string;
+  created_at: string;
+  profiles?: {
+    full_name: string;
+  };
+}
 
 export function useTaskComments(taskId?: string) {
   const { user } = useAuth();
@@ -21,9 +28,14 @@ export function useTaskComments(taskId?: string) {
       setLoading(true);
       const { data, error } = await supabase
         .from('task_comments')
-        .select('*, profiles(full_name)')
+        .select(`
+          *,
+          profiles (
+            full_name
+          )
+        `)
         .eq('task_id', taskId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setComments(data || []);
@@ -43,25 +55,22 @@ export function useTaskComments(taskId?: string) {
     if (!taskId || !user) return;
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('task_comments')
         .insert({
           task_id: taskId,
           user_id: user.id,
-          comment_text: commentText,
-        })
-        .select()
-        .single();
+          comment_text: commentText
+        });
 
       if (error) throw error;
 
       toast({
         title: "Kommentar hinzugefügt",
-        description: "Ihr Kommentar wurde erfolgreich hinzugefügt."
+        description: "Der Kommentar wurde erfolgreich hinzugefügt."
       });
 
-      await fetchComments(); // Refetch comments to include the new one
-      return data;
+      await fetchComments();
     } catch (error) {
       console.error('Error adding comment:', error);
       toast({
@@ -69,7 +78,6 @@ export function useTaskComments(taskId?: string) {
         description: error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten',
         variant: "destructive"
       });
-      throw error;
     }
   };
 
@@ -81,6 +89,6 @@ export function useTaskComments(taskId?: string) {
     comments,
     loading,
     addComment,
-    refetch: fetchComments,
+    refetch: fetchComments
   };
 }

@@ -1,5 +1,6 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, Session, AuthResponse } from '@supabase/supabase-js'
+import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 import { Database } from '@/types/database'
 
@@ -7,6 +8,14 @@ type Profile = Database['public']['Tables']['profiles']['Row']
 
 interface ExtendedUser extends User {
   profile?: Profile | null;
+}
+
+interface AuthResponse {
+  data: {
+    user: User | null;
+    session: Session | null;
+  };
+  error: Error | null;
 }
 
 interface AuthContextType {
@@ -82,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp = async (email: string, password: string, fullName?: string): Promise<AuthResponse> => {
     const redirectUrl = `${window.location.origin}/`
 
     const { data, error } = await supabase.auth.signUp({
@@ -95,15 +104,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     })
-    return { error, data }
+    
+    return { 
+      data: {
+        user: data.user,
+        session: data.session
+      },
+      error 
+    }
   }
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+  const signIn = async (email: string, password: string): Promise<AuthResponse> => {
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     })
-    return { error }
+    
+    return { 
+      data: {
+        user: data.user,
+        session: data.session
+      },
+      error 
+    }
   }
 
   const signOut = async () => {

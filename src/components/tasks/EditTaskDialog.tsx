@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -38,7 +39,7 @@ export function EditTaskDialog({ open, onOpenChange, householdId, task }: EditTa
   useEffect(() => {
     if (task) {
       setTitle(task.title);
-      setDescription(task.description);
+      setDescription(task.description || '');
       setDate(task.start ? new Date(task.start) : undefined);
       setLinkUrl(task.link_url || '');
       setAttachmentUrl(task.attachment_url || '');
@@ -84,9 +85,7 @@ export function EditTaskDialog({ open, onOpenChange, householdId, task }: EditTa
       const fileName = `${uuidv4()}.${fileExt}`;
       const filePath = `${householdId}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage.from('attachments').upload(filePath, file, {
-        abortSignal: controller.signal
-      });
+      const { error: uploadError } = await supabase.storage.from('attachments').upload(filePath, file);
 
       if (uploadError) {
         throw uploadError;
@@ -114,7 +113,7 @@ export function EditTaskDialog({ open, onOpenChange, householdId, task }: EditTa
       due_date: date ? format(date, 'yyyy-MM-dd') : null,
       link_url: linkUrl,
       attachment_url: attachmentUrl,
-      assignee_id: assigneeId,
+      assigned_to: assigneeId,
     });
     onOpenChange(false);
   };
@@ -199,4 +198,3 @@ export function EditTaskDialog({ open, onOpenChange, householdId, task }: EditTa
     </Dialog>
   );
 }
-
