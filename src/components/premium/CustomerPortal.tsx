@@ -28,10 +28,11 @@ export const CustomerPortal = () => {
         throw new Error('Nicht angemeldet')
       }
 
-      // Get customer ID from database
+      // Get customer ID from database for current user
       const { data: customerData, error: customerError } = await supabase
         .from('stripe_customers')
         .select('stripe_customer_id')
+        .eq('user_id', session.user.id)
         .single()
 
       if (customerError || !customerData?.stripe_customer_id) {

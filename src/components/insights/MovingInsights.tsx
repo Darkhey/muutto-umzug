@@ -25,6 +25,7 @@ interface MovingInsightsProps {
 
 export const MovingInsights = ({ household, className }: MovingInsightsProps) => {
   const { tasks } = useTasks(household.id)
+  const { status, loading } = usePremiumStatus()
   const completedTasks = tasks.filter(t => t.completed).length
   const progress = calculateHouseholdProgress(
     household.move_date,

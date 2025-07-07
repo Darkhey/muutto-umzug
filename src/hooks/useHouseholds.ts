@@ -203,11 +203,25 @@ export function useHouseholds() {
 
       // Create initial tasks from templates
       try {
+        // Extract location data from household addresses
+        const extractStateFromAddress = (address: string | null | undefined): string => {
+          if (!address) return ''
+          // Simple extraction - in a real app, you might use a geocoding service
+          const parts = address.split(',').map(part => part.trim())
+          return parts[parts.length - 1] || ''
+        }
+
+        const extractMunicipalityFromAddress = (address: string | null | undefined): string => {
+          if (!address) return ''
+          const parts = address.split(',').map(part => part.trim())
+          return parts[0] || ''
+        }
+
         const { data: taskCount, error: taskError } = await supabase.rpc('generate_personalized_tasks', {
           p_household_id: household.id,
-          p_move_from_state: householdData.old_address ? '' : '', // Placeholder
-          p_move_to_state: householdData.new_address ? '' : '', // Placeholder
-          p_move_to_municipality: householdData.postal_code ? '' : '', // Placeholder
+          p_move_from_state: extractStateFromAddress(householdData.old_address),
+          p_move_to_state: extractStateFromAddress(householdData.new_address),
+          p_move_to_municipality: extractMunicipalityFromAddress(householdData.new_address) || householdData.postal_code || '',
           p_has_children: householdData.children_count > 0,
           p_has_pets: householdData.pets_count > 0,
           p_owns_car: householdData.owns_car || false,

@@ -12,6 +12,21 @@ import { Crown, Check, ArrowLeft, CreditCard, Calendar, Loader2 } from 'lucide-r
 import CustomerPortal from '@/components/premium/CustomerPortal'
 import { SUPABASE_URL } from '@/integrations/supabase/client'
 
+// Environment variables for Stripe product IDs
+const ONE_TIME_PRODUCT_ID = import.meta.env.VITE_ONE_TIME_PRODUCT_ID
+const MONTHLY_PRODUCT_ID = import.meta.env.VITE_MONTHLY_PRODUCT_ID
+
+// Check environment variables and provide fallback
+const hasRequiredEnvVars = ONE_TIME_PRODUCT_ID && MONTHLY_PRODUCT_ID
+
+if (!hasRequiredEnvVars) {
+  console.warn('Missing Stripe product ID environment variables:', {
+    ONE_TIME_PRODUCT_ID: !!ONE_TIME_PRODUCT_ID,
+    MONTHLY_PRODUCT_ID: !!MONTHLY_PRODUCT_ID
+  })
+  console.warn('Please set VITE_ONE_TIME_PRODUCT_ID and VITE_MONTHLY_PRODUCT_ID in your .env file')
+}
+
 interface StripeProduct {
   id: string
   name: string
@@ -130,6 +145,50 @@ export default function Premium() {
       setSearchParams(searchParams)
     }
   }, [searchParams, setSearchParams, toast])
+
+  // Show configuration error if environment variables are missing
+  if (!hasRequiredEnvVars) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center gap-2 mb-6">
+            <Button variant="ghost" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Zurück
+            </Button>
+          </div>
+          <Card className="text-center">
+            <CardHeader>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Crown className="h-8 w-8 text-yellow-500" />
+                <CardTitle className="text-2xl">Premium-Konfiguration</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-muted-foreground">
+                  Die Premium-Funktionen sind derzeit nicht verfügbar, da die Stripe-Konfiguration fehlt.
+                </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-left">
+                  <h4 className="font-medium text-yellow-800 mb-2">Fehlende Konfiguration:</h4>
+                  <ul className="text-sm text-yellow-700 space-y-1">
+                    <li>• VITE_ONE_TIME_PRODUCT_ID</li>
+                    <li>• VITE_MONTHLY_PRODUCT_ID</li>
+                  </ul>
+                  <p className="text-sm text-yellow-600 mt-2">
+                    Bitte erstellen Sie eine .env-Datei mit den entsprechenden Stripe-Produkt-IDs.
+                  </p>
+                </div>
+                <Button onClick={() => navigate('/dashboard')} className="w-full">
+                  Zum Dashboard zurück
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (

@@ -217,36 +217,62 @@ const Moves = () => {
               </div>
               <div>
                 <Label htmlFor="initial-households">Initiale Haushalte (optional)</Label>
-                <Select
-                  onValueChange={(value) => {
-                    if (!premiumStatus?.is_premium && value.length > 1) {
-                      toast({
-                        title: "Premium erforderlich",
-                        description: "Nur Premium-Nutzer können Umzüge mit mehreren Haushalten erstellen.",
-                        variant: "destructive"
-                      })
-                      return
-                    }
-                    setNewMoveInitialHouseholds(typeof value === 'string' ? [value] : value)
-                  }}
-                  value={newMoveInitialHouseholds.length > 0 ? newMoveInitialHouseholds[0] : ''} // Only show first selected for single select
-                  multiple={premiumStatus?.is_premium} // Allow multiple selection only for premium
-                >
-                  <SelectTrigger id="initial-households">
-                    <SelectValue placeholder="Haushalte auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {householdsLoading ? (
-                      <SelectItem value="loading" disabled>Lädt Haushalte...</SelectItem>
-                    ) : (
-                      households.map(h => (
-                        <SelectItem key={h.id} value={h.id}>
-                          {h.name}
-                        </SelectItem>
-                      ))
+                {premiumStatus?.is_premium ? (
+                  // Multi-select for premium users
+                  <div className="space-y-2">
+                    <div className="border rounded-md p-3 max-h-32 overflow-y-auto">
+                      {householdsLoading ? (
+                        <div className="text-sm text-muted-foreground">Lädt Haushalte...</div>
+                      ) : households.length === 0 ? (
+                        <div className="text-sm text-muted-foreground">Keine Haushalte verfügbar</div>
+                      ) : (
+                        households.map(h => (
+                          <label key={h.id} className="flex items-center space-x-2 py-1">
+                            <input
+                              type="checkbox"
+                              checked={newMoveInitialHouseholds.includes(h.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewMoveInitialHouseholds([...newMoveInitialHouseholds, h.id])
+                                } else {
+                                  setNewMoveInitialHouseholds(newMoveInitialHouseholds.filter(id => id !== h.id))
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <span className="text-sm">{h.name}</span>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                    {newMoveInitialHouseholds.length > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        Ausgewählt: {newMoveInitialHouseholds.length} Haushalt(e)
+                      </div>
                     )}
-                  </SelectContent>
-                </Select>
+                  </div>
+                ) : (
+                  // Single select for non-premium users
+                  <Select
+                    onValueChange={(value) => setNewMoveInitialHouseholds(value ? [value] : [])}
+                    value={newMoveInitialHouseholds[0] || ''}
+                  >
+                    <SelectTrigger id="initial-households">
+                      <SelectValue placeholder="Haushalt auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {householdsLoading ? (
+                        <SelectItem value="loading" disabled>Lädt Haushalte...</SelectItem>
+                      ) : (
+                        households.map(h => (
+                          <SelectItem key={h.id} value={h.id}>
+                            {h.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
                 {!premiumStatus?.is_premium && (
                   <p className="text-xs text-muted-foreground mt-1 flex items-center">
                     <Crown className="h-3 w-3 mr-1 text-yellow-600" />
