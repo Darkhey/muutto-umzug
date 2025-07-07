@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Grid, Eye, EyeOff, RefreshCw, AlertTriangle, CheckCircle, Wrench, Activity } from 'lucide-react';
 import { Layout, Layouts } from 'react-grid-layout';
-import { validateLayout, repairLayout, optimizeSpacing, LayoutValidationResult } from '@/utils/layoutValidator';
+import { validateLayout, repairLayout, optimizeSpacing, LayoutValidationResult, BreakpointKey } from '@/utils/layoutValidator';
 
 interface LayoutDebuggerProps {
   layouts: Layouts;
@@ -30,7 +29,7 @@ export const LayoutDebugger: React.FC<LayoutDebuggerProps> = ({
 }) => {
   const getLayoutValidation = (breakpoint: keyof Layouts): LayoutValidationResult => {
     const layout = layouts[breakpoint] || [];
-    return validateLayout(layout, breakpoint);
+    return validateLayout(layout);
   };
 
   const getAllValidations = () => {
@@ -62,7 +61,7 @@ export const LayoutDebugger: React.FC<LayoutDebuggerProps> = ({
     Object.keys(layouts).forEach(breakpoint => {
       const bp = breakpoint as keyof Layouts;
       const layout = layouts[bp] || [];
-      repairedLayouts[bp] = repairLayout(layout, bp);
+      repairedLayouts[bp] = repairLayout(layout, bp as BreakpointKey);
     });
     
     onRepairLayout(repairedLayouts);
@@ -76,7 +75,7 @@ export const LayoutDebugger: React.FC<LayoutDebuggerProps> = ({
     Object.keys(layouts).forEach(breakpoint => {
       const bp = breakpoint as keyof Layouts;
       const layout = layouts[bp] || [];
-      optimizedLayouts[bp] = optimizeSpacing(layout, bp);
+      optimizedLayouts[bp] = optimizeSpacing(layout, bp as BreakpointKey);
     });
     
     onOptimizeLayout(optimizedLayouts);

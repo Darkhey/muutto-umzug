@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { validateLayout, repairLayout, preventOutOfBounds } from '@/utils/layoutValidator';
@@ -46,11 +45,11 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
       const currentLayout = allLayouts[bp] || [];
       
       // Validate layout  
-      const validation = validateLayout(currentLayout, bp as "lg" | "md" | "sm" | "xs");
+      const validation = validateLayout(currentLayout);
       
       if (!validation.isValid) {
         // Repair layout if invalid
-        repairedLayouts[bp] = repairLayout(currentLayout, bp as "lg" | "md" | "sm" | "xs");
+        repairedLayouts[bp] = repairLayout(currentLayout, bp as any);
       } else {
         repairedLayouts[bp] = currentLayout;
       }
@@ -74,8 +73,8 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
     const boundedItem = preventOutOfBounds(newItem, currentBreakpoint);
     
     // Update the layout with the bounded item
-    const updatedLayout = layout.map(item => 
-      item.i === boundedItem.i ? boundedItem : item
+    const updatedLayout = layout.map(item =>
+      (typeof item === 'object' && 'i' in item && item.i === (boundedItem as any).i) ? boundedItem : item
     );
     
     // Trigger layout change with validation
@@ -99,8 +98,8 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
     const boundedItem = preventOutOfBounds(newItem, currentBreakpoint);
     
     // Update the layout with the bounded item
-    const updatedLayout = layout.map(item => 
-      item.i === boundedItem.i ? boundedItem : item
+    const updatedLayout = layout.map(item =>
+      (typeof item === 'object' && 'i' in item && item.i === (boundedItem as any).i) ? boundedItem : item
     );
     
     // Trigger layout change with validation
