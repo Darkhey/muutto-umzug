@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { Button } from '@/components/ui/button'
@@ -32,8 +31,8 @@ const cardElementOptions = {
 }
 
 export const StripeElementsCheckout = ({ 
-  mode = 'monthly', 
   priceId,
+  mode = 'monthly', 
   price,
   onSuccess, 
   onCancel 
@@ -43,6 +42,18 @@ export const StripeElementsCheckout = ({
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Show warning if Stripe is not available
+  if (!stripe) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+        <p className="font-medium">Payment System Unavailable</p>
+        <p className="text-sm mt-1">
+          Stripe is not properly configured. Please check your environment variables.
+        </p>
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

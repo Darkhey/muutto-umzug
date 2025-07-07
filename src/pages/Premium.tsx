@@ -52,6 +52,9 @@ export default function Premium() {
   const [selectedPriceId, setSelectedPriceId] = useState<string>('')
   const [loadingProducts, setLoadingProducts] = useState(true)
 
+  const oneTimeProductId = import.meta.env.VITE_ONE_TIME_PRODUCT_ID
+  const monthlyProductId = import.meta.env.VITE_MONTHLY_PRODUCT_ID
+
   useEffect(() => {
     const fetchProducts = async () => {
       setLoadingProducts(true)
@@ -146,45 +149,20 @@ export default function Premium() {
     }
   }, [searchParams, setSearchParams, toast])
 
-  // Show configuration error if environment variables are missing
-  if (!hasRequiredEnvVars) {
+  // Show configuration warning if environment variables are missing
+  if (!oneTimeProductId || !monthlyProductId) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-2 mb-6">
-            <Button variant="ghost" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Zurück
-            </Button>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Premium Features</h1>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+              <p className="font-medium">Configuration Required</p>
+              <p className="text-sm mt-1">
+                Please configure your Stripe product IDs in the environment variables to enable premium features.
+              </p>
+            </div>
           </div>
-          <Card className="text-center">
-            <CardHeader>
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Crown className="h-8 w-8 text-yellow-500" />
-                <CardTitle className="text-2xl">Premium-Konfiguration</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-muted-foreground">
-                  Die Premium-Funktionen sind derzeit nicht verfügbar, da die Stripe-Konfiguration fehlt.
-                </p>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-left">
-                  <h4 className="font-medium text-yellow-800 mb-2">Fehlende Konfiguration:</h4>
-                  <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• VITE_ONE_TIME_PRODUCT_ID</li>
-                    <li>• VITE_MONTHLY_PRODUCT_ID</li>
-                  </ul>
-                  <p className="text-sm text-yellow-600 mt-2">
-                    Bitte erstellen Sie eine .env-Datei mit den entsprechenden Stripe-Produkt-IDs.
-                  </p>
-                </div>
-                <Button onClick={() => navigate('/dashboard')} className="w-full">
-                  Zum Dashboard zurück
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     )
