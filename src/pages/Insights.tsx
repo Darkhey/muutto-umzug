@@ -3,19 +3,24 @@ import { Lightbulb, PackageSearch, Clock, Zap } from "lucide-react";
 import { funFacts } from "@/lib/funfacts";
 import { useMoves } from "@/hooks/useMoves";
 import { differenceInDays, parseISO } from "date-fns";
-
-const getRandomFact = () => {
-  return funFacts[Math.floor(Math.random() * funFacts.length)];
-};
+import { useMemo } from 'react';
 
 const InsightsPage = () => {
   const { activeMove } = useMoves();
-
+  const randomFact = useMemo(() => {
+    return funFacts[Math.floor(Math.random() * funFacts.length)];
+  }, []);
   const daysUntilMove = activeMove?.move_date
-    ? differenceInDays(parseISO(activeMove.move_date), new Date())
+    ? (() => {
+        try {
+          return differenceInDays(parseISO(activeMove.move_date), new Date());
+        } catch (error) {
+          console.warn('Invalid move date format:', activeMove.move_date);
+          return null;
+        }
+      })()
     : null;
-
-  const progress = activeMove?.progress || 0;
+  const progress = typeof activeMove?.progress === 'number' ? activeMove.progress : 0;
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -59,7 +64,7 @@ const InsightsPage = () => {
           </CardHeader>
           <CardContent>
             <p className="text-lg font-semibold text-yellow-900">
-              {getRandomFact()}
+              {randomFact}
             </p>
           </CardContent>
         </Card>

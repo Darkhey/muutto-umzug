@@ -163,7 +163,10 @@ export const MoveMemberManagement = ({ moveId }: MoveMemberManagementProps) => {
                       {MOVE_ROLES.map(role => (
                         <SelectItem key={role.key} value={role.key}>
                           <div className="flex items-center">
-                            {role.icon && React.createElement(role.icon, { className: "mr-2" })}
+                            {(() => {
+                              const roleInfo = getMoveRoleByKey(role.key);
+                              return roleInfo?.icon && React.createElement(roleInfo.icon, { className: "mr-2" });
+                            })()}
                             {role.name}
                           </div>
                         </SelectItem>
@@ -191,8 +194,11 @@ export const MoveMemberManagement = ({ moveId }: MoveMemberManagementProps) => {
                   <div>
                     <p className="font-medium">{getProfileDisplayName(memberRole.user_id)}</p>
                     <Badge variant="secondary" className="mt-1">
-                      {getMoveRoleByKey(memberRole.role)?.icon && React.createElement(getMoveRoleByKey(memberRole.role)!.icon, { className: "mr-1" })}
-                      {getMoveRoleByKey(memberRole.role)?.name || memberRole.role}
+                      {(() => {
+                        const roleInfo = getMoveRoleByKey(memberRole.role);
+                        return roleInfo?.icon && React.createElement(roleInfo.icon, { className: "mr-1" });
+                      })()}
+                      {memberRole.role}
                     </Badge>
                   </div>
                 </div>
@@ -207,7 +213,7 @@ export const MoveMemberManagement = ({ moveId }: MoveMemberManagementProps) => {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Rolle entfernen</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Möchtest du die Rolle &apos;{getMoveRoleByKey(memberRole.role)?.name || memberRole.role}&apos; für &apos;{getProfileDisplayName(memberRole.user_id)}&apos; wirklich entfernen?
+                          Möchtest du die Rolle &apos;{memberRole.role}&apos; für &apos;{getProfileDisplayName(memberRole.user_id)}&apos; wirklich entfernen?
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

@@ -20,6 +20,7 @@ interface BoxStatisticsProps {
 export function BoxStatistics({ householdId, getStatistics }: BoxStatisticsProps) {
   const [stats, setStats] = useState<BoxStatisticsType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadStatistics();
@@ -27,11 +28,13 @@ export function BoxStatistics({ householdId, getStatistics }: BoxStatisticsProps
 
   const loadStatistics = async () => {
     setLoading(true);
+    setError(null);
     try {
       const statistics = await getStatistics();
       setStats(statistics);
     } catch (error) {
       console.error('Fehler beim Laden der Statistiken:', error);
+      setError('Statistiken konnten nicht geladen werden');
     } finally {
       setLoading(false);
     }
@@ -47,6 +50,10 @@ export function BoxStatistics({ householdId, getStatistics }: BoxStatisticsProps
         </CardContent>
       </Card>
     );
+  }
+
+  if (error) {
+    return <div className="text-red-500 font-semibold">{error}</div>;
   }
 
   if (!stats) {

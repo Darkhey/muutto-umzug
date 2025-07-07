@@ -94,7 +94,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ language plpgsql;
 
 CREATE TRIGGER update_boxes_updated_at BEFORE UPDATE ON boxes
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -113,7 +113,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ language plpgsql;
 
 CREATE TRIGGER ensure_single_current_location_trigger 
     BEFORE INSERT OR UPDATE ON box_locations

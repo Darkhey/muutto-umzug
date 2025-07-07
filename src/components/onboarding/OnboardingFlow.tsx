@@ -119,7 +119,7 @@ export const OnboardingFlow = ({
   onBackToDrafts 
 }: OnboardingFlowProps) => {
   const { user } = useAuth();
-  const { isPremium } = usePremiumStatus();
+  const { status, loading } = usePremiumStatus();
   const [currentStep, setCurrentStep] = useState(initialStep);
   
   const [data, setData] = useState<OnboardingData>({
@@ -183,7 +183,12 @@ export const OnboardingFlow = ({
         if (!data.inventoryStyle) newErrors.inventoryStyle = 'Bitte wähle deinen Inventar-Stil.';
         break;
       case 7:
+        // Hier keine moveStyle- oder members-Validierung mehr
+        break;
+      case 8:
         if (!data.moveStyle) newErrors.moveStyle = 'Bitte wähle, wie du umziehen möchtest.';
+        break;
+      case 9:
         if (!data.members || data.members.length === 0) newErrors.members = 'Bitte füge mindestens ein Mitglied hinzu.';
         else if (data.members.some(m => !m.name || !m.email)) newErrors.members = 'Bitte gib Name und E-Mail für alle Mitglieder an.';
         break;
@@ -372,7 +377,7 @@ export const OnboardingFlow = ({
                         <Label>Wohnform</Label>
                         <Select value={homeData.propertyType} onValueChange={(v) => updateHomeData(homeKey, { propertyType: v as PropertyType })}>
                             <SelectTrigger><SelectValue placeholder="Wähle eine Wohnform" /></SelectTrigger>
-                            <SelectContent>{PROPERTY_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                            <SelectContent>{PROPERTY_TYPES.map(t => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div>
@@ -417,7 +422,7 @@ export const OnboardingFlow = ({
                         <Label>Wohnform</Label>
                         <Select value={homeData.propertyType} onValueChange={(v) => updateHomeData(homeKey, { propertyType: v as PropertyType })}>
                             <SelectTrigger><SelectValue placeholder="Wähle eine Wohnform" /></SelectTrigger>
-                            <SelectContent>{PROPERTY_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                            <SelectContent>{PROPERTY_TYPES.map(t => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div>
