@@ -6,7 +6,7 @@ import { Home, CheckCircle, Bell, TrendingUp, MapPin, Map as DashboardMap, Truck
 import { useAuth } from '@/contexts/AuthContext'
 import { useHouseholds } from '@/hooks/useHouseholds'
 import { useToast } from '@/hooks/use-toast'
-import { ExtendedHousehold, CreateHouseholdData } from '@/types/household'
+import { ExtendedHousehold, CreateHouseholdData, OnboardingData } from '@/types/household'
 import { APP_CONFIG } from '@/config/app'
 import MapModule from '@/components/maps/MapModule'
 import { DashboardStats } from './DashboardStats'
@@ -26,7 +26,7 @@ export const ModularDashboard = () => {
   const { toast } = useToast()
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [viewMode, setViewMode] = useState<'dashboard' | 'onboarding' | 'onboarding-success' | 'household-overview' | 'member-management'>('dashboard')
-  const [onboardingData, setOnboardingData] = useState<CreateHouseholdData | null>(null)
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
 
   const [modules, setModules] = useState<DashboardModule[]>([])
 
@@ -177,7 +177,7 @@ export const ModularDashboard = () => {
     }
   }, [households])
 
-  const handleOnboardingComplete = async (data: CreateHouseholdData) => {
+  const handleOnboardingComplete = async (data: OnboardingData) => {
     try {
       setOnboardingData(data)
 

@@ -1,3 +1,4 @@
+
 import { Database } from 'src/types/database';
 
 // Basis-Typen aus der Datenbank
@@ -22,10 +23,10 @@ export type BoxLocationInsert = Database['public']['Tables']['box_locations']['I
 export type BoxLocationUpdate = Database['public']['Tables']['box_locations']['Update'];
 
 // Enums
-export type BoxStatus = Database['public']['Enums']['box_status'];
-export type BoxCategory = Database['public']['Enums']['box_category'];
+export type BoxStatus = 'leer' | 'gepackt' | 'versiegelt' | 'transportiert' | 'ausgepackt';
+export type BoxCategory = 'küche' | 'wohnzimmer' | 'schlafzimmer' | 'bad' | 'keller' | 'dachboden' | 'büro' | 'kinderzimmer' | 'garten' | 'sonstiges';
 
-// Vereinheitlichte Schnittstelle für Box mit Details
+// Vereinheitlichte Schnittstelle für Box mit Details - extends the base Box type
 export interface BoxWithDetails extends Box {
   photos?: BoxPhoto[];
   contents?: BoxContent[];

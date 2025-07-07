@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AuthPage } from './auth/AuthPage'
 import { HouseholdCard } from './households/HouseholdCard'
 import { useToast } from '@/hooks/use-toast'
-import { ExtendedHousehold, CreateHouseholdData } from '@/types/household'
+import { ExtendedHousehold, CreateHouseholdData, OnboardingData } from '@/types/household'
 import { APP_CONFIG, getRandomTip } from '@/config/app'
 import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
 import { getDaysUntilMove, getUrgencyColor, getUrgencyIcon } from '@/utils/moveDate'
@@ -50,7 +50,7 @@ export const Dashboard = () => {
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [dailyTip] = useState(getRandomTip())
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [onboardingData, setOnboardingData] = useState<CreateHouseholdData | null>(null)
+  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
   const [householdProgress, setHouseholdProgress] = useState<Record<string, number>>({})
   const { invitations, loading: inviteLoading, error: inviteError, refetch: refetchInvites } = usePendingInvitations()
 
@@ -137,7 +137,7 @@ export const Dashboard = () => {
     )
   }
 
-  const handleOnboardingComplete = async (data: CreateHouseholdData) => {
+  const handleOnboardingComplete = async (data: OnboardingData) => {
     try {
       setOnboardingData(data)
       
@@ -172,8 +172,8 @@ export const Dashboard = () => {
           p_move_to_municipality: data.postalCode || '', // Using postal code as municipality for now
           p_has_children: data.childrenCount > 0,
           p_has_pets: data.petsCount > 0,
-          p_owns_car: data.ownsCar,
-          p_is_self_employed: data.isSelfEmployed
+          p_owns_car: data.ownsCar || false,
+          p_is_self_employed: data.isSelfEmployed || false
         })
 
         if (rpcError) {

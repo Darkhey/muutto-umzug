@@ -1,31 +1,12 @@
+
 import { useState, useEffect } from 'react';
 import { OnboardingFlow } from './OnboardingFlow';
 import { DraftList } from './DraftList';
 import { useHouseholdDrafts } from '@/hooks/useHouseholdDrafts';
 import { useToast } from '@/hooks/use-toast';
-import { CreateHouseholdData } from '@/hooks/useHouseholds';
+import { CreateHouseholdData, OnboardingData } from '@/types/household';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-
-interface OnboardingData {
-  householdName: string
-  moveDate: string
-  householdSize: number
-  childrenCount: number
-  petsCount: number
-  propertyType: string | ''
-  postalCode: string
-  oldAddress: string
-  newAddress: string
-  livingSpace: number
-  rooms: number
-  furnitureVolume: number
-  members: Array<{
-    name: string
-    email: string
-    role: string
-  }>
-}
 
 interface OnboardingFlowWithDraftsProps {
   onComplete: (data: OnboardingData) => Promise<void>;

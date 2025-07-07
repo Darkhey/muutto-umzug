@@ -55,3 +55,27 @@ export interface CreateHouseholdData {
     role?: string;
   }>;
 }
+
+// Unified onboarding data type
+export interface OnboardingData {
+  householdName: string;
+  moveDate: string;
+  householdSize: number;
+  childrenCount: number;
+  petsCount: number;
+  propertyType: 'miete' | 'eigentum';
+  postalCode: string;
+  oldAddress: string;
+  newAddress: string;
+  livingSpace: number;
+  rooms: number;
+  furnitureVolume: number;
+  ownsCar?: boolean;
+  isSelfEmployed?: boolean;
+  adUrl?: string;
+  members: Array<{
+    name: string;
+    email: string;
+    role: string;
+  }>;
+}
