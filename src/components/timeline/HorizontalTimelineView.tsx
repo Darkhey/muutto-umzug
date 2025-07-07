@@ -13,6 +13,7 @@ import { TimelineLegend } from './TimelineLegend'
 import { useTimelineDrag } from '@/hooks/useTimelineDrag'
 import { useTimelineExport } from '@/hooks/useTimelineExport'
 import { addDays, subDays } from 'date-fns'
+import { supabase } from '@/integrations/supabase/client'
 
 import { AISuggestionsDialog } from './AISuggestionsDialog';
 
@@ -59,12 +60,11 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
   const handleCreateStickyNote = async () => {
     if (!household.id) return;
     await addTask({
-      household_id: household.id,
       title: 'Neue Sticky Note',
       description: '',
       phase: 'langzeit',
       priority: 'niedrig',
-      start: null, // Sticky notes don't have a specific due date
+      due_date: null,
       is_sticky: true,
     });
   };
@@ -199,7 +199,11 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
               {filteredTasks.map((task) => (
                 <TimelineTask
                   key={task.id}
-                  task={task}
+                  task={{
+                    ...task,
+                    description: task.description || '',
+                    assignee_name: task.assignee_name || null
+                  }}
                   isDragged={draggedTask?.id === task.id}
                   colors={COLORS}
                   phaseColors={PHASE_COLORS}
@@ -229,7 +233,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
         onOpenChange={setShowSuggestionsDialog}
         suggestions={aiSuggestions}
         onAccept={(suggestion) => {
-          addTask({ ...suggestion, household_id: household.id });
+          addTask({ ...suggestion });
           setShowSuggestionsDialog(false);
         }}
       />

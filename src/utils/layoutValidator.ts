@@ -1,115 +1,110 @@
 
+import { Layout } from 'react-grid-layout';
+
+export type BreakpointKey = 'lg' | 'md' | 'sm' | 'xs';
+
 export interface LayoutValidationResult {
   isValid: boolean;
-  errors: string[];
-  warnings: string[];
+  overlaps: Array<{ item1: string; item2: string }>;
+  outOfBounds: string[];
   healthScore: number;
-  overlaps: Array<{
-    item1: string;
-    item2: string;
-    area: number;
-  }>;
-  outOfBounds: Array<{
-    item: string;
-    bounds: { x: number; y: number; w: number; h: number };
-  }>;
 }
 
-export type BreakpointKey = 'lg' | 'md' | 'sm' | 'xs' | 'xxs';
+const BREAKPOINT_COLS = {
+  lg: 4,
+  md: 2,
+  sm: 1,
+  xs: 1
+} as const;
 
-export function validateLayout(layout: any[]): LayoutValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  const overlaps: Array<{ item1: string; item2: string; area: number }> = [];
-  const outOfBounds: Array<{ item: string; bounds: { x: number; y: number; w: number; h: number } }> = [];
+export function validateLayout(layout: Layout[]): LayoutValidationResult {
+  const overlaps: Array<{ item1: string; item2: string }> = [];
+  const outOfBounds: string[] = [];
   
-  // Grundlegende Validierung
-  if (!Array.isArray(layout)) {
-    errors.push('Layout muss ein Array sein');
-    return {
-      isValid: false,
-      errors,
-      warnings,
-      healthScore: 0,
-      overlaps,
-      outOfBounds
-    };
-  }
-
-  // Überprüfe Überlappungen
+  // Check for overlaps
   for (let i = 0; i < layout.length; i++) {
     for (let j = i + 1; j < layout.length; j++) {
       const item1 = layout[i];
       const item2 = layout[j];
       
-      if (isOverlapping(item1, item2)) {
-        overlaps.push({
-          item1: item1.i,
-          item2: item2.i,
-          area: calculateOverlapArea(item1, item2)
+      if (
+        item1.x < item2.x + item2.w &&
+        item1.x + item1.w > item2.x &&
+        item1.y < item2.y + item2.h &&
+        item1.y + item1.h > item2.y
+      ) {
+        overlaps.push({ 
+          item1: item1.i || `item-${i}`, 
+          item2: item2.i || `item-${j}` 
         });
       }
     }
   }
-
-  // Berechne Health Score
-  const healthScore = Math.max(0, 100 - (errors.length * 20) - (warnings.length * 10) - (overlaps.length * 15));
-
+  
+  // Check for out of bounds (assuming 4 columns max)
+  layout.forEach((item) => {
+    if (item.x + item.w > 4 || item.x < 0 || item.y < 0) {
+      outOfBounds.push(item.i || 'unknown');
+    }
+  });
+  
+  const healthScore = Math.max(0, 100 - (overlaps.length * 20) - (outOfBounds.length * 15));
+  
   return {
-    isValid: errors.length === 0,
-    errors,
-    warnings,
-    healthScore,
+    isValid: overlaps.length === 0 && outOfBounds.length === 0,
     overlaps,
-    outOfBounds
+    outOfBounds,
+    healthScore
   };
 }
 
-export function repairLayout(layout: any[]): any[] {
+export function repairLayout(layout: Layout[]): Layout[] {
   const repairedLayout = [...layout];
   
-  // Einfache Reparatur: Verschiebe überlappende Items
-  for (let i = 0; i < repairedLayout.length; i++) {
-    for (let j = i + 1; j < repairedLayout.length; j++) {
-      if (isOverlapping(repairedLayout[i], repairedLayout[j])) {
-        repairedLayout[j].y = repairedLayout[i].y + repairedLayout[i].h;
-      }
+  // Sort by y position to maintain visual order
+  repairedLayout.sort((a, b) => a.y - b.y);
+  
+  // Fix each item position
+  repairedLayout.forEach((item, index) => {
+    // Ensure minimum bounds
+    item.x = Math.max(0, item.x);
+    item.y = Math.max(0, item.y);
+    item.w = Math.max(1, Math.min(4, item.w));
+    item.h = Math.max(1, item.h);
+    
+    // Ensure it fits within grid
+    if (item.x + item.w > 4) {
+      item.x = Math.max(0, 4 - item.w);
     }
-  }
+  });
   
   return repairedLayout;
 }
 
-export function optimizeSpacing(layout: any[]): any[] {
-  return layout.map(item => ({
-    ...item,
-    y: Math.max(0, item.y)
-  }));
-}
-
-export function preventOutOfBounds(layout: any[]): any[] {
-  return layout.map(item => ({
-    ...item,
-    x: Math.max(0, Math.min(item.x, 12 - item.w)),
-    y: Math.max(0, item.y)
-  }));
-}
-
-function isOverlapping(item1: any, item2: any): boolean {
-  return !(item1.x + item1.w <= item2.x || 
-           item2.x + item2.w <= item1.x || 
-           item1.y + item1.h <= item2.y || 
-           item2.y + item2.h <= item1.y);
-}
-
-function calculateOverlapArea(item1: any, item2: any): number {
-  const left = Math.max(item1.x, item2.x);
-  const right = Math.min(item1.x + item1.w, item2.x + item2.w);
-  const top = Math.max(item1.y, item2.y);
-  const bottom = Math.min(item1.y + item1.h, item2.y + item2.h);
+export function preventOutOfBounds(item: Layout): Layout {
+  const fixed = { ...item };
   
-  if (left < right && top < bottom) {
-    return (right - left) * (bottom - top);
-  }
-  return 0;
+  // Ensure it stays within bounds
+  fixed.x = Math.max(0, Math.min(fixed.x, 4 - fixed.w));
+  fixed.y = Math.max(0, fixed.y);
+  fixed.w = Math.max(1, Math.min(4, fixed.w));
+  fixed.h = Math.max(1, fixed.h);
+  
+  return fixed;
+}
+
+export function optimizeSpacing(layout: Layout[]): Layout[] {
+  const optimized = [...layout];
+  
+  // Sort by y position
+  optimized.sort((a, b) => a.y - b.y);
+  
+  // Compact layout by removing gaps
+  let currentY = 0;
+  optimized.forEach((item) => {
+    item.y = currentY;
+    currentY += item.h;
+  });
+  
+  return optimized;
 }

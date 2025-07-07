@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { validateLayout, repairLayout, preventOutOfBounds } from '@/utils/layoutValidator';
@@ -49,7 +50,7 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
       
       if (!validation.isValid) {
         // Repair layout if invalid
-        repairedLayouts[bp] = repairLayout(currentLayout, bp as any);
+        repairedLayouts[bp] = repairLayout(currentLayout);
       } else {
         repairedLayouts[bp] = currentLayout;
       }
@@ -70,7 +71,7 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
     else if (width < breakpoints.lg) currentBreakpoint = 'lg';
     
     // Prevent out of bounds
-    const boundedItem = preventOutOfBounds(newItem, currentBreakpoint);
+    const boundedItem = preventOutOfBounds(newItem);
     
     // Update the layout with the bounded item
     const updatedLayout = layout.map(item =>
@@ -95,7 +96,7 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
     else if (width < breakpoints.lg) currentBreakpoint = 'lg';
     
     // Prevent out of bounds and enforce size constraints
-    const boundedItem = preventOutOfBounds(newItem, currentBreakpoint);
+    const boundedItem = preventOutOfBounds(newItem);
     
     // Update the layout with the bounded item
     const updatedLayout = layout.map(item =>
@@ -141,7 +142,7 @@ export const EnhancedResponsiveGrid: React.FC<ResponsiveGridLayoutProps> = ({
         isDraggable={isDraggable}
         isResizable={isResizable}
         autoSize={true}
-        verticalCompact={false} // Disable for better spacing control
+        verticalCompact={false}
         measureBeforeMount={false}
         style={{ minHeight: '400px', width: '100%' }}
         isBounded={true}

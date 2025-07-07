@@ -1,3 +1,4 @@
+
 import { HouseholdRole } from '@/types/household';
 import { Users, Package, DollarSign, Wrench, Heart } from 'lucide-react';
 
@@ -10,7 +11,7 @@ export interface RoleConfig {
   responsibilities: string[];
 }
 
-export const HOUSEHOLD_ROLES: HouseholdRole[] = [
+export const HOUSEHOLD_ROLES: RoleConfig[] = [
   {
     key: 'vertragsmanager',
     name: 'Vertragsmanager',
@@ -91,6 +92,6 @@ export function getRoleName(key: HouseholdRole): string {
 }
 
 export const getRoleIcon = (role: string): string => {
-  const roleConfig = HOUSEHOLD_ROLES.find(r => r.id === role);
-  return roleConfig?.icon || '👤';
+  const roleConfig = HOUSEHOLD_ROLES.find(r => r.key === role);
+  return roleConfig?.icon ? '👤' : '👤'; // Fallback icon
 };

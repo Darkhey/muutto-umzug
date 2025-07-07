@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { 
-  Home, Timeline, Settings, Move, Crown, Package, TrendingUp, 
+  Home, Calendar, Settings, Move, Crown, Package, TrendingUp, 
   Menu, X, ChevronRight
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import { APP_CONFIG } from '@/config/app'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Timeline', href: '/timeline', icon: Timeline },
+  { name: 'Timeline', href: '/timeline', icon: Calendar },
   { name: 'Umzüge', href: '/moves', icon: Move },
   { name: 'Kartons', href: '/box-management', icon: Package },
   { name: 'Insights', href: '/insights', icon: TrendingUp },
