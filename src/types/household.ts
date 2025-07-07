@@ -1,9 +1,19 @@
-
 import { Database } from './database';
 
 export type Household = Database['public']['Tables']['households']['Row'];
 export type HouseholdInsert = Database['public']['Tables']['households']['Insert'];
-export type HouseholdMember = Database['public']['Tables']['household_members']['Row'];
+export type HouseholdMember = {
+  created_at: string;
+  email: string | null;
+  household_id: string;
+  id: string;
+  invited_at: string | null;
+  is_owner: boolean;
+  joined_at: string | null;
+  name: string;
+  role: Database["public"]["Enums"]["household_role"] | null;
+  user_id: string | null;
+};
 export type HouseholdRole = Database['public']['Tables']['household_members']['Row']['role'];
 
 export interface ExtendedHousehold extends Household {

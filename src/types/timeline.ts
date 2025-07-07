@@ -1,4 +1,3 @@
-
 export interface TimelineItem {
   id: string;
   title: string;
@@ -7,14 +6,18 @@ export interface TimelineItem {
   priority: string;
   category?: string;
   start?: string;
+  due_date?: string | null;
   completed: boolean;
   assigned_to?: string;
+  assignee_id?: string | null;
   assignee_name?: string;
   is_overdue: boolean;
   module_color: string;
   className?: string;
   comment_count?: number;
   is_sticky?: boolean;
+  link_url?: string | null;
+  attachment_url?: string | null;
 }
 
 export interface VisItem {
