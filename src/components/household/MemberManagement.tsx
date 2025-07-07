@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { useHouseholdMembers } from '@/hooks/useHouseholdMembers'
 import { useAuth } from '@/contexts/AuthContext'
-import { HOUSEHOLD_ROLES, getRoleIcon, getRoleColor } from '@/config/roles'
+import { HOUSEHOLD_ROLES, getRoleColor } from '@/config/roles'
 import { HouseholdRole } from '@/types/household'
 import { Users, UserPlus, Mail, Crown, Clock, CheckCircle, Trash2, Settings, Copy, Link2, MessageCircle, QrCode } from 'lucide-react'
 import QRCode from 'react-qr-code'
@@ -18,13 +18,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { HouseholdMember as BaseMember } from '@/types/household'
-
-interface HouseholdMember extends BaseMember {
-  id: string
-  is_owner: boolean
-  user_id?: string | null
-  joined_at?: string | null
-}
+import React from 'react'
 
 interface MemberManagementProps {
   householdId: string
@@ -122,7 +116,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
-  const getStatusBadge = (member: HouseholdMember) => {
+  const getStatusBadge = (member: BaseMember) => {
     if (member.is_owner) {
       return <Badge variant="default" className="bg-yellow-100 text-yellow-800"><Crown className="h-3 w-3 mr-1" />Besitzer</Badge>
     }
@@ -339,7 +333,7 @@ export const MemberManagement = ({ householdId, isOwner = false }: MemberManagem
                     {member.role && (
                       <div className="flex items-center mt-1">
                         <Badge className={getRoleColor(member.role)}>
-                          {member.role && <span className="mr-1">{getRoleIcon(member.role)}</span>}
+                          {member.role && <span className="mr-1">{HOUSEHOLD_ROLES.find(r => r.key === member.role)?.icon && React.createElement(HOUSEHOLD_ROLES.find(r => r.key === member.role)!.icon, { className: 'inline h-4 w-4' })}</span>}
                           {HOUSEHOLD_ROLES.find(r => r.key === member.role)?.name}
                         </Badge>
                       </div>
