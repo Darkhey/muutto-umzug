@@ -25,7 +25,7 @@ export function BoxManagementDashboardModule({
 }: BoxManagementDashboardModuleProps) {
   const { boxes, loading } = useBoxes(householdId);
   const totalBoxes = boxes.length;
-  const unpackedBoxes = boxes.filter(box => box.status === 'ausgepackt').length;
+  const unpackedBoxes = boxes.filter(box => box.status !== 'ausgepackt').length;
   return (
     <Card className="h-full">
       <CardHeader>
