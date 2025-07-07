@@ -16,20 +16,31 @@
 
 ## Environment variables
 
-The application requires access to your Supabase instance. Create a `.env.local` file in the project root and provide your credentials:
+The application requires access to your Supabase instance and Stripe for premium features. Create a `.env.local` file in the project root and provide your credentials:
 
 ```bash
+# Supabase Configuration
 VITE_SUPABASE_URL=<your-supabase-url>
 VITE_SUPABASE_ANON_KEY=<your-anon-key>
+
+# Stripe Configuration (for Premium features)
+VITE_STRIPE_PUBLISHABLE_KEY=<your-stripe-publishable-key>
+VITE_ONE_TIME_PRODUCT_ID=<your-one-time-product-id>
+VITE_MONTHLY_PRODUCT_ID=<your-monthly-product-id>
+
+# Backend Stripe Configuration (for Edge Functions)
 STRIPE_SECRET_KEY=<your-stripe-secret>
-STRIPE_PRICE_ONE_TIME=<price-id-one-time>
-STRIPE_PRICE_MONTHLY=<price-id-monthly>
 STRIPE_WEBHOOK_SECRET=<webhook-secret>
 FRONTEND_URL=<http://localhost:5173>
 ```
+
 These variables are read by the Supabase client and Stripe edge functions. Ensure they are set in your environment before running the app.
 
 **Security Note**: Keep `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` safe and never commit them to version control.
+
+### Stripe Setup
+
+For detailed instructions on setting up Stripe for premium features, see [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md).
 
 ## Quick setup
 

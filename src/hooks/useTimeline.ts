@@ -52,9 +52,25 @@ export const useTimeline = (householdId: string) => {
 
   const addTask = async (task: Omit<TimelineItem, 'id' | 'created_at' | 'completed' | 'is_overdue'>) => {
     try {
+      // Validate required fields
+      if (!task.title?.trim()) {
+        throw new Error('Titel ist erforderlich');
+      }
+      if (!task.phase) {
+        throw new Error('Phase ist erforderlich');
+      }
+      if (!task.priority) {
+        throw new Error('Priorität ist erforderlich');
+      }
+
+      const taskData = {
+        ...task,
+        household_id: task.household_id || householdId,
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert([task])
+        .insert([taskData])
         .select();
 
       if (error) throw error;
@@ -64,6 +80,7 @@ export const useTimeline = (householdId: string) => {
       }
     } catch (error) {
       console.error('Error adding task:', error);
+      throw error;
     }
   };
 
@@ -82,7 +99,7 @@ export const useTimeline = (householdId: string) => {
 
       const itemsWithCommentCount = data.map(item => ({
         ...item,
-        comment_count: item.task_comments ? item.task_comments.length : 0,
+        comment_count: item.task_comments?.[0]?.count || 0,
       }));
 
       setTimelineItems(itemsWithCommentCount);

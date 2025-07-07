@@ -49,7 +49,7 @@ serve(async (req) => {
   console.log('Benutzer authentifiziert:', user.email)
 
   const body = await req.json()
-  const { paymentMethodId, mode = 'monthly', priceId } = body
+  const { paymentMethodId, mode = 'monthly', priceId, setAsDefault = false } = body
 
   console.log('Request Body:', { paymentMethodId: !!paymentMethodId, mode, priceId })
 
@@ -85,9 +85,13 @@ serve(async (req) => {
       await stripe.paymentMethods.attach(paymentMethodId, {
         customer: customerId,
       })
-      await stripe.customers.update(customerId, {
-        invoice_settings: { default_payment_method: paymentMethodId },
-      })
+      
+      // Only set as default payment method if user explicitly consents
+      if (setAsDefault) {
+        await stripe.customers.update(customerId, {
+          invoice_settings: { default_payment_method: paymentMethodId },
+        })
+      }
     } else {
       // Neuen Stripe Customer erstellen
       console.log('Neuen Customer erstellen für:', user.email)
@@ -131,8 +135,14 @@ serve(async (req) => {
       console.log('Erstelle Einmalzahlung mit Preis:', priceId)
       // Preis abrufen für Einmalzahlung
       const priceObj = await stripe.prices.retrieve(priceId)
+      
+      // Validate that unit_amount is present and valid
+      if (!priceObj.unit_amount || priceObj.unit_amount <= 0) {
+        throw new Error('Invalid price amount: unit_amount is missing or zero')
+      }
+      
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: priceObj.unit_amount || 999,
+        amount: priceObj.unit_amount,
         currency: priceObj.currency || 'eur',
         customer: customerId,
         payment_method: paymentMethodId,

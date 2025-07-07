@@ -12,6 +12,8 @@ import { useTasks } from '@/hooks/useTasks';
 import { useHouseholdMembers } from '@/hooks/useHouseholdMembers';
 import { useTaskComments } from '@/hooks/useTaskComments';
 import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
+import { isSafeUrl } from '@/utils/url';
 
 interface EditTaskDialogProps {
   open: boolean;
@@ -32,6 +34,7 @@ export function EditTaskDialog({ open, onOpenChange, householdId, task }: EditTa
   const [uploading, setUploading] = useState(false);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState('');
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   useEffect(() => {
     if (task) {
@@ -44,19 +47,47 @@ export function EditTaskDialog({ open, onOpenChange, householdId, task }: EditTa
     }
   }, [task]);
 
+  // Cleanup function to abort upload if component unmounts
+  useEffect(() => {
+    return () => {
+      if (abortController) {
+        abortController.abort();
+      }
+    };
+  }, [abortController]);
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
       if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('You must select an image to upload.');
+        throw new Error('Sie müssen eine Datei zum Hochladen auswählen.');
       }
 
       const file = event.target.files[0];
+      
+      // File size validation (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > maxSize) {
+        throw new Error('Datei ist zu groß. Maximale Größe ist 10MB.');
+      }
+      
+      // File type validation
+      const allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+      if (!allowedMimeTypes.includes(file.type)) {
+        throw new Error('Nur JPEG, PNG und PDF Dateien sind erlaubt.');
+      }
+
+      // Create AbortController for upload
+      const controller = new AbortController();
+      setAbortController(controller);
+
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
+      const fileName = `${uuidv4()}.${fileExt}`;
       const filePath = `${householdId}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage.from('attachments').upload(filePath, file);
+      const { error: uploadError } = await supabase.storage.from('attachments').upload(filePath, file, {
+        abortSignal: controller.signal
+      });
 
       if (uploadError) {
         throw uploadError;
@@ -65,9 +96,14 @@ export function EditTaskDialog({ open, onOpenChange, householdId, task }: EditTa
       const { data } = supabase.storage.from('attachments').getPublicUrl(filePath);
       setAttachmentUrl(data.publicUrl);
     } catch (error) {
-      alert(error.message);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Upload was aborted');
+      } else {
+        alert(error instanceof Error ? error.message : 'Ein Fehler ist aufgetreten');
+      }
     } finally {
       setUploading(false);
+      setAbortController(null);
     }
   };
 
@@ -106,7 +142,9 @@ export function EditTaskDialog({ open, onOpenChange, householdId, task }: EditTa
             <label htmlFor="attachment">Anhang</label>
             <Input id="attachment" type="file" onChange={handleFileUpload} disabled={uploading} />
             {uploading && <p>Lädt hoch...</p>}
-            {attachmentUrl && <a href={attachmentUrl} target="_blank" rel="noreferrer">Anhang anzeigen</a>}
+            {attachmentUrl && isSafeUrl(attachmentUrl) && (
+              <a href={attachmentUrl} target="_blank" rel="noreferrer">Anhang anzeigen</a>
+            )}
           </div>
           <Select onValueChange={setAssigneeId} defaultValue={assigneeId || undefined}>
             <SelectTrigger>

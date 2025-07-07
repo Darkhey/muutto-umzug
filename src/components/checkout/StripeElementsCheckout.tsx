@@ -11,6 +11,7 @@ import { Loader2, CreditCard, Crown } from 'lucide-react'
 interface StripeElementsCheckoutProps {
   mode?: 'monthly' | 'one-time'
   priceId?: string
+  price?: { amount: string; currency: string }
   onSuccess?: () => void
   onCancel?: () => void
 }
@@ -33,6 +34,7 @@ const cardElementOptions = {
 export const StripeElementsCheckout = ({ 
   mode = 'monthly', 
   priceId,
+  price,
   onSuccess, 
   onCancel 
 }: StripeElementsCheckoutProps) => {
@@ -166,6 +168,10 @@ export const StripeElementsCheckout = ({
   }
 
   const getPriceDisplay = () => {
+    if (price) {
+      return { amount: price.amount, period: mode === 'monthly' ? 'Monat' : 'einmalig' }
+    }
+    // Fallback to hardcoded prices if no price prop is provided
     if (mode === 'monthly') {
       return { amount: '9,99', period: 'Monat' }
     }

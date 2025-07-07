@@ -53,16 +53,25 @@ fi
 # 4. Prepare local environment variables
 if [ ! -f .env.local ]; then
   cat <<'EOV' > .env.local
+# Supabase Configuration
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
-OPENAI_API_KEY=
+
+# Stripe Configuration (for Premium features)
+VITE_STRIPE_PUBLISHABLE_KEY=
+VITE_ONE_TIME_PRODUCT_ID=
+VITE_MONTHLY_PRODUCT_ID=
+
+# Backend Stripe Configuration (for Edge Functions)
 STRIPE_SECRET_KEY=
-STRIPE_PRICE_ONE_TIME=
-STRIPE_PRICE_MONTHLY=
 STRIPE_WEBHOOK_SECRET=
-FRONTEND_URL=
+FRONTEND_URL=http://localhost:5173
+
+# Optional: OpenAI Configuration
+OPENAI_API_KEY=
 EOV
-  echo "Created .env.local. Please fill in your Supabase and OpenAI credentials."
+  echo "Created .env.local. Please fill in your Supabase and Stripe credentials."
+  echo "For detailed Stripe setup instructions, see docs/STRIPE_SETUP.md"
 fi
 
 # 5. Apply database migrations if Supabase CLI is available

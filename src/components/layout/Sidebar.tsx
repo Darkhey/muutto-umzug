@@ -7,18 +7,16 @@ import { Badge } from '@/components/ui/badge'
 import { 
   Home, 
   Settings, 
-  User, 
   LogOut, 
   Menu, 
   LayoutDashboard, 
   CalendarDays, 
   Crown, 
-  Users, 
   ClipboardList, 
-  Lightbulb
+  Lightbulb,
+  Package
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useHouseholds } from '@/hooks/useHouseholds'
 import { usePremiumStatus } from '@/hooks/usePremiumStatus'
 import { UpgradeCTA } from '@/components/premium/UpgradeCTA'
 
@@ -33,21 +31,20 @@ const mainNavItems: NavItem[] = [
   { label: 'Dashboard', to: '/', icon: <LayoutDashboard className="h-5 w-5" /> },
   { label: 'Timeline', to: '/timeline', icon: <CalendarDays className="h-5 w-5" /> },
   { label: 'Haushalte', to: '/household-module', icon: <Home className="h-5 w-5" /> },
+  { label: 'Kartonverwaltung', to: '/box-management', icon: <Package className="h-5 w-5" /> },
   { label: 'Umzüge', to: '/moves', icon: <CalendarDays className="h-5 w-5" /> },
   { label: 'Checkliste', to: '/checklist', icon: <ClipboardList className="h-5 w-5" /> },
-  { label: 'Insights', to: '/insights', icon: <Lightbulb className="h-5 w-5" /> },
+  { label: 'Insights', to: '/insights', icon: <Lightbulb className="h-5 w-5" />, premium: true },
 ]
 
 const settingsNavItems: NavItem[] = [
   { label: 'Einstellungen', to: '/settings', icon: <Settings className="h-5 w-5" /> },
-  { label: 'Premium', to: '/premium', icon: <Crown className="h-5 w-5" />, premium: true },
+  { label: 'Premium', to: '/premium', icon: <Crown className="h-5 w-5" /> },
 ]
 
 export const Sidebar = () => {
   const location = useLocation()
-  const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const { households } = useHouseholds()
   const { status: premiumStatus, loading: premiumLoading } = usePremiumStatus()
 
   const getInitials = (name: string | null | undefined) => {
@@ -58,112 +55,92 @@ export const Sidebar = () => {
   const userDisplayName = user?.user_metadata?.full_name || user?.email || 'Gast'
   const userInitials = getInitials(userDisplayName)
 
-  const renderNavItem = (item: NavItem) => (
-    <Link
-      key={item.to}
-      to={item.to}
-      className={`flex items-center space-x-3 p-2 rounded-md ${location.pathname === item.to ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}
-    >
-      {item.icon}
-      <span className="flex-1">{item.label}</span>
-      {item.premium && premiumStatus?.is_premium && (
-        <Badge variant="outline" className="text-xs">
-          <Crown className="h-3 w-3 mr-1" />
-          Aktiv
-        </Badge>
-      )}
-    </Link>
-  )
+  const renderNavItem = (item: NavItem) => {
+    const isActive = location.pathname === item.to;
+    return (
+      <Link
+        key={item.to}
+        to={item.to}
+        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${isActive && 'bg-muted text-primary'}`}>
+        {item.icon}
+        {item.label}
+        {item.premium && !premiumStatus?.is_premium && (
+            <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-yellow-400 text-black">
+                <Crown className="h-4 w-4" />
+            </Badge>
+        )}
+      </Link>
+    )
+  }
 
-
+  const sidebarContent = (
+    <div className="flex flex-col h-full">
+        <div className="flex h-16 items-center border-b px-6">
+            <Link to="/" className="flex items-center gap-2 font-semibold">
+                <Package className="h-6 w-6" />
+                <span>muutto</span>
+            </Link>
+        </div>
+        <div className="flex-1 overflow-auto py-2">
+            <nav className="grid items-start px-4 text-sm font-medium">
+                {mainNavItems.map(renderNavItem)}
+                <Separator className="my-4" />
+                {settingsNavItems.map(renderNavItem)}
+            </nav>
+        </div>
+        <div className="mt-auto p-4 border-t">
+            {!premiumLoading && !premiumStatus?.is_premium && (
+                <div className="mb-4">
+                    <UpgradeCTA />
+                </div>
+            )}
+            <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 border">
+                    <AvatarImage src={user?.user_metadata?.avatar_url} alt={userDisplayName} />
+                    <AvatarFallback>{userInitials}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                    <p className="font-semibold text-sm">{userDisplayName}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-red-500">
+                    <LogOut className="h-5 w-5" />
+                </Button>
+            </div>
+        </div>
+    </div>
+  );
 
   return (
     <>
-      {/* Mobile Sidebar Trigger */}
-      <div className="md:hidden flex items-center p-4 border-b border-border">
+      {/* Mobile Header */}
+      <header className="md:hidden sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur-sm px-4">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="-ml-2">
               <Menu className="h-6 w-6" />
               <span className="sr-only">Navigation öffnen</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
-            <div className="flex flex-col h-full bg-background">
-              <div className="p-4 border-b border-border flex items-center space-x-3">
-                <Avatar>
-                  <AvatarImage src={user?.user_metadata?.avatar_url} />
-                  <AvatarFallback>{userInitials}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <p className="font-semibold text-sm">{userDisplayName}</p>
-                  {user?.email && <p className="text-xs text-muted-foreground">{user.email}</p>}
-                  {!premiumLoading && premiumStatus?.is_premium && (
-                    <Badge variant="outline" className="text-xs mt-1">
-                      <Crown className="h-3 w-3 mr-1" />
-                      Premium {premiumStatus.premium_mode === 'monthly' ? '(Abo)' : '(Einmalig)'}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <nav className="flex-1 p-4 space-y-2">
-                {mainNavItems.map(renderNavItem)}
-                <Separator className="my-4" />
-                {settingsNavItems.map(renderNavItem)}
-              </nav>
-              <div className="p-4 border-t border-border">
-                {!premiumLoading && !premiumStatus?.is_premium && (
-                  <div className="mb-4">
-                    <UpgradeCTA />
-                  </div>
-                )}
-                <Button variant="ghost" onClick={signOut} className="w-full justify-start text-red-600">
-                  <LogOut className="mr-2 h-5 w-5" />
-                  <span>Abmelden</span>
-                </Button>
-              </div>
-            </div>
+          <SheetContent side="left" className="w-72 p-0">
+            {sidebarContent}
           </SheetContent>
         </Sheet>
-        <Link to="/" className="text-lg font-bold text-primary ml-4">
-          muutto
-        </Link>
-      </div>
+        
+        <div className="flex-1 flex justify-center">
+            <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
+                <Package className="h-6 w-6" />
+                <span>muutto</span>
+            </Link>
+        </div>
+
+        {/* Placeholder to center the logo correctly */}
+        <div className="w-10" />
+      </header>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-background h-screen sticky top-0">
-        <div className="p-4 border-b border-border flex items-center space-x-3">
-          <Avatar>
-            <AvatarImage src={user?.user_metadata?.avatar_url} />
-            <AvatarFallback>{userInitials}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <p className="font-semibold text-sm">{userDisplayName}</p>
-            {user?.email && <p className="text-xs text-muted-foreground">{user.email}</p>}
-            {!premiumLoading && premiumStatus?.is_premium && (
-              <Badge variant="outline" className="text-xs mt-1">
-                <Crown className="h-3 w-3 mr-1" />
-                Premium {premiumStatus.premium_mode === 'monthly' ? '(Abo)' : '(Einmalig)'}
-              </Badge>
-            )}
-          </div>
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          {mainNavItems.map(renderNavItem)}
-          <Separator className="my-4" />
-          {settingsNavItems.map(renderNavItem)}
-        </nav>
-        <div className="p-4 border-t border-border">
-          {!premiumLoading && !premiumStatus?.is_premium && (
-            <div className="mb-4">
-              <UpgradeCTA />
-            </div>
-          )}
-          <Button variant="ghost" onClick={signOut} className="w-full justify-start text-red-600">
-            <LogOut className="mr-2 h-5 w-5" />
-            <span>Abmelden</span>
-          </Button>
-        </div>
+      <aside className="hidden md:block w-72 border-r bg-background h-screen sticky top-0">
+        {sidebarContent}
       </aside>
     </>
   )

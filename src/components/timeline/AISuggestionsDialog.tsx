@@ -26,11 +26,11 @@ export const AISuggestionsDialog = ({ open, onOpenChange, suggestions, onAccept 
         </DialogHeader>
         <div className="space-y-4">
           {suggestions.map((suggestion, index) => (
-            <div key={index} className="p-4 border rounded-lg">
+            <div key={suggestion.id || `suggestion-${index}`} className="p-4 border rounded-lg">
               <h4 className="font-semibold">{suggestion.title}</h4>
               <p className="text-sm text-gray-500">{suggestion.description}</p>
               <div className="text-xs text-gray-400 mt-2">
-                Voraussichtliches Fälligkeitsdatum: {new Date(suggestion.due_date).toLocaleDateString()}
+                Voraussichtliches Fälligkeitsdatum: {suggestion.due_date ? new Date(suggestion.due_date).toLocaleDateString() : 'Nicht festgelegt'}
               </div>
               <Button onClick={() => onAccept(suggestion)} size="sm" className="mt-2">Hinzufügen</Button>
             </div>

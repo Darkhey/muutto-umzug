@@ -19,6 +19,38 @@ if (!supabaseUrl || !serviceRole || !stripeSecret || !endpointSecret) {
 const supabase = createClient(supabaseUrl, serviceRole)
 const stripe = new Stripe(stripeSecret, { apiVersion: '2023-10-16' })
 
+// Helper function to get user_id from customer_id
+async function getUserFromCustomer(customerId: string) {
+  const { data: customerData, error: customerError } = await supabase
+    .from('stripe_customers')
+    .select('user_id')
+    .eq('stripe_customer_id', customerId)
+    .single()
+  
+  if (customerError || !customerData) {
+    throw new Error('Customer not found')
+  }
+  
+  return customerData.user_id
+}
+
+// Helper function to upsert premium status with transaction
+async function upsertPremiumStatus(userId: string, mode: 'monthly' | 'one-time', subscriptionId?: string) {
+  const { error: upsertError } = await supabase
+    .from('premium_status')
+    .upsert({
+      user_id: userId,
+      is_premium: true,
+      premium_mode: mode,
+      purchase_date: new Date().toISOString(),
+      stripe_subscription_id: subscriptionId || null,
+    })
+  
+  if (upsertError) {
+    throw new Error('Failed to update premium status')
+  }
+}
+
 serve(async (req) => {
   const sig = req.headers.get('stripe-signature')
   if (!sig) return new Response('Missing signature', { status: 400 })
@@ -65,40 +97,23 @@ serve(async (req) => {
       const customerId = paymentIntent.customer as string
       
       if (customerId) {
-        // Get user_id from stripe_customers table
-        const { data: customerData, error: customerError } = await supabase
-          .from('stripe_customers')
-          .select('user_id')
-          .eq('stripe_customer_id', customerId)
-          .single()
-        
-        if (customerError || !customerData) {
-          console.error('Customer lookup error', customerError)
-          return new Response('Customer not found', { status: 400 })
-        }
-        
-        // Check if this is a one-time payment (not subscription)
-        const { data: subscriptionData } = await supabase
-          .from('premium_status')
-          .select('stripe_subscription_id')
-          .eq('user_id', customerData.user_id)
-          .single()
-        
-        // Only activate premium if no subscription exists (one-time payment)
-        if (!subscriptionData?.stripe_subscription_id) {
-          const { error: upsertError } = await supabase
+        try {
+          const userId = await getUserFromCustomer(customerId)
+          
+          // Check if this is a one-time payment (not subscription)
+          const { data: subscriptionData } = await supabase
             .from('premium_status')
-            .upsert({
-              user_id: customerData.user_id,
-              is_premium: true,
-              premium_mode: 'one-time',
-              purchase_date: new Date().toISOString(),
-              stripe_subscription_id: null,
-            })
-          if (upsertError) {
-            console.error('Premium upsert error', upsertError)
-            return new Response('Database error', { status: 500 })
+            .select('stripe_subscription_id')
+            .eq('user_id', userId)
+            .single()
+          
+          // Only activate premium if no subscription exists (one-time payment)
+          if (!subscriptionData?.stripe_subscription_id) {
+            await upsertPremiumStatus(userId, 'one-time')
           }
+        } catch (error) {
+          console.error('Payment intent processing error:', error)
+          return new Response(error instanceof Error ? error.message : 'Database error', { status: 500 })
         }
       }
       break
@@ -107,35 +122,15 @@ serve(async (req) => {
     case 'invoice.payment_succeeded': {
       const invoice = event.data.object as Stripe.Invoice
       const subscriptionId = invoice.subscription as string
+      const customerId = invoice.customer as string
       
-      if (subscriptionId) {
-        // Get user_id from stripe_customers table via subscription
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-        const customerId = subscription.customer as string
-        
-        const { data: customerData, error: customerError } = await supabase
-          .from('stripe_customers')
-          .select('user_id')
-          .eq('stripe_customer_id', customerId)
-          .single()
-        
-        if (customerError || !customerData) {
-          console.error('Customer lookup error', customerError)
-          return new Response('Customer not found', { status: 400 })
-        }
-        
-        const { error: upsertError } = await supabase
-          .from('premium_status')
-          .upsert({
-            user_id: customerData.user_id,
-            is_premium: true,
-            premium_mode: 'monthly',
-            purchase_date: new Date().toISOString(),
-            stripe_subscription_id: subscriptionId,
-          })
-        if (upsertError) {
-          console.error('Premium upsert error', upsertError)
-          return new Response('Database error', { status: 500 })
+      if (subscriptionId && customerId) {
+        try {
+          const userId = await getUserFromCustomer(customerId)
+          await upsertPremiumStatus(userId, 'monthly', subscriptionId)
+        } catch (error) {
+          console.error('Invoice payment processing error:', error)
+          return new Response(error instanceof Error ? error.message : 'Database error', { status: 500 })
         }
       }
       break

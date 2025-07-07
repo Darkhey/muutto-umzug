@@ -42,8 +42,36 @@ const Settings = () => {
     }
   }
 
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 8) {
+      return 'Passwort muss mindestens 8 Zeichen lang sein';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Passwort muss mindestens einen Großbuchstaben enthalten';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Passwort muss mindestens einen Kleinbuchstaben enthalten';
+    }
+    if (!/\d/.test(password)) {
+      return 'Passwort muss mindestens eine Zahl enthalten';
+    }
+    return null;
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Password strength validation
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      toast({
+        title: "Passwort zu schwach",
+        description: passwordError,
+        variant: "destructive",
+      })
+      return
+    }
+    
     if (password !== confirmPassword) {
       toast({
         title: "Passwortfehler",

@@ -178,7 +178,7 @@ export const ModularDashboard = () => {
     }
   }, [households])
 
-  const handleOnboardingComplete = async (data: CreateHouseholdData) => {
+  const handleOnboardingComplete = async (data: any) => {
     try {
       setOnboardingData(data)
 
@@ -188,7 +188,7 @@ export const ModularDashboard = () => {
         household_size: data.householdSize,
         children_count: data.childrenCount,
         pets_count: data.petsCount,
-        property_type: data.propertyType,
+        property_type: data.propertyType as 'miete' | 'eigentum',
         postal_code: data.postalCode,
         old_address: data.oldAddress,
         new_address: data.newAddress,
@@ -238,6 +238,7 @@ export const ModularDashboard = () => {
 
   const handleRestartOnboarding = () => {
     setViewMode('onboarding')
+    setActiveHousehold(null)
   }
 
   if (!user && !loading) {
@@ -312,23 +313,23 @@ export const ModularDashboard = () => {
     )
   }
 
+  if (viewMode === 'onboarding') {
+    return (
+      <OnboardingFlowWithDrafts onComplete={handleOnboardingComplete} onSkip={() => setViewMode('dashboard')} />
+    )
+  }
+
+  if (viewMode === 'onboarding-success' && onboardingData) {
+    return (
+      <OnboardingSuccess
+        householdName={onboardingData.householdName}
+        moveDate={onboardingData.moveDate}
+        onContinue={handleOnboardingSuccessComplete}
+      />
+    )
+  }
+
   if (households.length === 0) {
-    if (viewMode === 'onboarding') {
-      return (
-        <OnboardingFlowWithDrafts onComplete={handleOnboardingComplete} onSkip={() => setViewMode('dashboard')} />
-      )
-    }
-
-    if (viewMode === 'onboarding-success' && onboardingData) {
-      return (
-        <OnboardingSuccess
-          householdName={onboardingData.householdName}
-          moveDate={onboardingData.moveDate}
-          onContinue={handleOnboardingSuccessComplete}
-        />
-      )
-    }
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <div className="max-w-2xl mx-auto">

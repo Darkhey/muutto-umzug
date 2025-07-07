@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { MOVE_ROLES, getMoveRoleByKey } from '@/config/moveRoles'
 import { Users, UserPlus, Trash2, Settings } from 'lucide-react'
 import { MoveMemberRole } from '@/types/move'
+import { supabase } from '@/integrations/supabase/client'
 
 interface MoveMemberManagementProps {
   moveId: string
@@ -162,7 +163,7 @@ export const MoveMemberManagement = ({ moveId }: MoveMemberManagementProps) => {
                       {MOVE_ROLES.map(role => (
                         <SelectItem key={role.key} value={role.key}>
                           <div className="flex items-center">
-                            {role.icon && <role.icon className="mr-2" />}
+                            {role.icon && React.createElement(role.icon, { className: "mr-2" })}
                             {role.name}
                           </div>
                         </SelectItem>
@@ -190,7 +191,7 @@ export const MoveMemberManagement = ({ moveId }: MoveMemberManagementProps) => {
                   <div>
                     <p className="font-medium">{getProfileDisplayName(memberRole.user_id)}</p>
                     <Badge variant="secondary" className="mt-1">
-                      {getMoveRoleByKey(memberRole.role)?.icon && <span className="mr-1">{getMoveRoleByKey(memberRole.role)?.icon}</span>}
+                      {getMoveRoleByKey(memberRole.role)?.icon && React.createElement(getMoveRoleByKey(memberRole.role)!.icon, { className: "mr-1" })}
                       {getMoveRoleByKey(memberRole.role)?.name || memberRole.role}
                     </Badge>
                   </div>

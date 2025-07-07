@@ -12,6 +12,8 @@ import { useHouseholdMerger } from '@/hooks/useHouseholdMerger'
 import { getDaysUntilMove } from '@/utils/moveDate'
 import { Separator } from '@/components/ui/separator'
 import { ExtendedHousehold } from '@/types/household'
+import { HouseholdOverlapViewer } from './HouseholdOverlapViewer'
+import { analyzeHouseholdOverlaps, type HouseholdOverlap } from '@/utils/householdOverlaps'
 
 interface HouseholdMergerProps {
   onBack: () => void
@@ -37,6 +39,7 @@ export const HouseholdMerger = ({
   )
   const [confirmStep, setConfirmStep] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [showOverlapAnalysis, setShowOverlapAnalysis] = useState(false)
 
   // Filter out households that are already selected as source
   const availableDestinationHouseholds = households.filter(
@@ -51,6 +54,13 @@ export const HouseholdMerger = ({
   const selectedDestinationHousehold = households.find(
     h => h.id === destinationHouseholdId
   )
+
+  // Analyze overlaps for selected households
+  const allSelectedHouseholds = [...selectedSourceHouseholds]
+  if (selectedDestinationHousehold) {
+    allSelectedHouseholds.push(selectedDestinationHousehold)
+  }
+  const overlapAnalysis = analyzeHouseholdOverlaps(allSelectedHouseholds)
 
   // Handle source household selection
   const toggleSourceHousehold = (householdId: string) => {
@@ -309,6 +319,49 @@ export const HouseholdMerger = ({
                 </div>
               </div>
             </div>
+
+            {/* Überlappungsanalyse */}
+            {allSelectedHouseholds.length > 1 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">Überlappungsanalyse</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowOverlapAnalysis(!showOverlapAnalysis)}
+                  >
+                    {showOverlapAnalysis ? 'Ausblenden' : 'Anzeigen'}
+                  </Button>
+                </div>
+                
+                {showOverlapAnalysis && (
+                  <HouseholdOverlapViewer
+                    selectedHouseholdIds={allSelectedHouseholds.map(h => h.id)}
+                    onResolveOverlap={(overlap) => {
+                      // Hier könnte man eine Dialog zum Lösen der Überlappung öffnen
+                      console.log('Resolve overlap:', overlap)
+                    }}
+                  />
+                )}
+                
+                {!showOverlapAnalysis && overlapAnalysis.hasConflicts && (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Überlappungen gefunden</AlertTitle>
+                    <AlertDescription>
+                      {overlapAnalysis.criticalIssues} kritische und {overlapAnalysis.warnings} Warnungen in den ausgewählten Haushalten.
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto text-blue-600"
+                        onClick={() => setShowOverlapAnalysis(true)}
+                      >
+                        Details anzeigen
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
             
             <div className="p-4 border rounded-lg bg-yellow-50">
               <h4 className="font-medium flex items-center gap-2 mb-2">

@@ -5,25 +5,23 @@ import { useHouseholds } from '@/hooks/useHouseholds'
 import { Sidebar } from './Sidebar'
 
 export const AppShell = ({ children }: { children: ReactNode }) => {
-  console.log('AppShell: Rendering...')
-  
   const { households, loading } = useHouseholds()
   const activeHousehold = households && households.length > 0 ? households[0] : undefined
 
-  console.log('AppShell: Households:', households?.length, 'Loading:', loading)
-
   return (
-    <div className="flex min-h-screen">
+    <div className="min-h-screen w-full bg-background text-foreground">
       <Sidebar />
-      <div className="flex flex-col flex-1">
-        <main className="flex-1 p-4">{children}</main>
+      <div className="flex flex-col md:pl-72">
+        {/* Spacer for the sticky mobile header (h-16) */}
+        <div className="h-16 md:hidden" />
+        <main className="flex-1 p-4 sm:p-6">
+          {children}
+        </main>
         <Footer />
-        
-        {/* Global Floating Chat Button - only show when not loading and household exists */}
-        {!loading && activeHousehold && (
-          <FloatingChatButton household={activeHousehold} />
-        )}
       </div>
+      {!loading && activeHousehold && (
+        <FloatingChatButton household={activeHousehold} />
+      )}
     </div>
   )
 }

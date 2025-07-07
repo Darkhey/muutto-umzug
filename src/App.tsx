@@ -17,14 +17,14 @@ import AGB from "./pages/AGB";
 import Kontakt from "./pages/Kontakt";
 import Premium from "./pages/Premium";
 import HouseholdModulePage from "./pages/HouseholdModulePage";
+import { BoxManagement } from "./pages/BoxManagement";
 import { AppShell } from "@/components/layout/AppShell";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import InsightsPage from "./pages/Insights";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  console.log('App: Rendering...')
-  
   return (
     <ErrorBoundary>
       <HelmetProvider>
@@ -54,23 +54,23 @@ const AppContent = () => {
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ErrorBoundary>
-          <AppShell>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/timeline" element={<Timeline />} />
-              <Route path="/premium" element={<Premium />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/moves" element={<Moves />} />
-              <Route path="/impressum" element={<Impressum />} />
-              <Route path="/datenschutz" element={<Datenschutz />} />
-              <Route path="/agb" element={<AGB />} />
-              <Route path="/kontakt" element={<Kontakt />} />
-              <Route path="/household-module" element={<HouseholdModulePage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AppShell>
-        </ErrorBoundary>
+        <AppShell>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/timeline" element={<Timeline />} />
+            <Route path="/premium" element={<Premium />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/moves" element={<Moves />} />
+            <Route path="/impressum" element={<Impressum />} />
+            <Route path="/datenschutz" element={<Datenschutz />} />
+            <Route path="/agb" element={<AGB />} />
+            <Route path="/kontakt" element={<Kontakt />} />
+            <Route path="/household-module" element={<HouseholdModulePage />} />
+            <Route path="/box-management" element={<BoxManagement />} />
+            <Route path="/insights" element={<InsightsPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AppShell>
       </BrowserRouter>
     </>
   );
