@@ -7,15 +7,19 @@ export type BoxUpdate = Database['public']['Tables']['boxes']['Update'];
 
 export type BoxPhoto = Database['public']['Tables']['box_photos']['Row'];
 export type BoxPhotoInsert = Database['public']['Tables']['box_photos']['Insert'];
+export type BoxPhotoUpdate = Database['public']['Tables']['box_photos']['Update'];
 
 export type BoxContent = Database['public']['Tables']['box_contents']['Row'];
 export type BoxContentInsert = Database['public']['Tables']['box_contents']['Insert'];
+export type BoxContentUpdate = Database['public']['Tables']['box_contents']['Update'];
 
 export type BoxComment = Database['public']['Tables']['box_comments']['Row'];
 export type BoxCommentInsert = Database['public']['Tables']['box_comments']['Insert'];
+export type BoxCommentUpdate = Database['public']['Tables']['box_comments']['Update'];
 
 export type BoxLocation = Database['public']['Tables']['box_locations']['Row'];
 export type BoxLocationInsert = Database['public']['Tables']['box_locations']['Insert'];
+export type BoxLocationUpdate = Database['public']['Tables']['box_locations']['Update'];
 
 // Enums
 export type BoxStatus = Database['public']['Enums']['box_status'];
@@ -38,6 +42,12 @@ export interface BoxWithDetails extends Box {
 // Für Rückwärtskompatibilität
 export type ExtendedBox = BoxWithDetails;
 
+export interface BoxDimensionsCm {
+  length: number;
+  width: number;
+  height: number;
+}
+
 export interface CreateBoxData {
   box_number: string;
   name?: string;
@@ -45,11 +55,7 @@ export interface CreateBoxData {
   category?: BoxCategory;
   room?: string;
   weight_kg?: number;
-  dimensions_cm?: {
-    length: number;
-    width: number;
-    height: number;
-  };
+  dimensions_cm?: BoxDimensionsCm;
   source_household_id?: string;
   destination_household_id?: string;
 }
@@ -73,10 +79,10 @@ export interface AIAnalysisResult {
     name: string;
     description: string;
     quantity: number;
-    category: string;
+    category: BoxCategory;
     is_fragile: boolean;
   }>;
-  overall_category: string;
+  overall_category: BoxCategory;
   confidence_score: number;
   notes: string;
 }
@@ -89,13 +95,16 @@ export interface BoxPhotoUpload {
   photo_type?: 'content' | 'label' | 'damage';
 }
 
+// Hilfstyp für positive Zahlen
+export type PositiveNumber = number & { __positive__: void };
+
 export interface BoxContentFormData {
   item_name: string;
   description?: string;
-  quantity: number;
+  quantity: PositiveNumber; // Muss > 0 sein
   is_fragile: boolean;
   estimated_value?: number;
-  category?: string;
+  category?: BoxCategory;
 }
 
 export interface BoxCommentFormData {
@@ -139,5 +148,5 @@ export type SortDirection = 'asc' | 'desc';
 
 export interface BoxSort {
   field: BoxSortField;
-  direction: SortDirection;
+  direction?: SortDirection; // defaults to 'asc'
 } 

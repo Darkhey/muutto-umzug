@@ -83,15 +83,46 @@ export function useHouseholdOverlaps(options: UseHouseholdOverlapsOptions = {}):
 
   // Resolve overlap function
   const resolveOverlap = async (overlap: HouseholdOverlap): Promise<void> => {
-    // Hier könnte man die Logik zum Lösen der Überlappung implementieren
-    // z.B. API-Calls, Datenbank-Updates, etc.
-    console.log('Resolving overlap:', overlap)
-    
-    // Simuliere async operation
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Refresh analysis after resolving
-    refresh()
+    // Beispielhafte Implementierung für die wichtigsten Overlap-Typen
+    try {
+      if (overlap.type === 'move_date_conflict' && overlap.affectedHouseholds.length >= 2) {
+        // Verschiebe den zweiten betroffenen Haushalt um einen Tag nach hinten
+        const toUpdateId = overlap.affectedHouseholds[1];
+        const toUpdate = households.find(h => h.id === toUpdateId);
+        if (toUpdate) {
+          const newDate = new Date(toUpdate.move_date);
+          newDate.setDate(newDate.getDate() + 1);
+          // Hier sollte ein API-Call stehen, z.B. updateHouseholdMoveDate(toUpdateId, newDate)
+          toUpdate.move_date = newDate.toISOString().slice(0, 10);
+        }
+      } else if (overlap.type === 'address_overlap' && overlap.affectedHouseholds.length >= 2) {
+        // Verschiebe den Einziehenden nach hinten (analog zu oben)
+        const toUpdateId = overlap.affectedHouseholds[0];
+        const toUpdate = households.find(h => h.id === toUpdateId);
+        if (toUpdate) {
+          const newDate = new Date(toUpdate.move_date);
+          newDate.setDate(newDate.getDate() + 1);
+          // Hier sollte ein API-Call stehen, z.B. updateHouseholdMoveDate(toUpdateId, newDate)
+          toUpdate.move_date = newDate.toISOString().slice(0, 10);
+        }
+      } else if (overlap.type === 'member_duplicate' && overlap.data?.email && overlap.affectedHouseholds.length >= 2) {
+        // Entferne das doppelte Mitglied aus dem zweiten betroffenen Haushalt
+        const toUpdateId = overlap.affectedHouseholds[1];
+        const toUpdate = households.find(h => h.id === toUpdateId);
+        if (toUpdate && Array.isArray(toUpdate.members)) {
+          toUpdate.members = toUpdate.members.filter(m => m.email.toLowerCase() !== overlap.data.email.toLowerCase());
+          // Hier sollte ein API-Call stehen, z.B. removeHouseholdMember(toUpdateId, overlap.data.email)
+        }
+      } else {
+        // Für andere Typen nur Hinweis
+        console.info('Automatische Lösung für diesen Overlap-Typ nicht implementiert:', overlap.type);
+      }
+      // Simuliere async operation
+      await new Promise(resolve => setTimeout(resolve, 500));
+      refresh();
+    } catch (err) {
+      console.error('Fehler beim Lösen der Überlappung:', err);
+    }
   }
 
   // Helper functions

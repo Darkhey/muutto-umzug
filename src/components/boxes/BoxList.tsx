@@ -30,6 +30,27 @@ interface BoxListProps {
   categoryIcons: Record<BoxCategory, string>;
 }
 
+const STATUS_LABELS: Record<BoxStatus, string> = {
+  leer: 'Leer',
+  gepackt: 'Gepackt',
+  versiegelt: 'Versiegelt',
+  transportiert: 'Transportiert',
+  ausgepackt: 'Ausgepackt'
+};
+
+const CATEGORY_LABELS: Record<BoxCategory, string> = {
+  küche: 'Küche',
+  wohnzimmer: 'Wohnzimmer',
+  schlafzimmer: 'Schlafzimmer',
+  bad: 'Bad',
+  keller: 'Keller',
+  dachboden: 'Dachboden',
+  büro: 'Büro',
+  kinderzimmer: 'Kinderzimmer',
+  garten: 'Garten',
+  sonstiges: 'Sonstiges'
+};
+
 export function BoxList({ 
   boxes, 
   onUpdateBox, 
@@ -51,32 +72,9 @@ export function BoxList({
     }
   };
 
-  const getStatusLabel = (status: BoxStatus) => {
-    const labels: Record<BoxStatus, string> = {
-      leer: 'Leer',
-      gepackt: 'Gepackt',
-      versiegelt: 'Versiegelt',
-      transportiert: 'Transportiert',
-      ausgepackt: 'Ausgepackt'
-    };
-    return labels[status];
-  };
+  const getStatusLabel = (status: BoxStatus) => STATUS_LABELS[status];
 
-  const getCategoryLabel = (category: BoxCategory) => {
-    const labels: Record<BoxCategory, string> = {
-      küche: 'Küche',
-      wohnzimmer: 'Wohnzimmer',
-      schlafzimmer: 'Schlafzimmer',
-      bad: 'Bad',
-      keller: 'Keller',
-      dachboden: 'Dachboden',
-      büro: 'Büro',
-      kinderzimmer: 'Kinderzimmer',
-      garten: 'Garten',
-      sonstiges: 'Sonstiges'
-    };
-    return labels[category];
-  };
+  const getCategoryLabel = (category: BoxCategory) => CATEGORY_LABELS[category];
 
   if (boxes.length === 0) {
     return (

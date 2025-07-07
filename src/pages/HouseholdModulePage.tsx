@@ -62,8 +62,9 @@ const HouseholdModulePage = () => {
     }
   }, [currentHousehold]);
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  type HouseholdFormData = typeof formData;
+  const handleInputChange = <K extends keyof HouseholdFormData>(field: K, value: HouseholdFormData[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
