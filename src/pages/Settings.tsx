@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -5,11 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { usePremiumStatus } from '@/hooks/usePremiumStatus'
-import { Crown } from 'lucide-react'
+import { Crown, ChevronDown } from 'lucide-react'
 
 const Settings = () => {
   const { user } = useAuth()
@@ -21,6 +23,7 @@ const Settings = () => {
   const [email, setEmail] = useState(user?.email || '')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [premiumBenefitsOpen, setPremiumBenefitsOpen] = useState(false)
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -207,22 +210,70 @@ const Settings = () => {
             <CardContent className="space-y-4">
               {!premiumLoading && (
                 premiumStatus?.is_premium ? (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium flex items-center">
-                      <Crown className="h-5 w-5 text-yellow-500 mr-2" />
-                      Du bist Premium-Mitglied!
-                    </p>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Crown className="h-5 w-5 text-yellow-500" />
+                      <p className="text-sm font-medium">Du bist Premium-Mitglied!</p>
+                    </div>
                     {premiumStatus.premium_mode === 'monthly' && (
                        <Button onClick={handleManageSubscription}>Abonnement verwalten</Button>
                     )}
+                    
+                    <Collapsible open={premiumBenefitsOpen} onOpenChange={setPremiumBenefitsOpen}>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between">
+                          Premium-Vorteile anzeigen
+                          <ChevronDown className={`h-4 w-4 transition-transform ${premiumBenefitsOpen ? 'rotate-180' : ''}`} />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-4 space-y-2">
+                        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border">
+                          <h4 className="font-semibold text-yellow-800 mb-2">Deine Premium-Vorteile:</h4>
+                          <ul className="text-sm text-yellow-700 space-y-1">
+                            <li>✓ Unbegrenzte Haushalte</li>
+                            <li>✓ KI-gestützte Aufgabenplanung</li>
+                            <li>✓ Erweiterte Inventarverwaltung</li>
+                            <li>✓ Smart-Timeline mit Drag & Drop</li>
+                            <li>✓ Automatische Vertragsanalyse</li>
+                            <li>✓ Prioritärer Support</li>
+                            <li>✓ Export-Funktionen</li>
+                            <li>✓ Individuelle Rollenvergabe</li>
+                          </ul>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                      <p className="text-sm text-muted-foreground">Du hast noch kein Premium-Abo.</p>
                      <Button onClick={() => navigate('/premium')} className="bg-yellow-500 hover:bg-yellow-600 text-white">
                        <Crown className="h-4 w-4 mr-2" />
                        Jetzt Premium freischalten
                      </Button>
+                     
+                     <Collapsible open={premiumBenefitsOpen} onOpenChange={setPremiumBenefitsOpen}>
+                       <CollapsibleTrigger asChild>
+                         <Button variant="outline" className="w-full justify-between">
+                           Premium-Vorteile anzeigen
+                           <ChevronDown className={`h-4 w-4 transition-transform ${premiumBenefitsOpen ? 'rotate-180' : ''}`} />
+                         </Button>
+                       </CollapsibleTrigger>
+                       <CollapsibleContent className="mt-4 space-y-2">
+                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border">
+                           <h4 className="font-semibold text-blue-800 mb-2">Mit Premium erhältst du:</h4>
+                           <ul className="text-sm text-blue-700 space-y-1">
+                             <li>• Unbegrenzte Haushalte</li>
+                             <li>• KI-gestützte Aufgabenplanung</li>
+                             <li>• Erweiterte Inventarverwaltung</li>
+                             <li>• Smart-Timeline mit Drag & Drop</li>
+                             <li>• Automatische Vertragsanalyse</li>
+                             <li>• Prioritärer Support</li>
+                             <li>• Export-Funktionen</li>
+                             <li>• Individuelle Rollenvergabe</li>
+                           </ul>
+                         </div>
+                       </CollapsibleContent>
+                     </Collapsible>
                   </div>
                 )
               )}

@@ -1,3 +1,4 @@
+
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -55,6 +56,10 @@ export const Sidebar = () => {
   const userDisplayName = user?.user_metadata?.full_name || user?.email || 'Gast'
   const userInitials = getInitials(userDisplayName)
 
+  const handleSignOut = async () => {
+    await signOut()
+  }
+
   const renderNavItem = (item: NavItem) => {
     const isActive = location.pathname === item.to;
     return (
@@ -86,6 +91,15 @@ export const Sidebar = () => {
                 {mainNavItems.map(renderNavItem)}
                 <Separator className="my-4" />
                 {settingsNavItems.map(renderNavItem)}
+                <Separator className="my-4" />
+                <Button 
+                  variant="ghost" 
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary justify-start w-full"
+                >
+                  <LogOut className="h-5 w-5" />
+                  Abmelden
+                </Button>
             </nav>
         </div>
         <div className="mt-auto p-4 border-t">
@@ -103,9 +117,6 @@ export const Sidebar = () => {
                     <p className="font-semibold text-sm">{userDisplayName}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-red-500">
-                    <LogOut className="h-5 w-5" />
-                </Button>
             </div>
         </div>
     </div>
