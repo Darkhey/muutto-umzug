@@ -1,0 +1,65 @@
+@keyframes drive {
+  0% {
+    transform: translateX(-200px);
+  }
+  100% {
+    transform: translateX(200px);
+  }
+}
+
+@keyframes move-road {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100px);
+  }
+}
+
+.moving-truck-animation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.truck {
+  display: flex;
+  align-items: flex-end;
+  animation: drive 3s infinite linear;
+}
+
+.cabin {
+  width: 50px;
+  height: 40px;
+  background-color: #f9a825; /* Ein freundliches Gelb */
+  border-top-left-radius: 10px;
+  border-top-right-radius: 5px;
+  position: relative;
+}
+
+.cabin::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 20px;
+  height: 15px;
+  background-color: #e3f2fd; /* Fenster */
+  border-radius: 3px;
+}
+
+.box {
+  width: 80px;
+  height: 60px;
+  background-color: #42a5f5; /* Ein schönes Blau */
+  border-radius: 5px;
+}
+
+.road {
+  width: 300px;
+  height: 5px;
+  background-image: linear-gradient(to right, #616161 50%, transparent 50%);
+  background-size: 20px 5px;
+  animation: move-road 0.5s infinite linear;
+  margin-top: 10px;
+}
