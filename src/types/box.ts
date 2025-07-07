@@ -26,8 +26,25 @@ export type BoxLocationUpdate = Database['public']['Tables']['box_locations']['U
 export type BoxStatus = 'leer' | 'gepackt' | 'versiegelt' | 'transportiert' | 'ausgepackt';
 export type BoxCategory = 'küche' | 'wohnzimmer' | 'schlafzimmer' | 'bad' | 'keller' | 'dachboden' | 'büro' | 'kinderzimmer' | 'garten' | 'sonstiges';
 
-// Vereinheitlichte Schnittstelle für Box mit Details - extends the base Box type
-export interface BoxWithDetails extends Box {
+// Vereinheitlichte Schnittstelle für Box mit Details - includes all Box properties explicitly
+export interface BoxWithDetails {
+  id: string;
+  box_number: string;
+  name?: string | null;
+  description?: string | null;
+  category?: BoxCategory | null;
+  room?: string | null;
+  status?: BoxStatus | null;
+  weight_kg?: number | null;
+  dimensions_cm?: {
+    length: number;
+    width: number;
+    height: number;
+  } | null;
+  source_household_id?: string | null;
+  destination_household_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
   photos?: BoxPhoto[];
   contents?: BoxContent[];
   comments?: BoxComment[];

@@ -4,7 +4,7 @@ import { OnboardingFlow } from './OnboardingFlow';
 import { DraftList } from './DraftList';
 import { useHouseholdDrafts } from '@/hooks/useHouseholdDrafts';
 import { useToast } from '@/hooks/use-toast';
-import { CreateHouseholdData, OnboardingData } from '@/types/household';
+import { OnboardingData } from '@/types/household';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
   const { getDraft, saveDraft, completeDraft } = useHouseholdDrafts();
   const [showDraftList, setShowDraftList] = useState(true);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
-  const [initialData, setInitialData] = useState<Partial<CreateHouseholdData> | null>(null);
+  const [initialData, setInitialData] = useState<Partial<OnboardingData> | null>(null);
   const [initialStep, setInitialStep] = useState(1);
 
   const handleNewDraft = () => {
@@ -41,7 +41,31 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
       }
 
       setCurrentDraftId(draftId);
-      setInitialData(draft.data as Partial<CreateHouseholdData>);
+      // Convert draft data to OnboardingData format
+      const draftData = draft.data as any;
+      const convertedData: Partial<OnboardingData> = {
+        householdName: draftData.householdName || draftData.name,
+        moveDate: draftData.moveDate || draftData.move_date,
+        householdSize: draftData.householdSize || draftData.household_size,
+        childrenCount: draftData.childrenCount || draftData.children_count,
+        petsCount: draftData.petsCount || draftData.pets_count,
+        propertyType: draftData.propertyType || draftData.property_type,
+        postalCode: draftData.postalCode || draftData.postal_code,
+        oldAddress: draftData.oldAddress || draftData.old_address,
+        newAddress: draftData.newAddress || draftData.new_address,
+        livingSpace: draftData.livingSpace || draftData.living_space,
+        rooms: draftData.rooms,
+        furnitureVolume: draftData.furnitureVolume || draftData.furniture_volume,
+        ownsCar: draftData.ownsCar || draftData.owns_car,
+        isSelfEmployed: draftData.isSelfEmployed || draftData.is_self_employed,
+        adUrl: draftData.adUrl || draftData.ad_url,
+        members: (draftData.members || []).map((member: any) => ({
+          name: member.name || '',
+          email: member.email || '',
+          role: member.role || ''
+        }))
+      };
+      setInitialData(convertedData);
       setInitialStep(draft.lastStep || 1);
       setShowDraftList(false);
     } catch (error) {
@@ -75,7 +99,7 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
     }
   };
 
-  const handleSaveDraft = async (data: Partial<CreateHouseholdData>, step: number) => {
+  const handleSaveDraft = async (data: Partial<OnboardingData>, step: number) => {
     try {
       const draftId = await saveDraft(data, currentDraftId || undefined, step);
       setCurrentDraftId(draftId);
