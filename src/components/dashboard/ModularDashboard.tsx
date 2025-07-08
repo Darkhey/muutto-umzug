@@ -189,12 +189,14 @@ export const ModularDashboard = () => {
         children_count: data.children.length,
         pets_count: data.pets.length,
         property_type: (data.newHome.propertyType || data.oldHome.propertyType || 'miete') as 'miete' | 'eigentum',
-        postal_code: undefined,
-        old_address: undefined,
-        new_address: undefined,
-        living_space: data.newHome.livingSpace || data.oldHome.livingSpace,
-        rooms: data.newHome.rooms || data.oldHome.rooms,
-        furniture_volume: undefined
+        postal_code: data.newHome.municipality || data.oldHome.municipality || null,
+        old_address: data.oldHome.municipality || null,
+        new_address: data.newHome.municipality || null,
+        living_space: data.newHome.livingSpace || data.oldHome.livingSpace || null,
+        rooms: data.newHome.rooms || data.oldHome.rooms || null,
+        furniture_volume: null,
+        owns_car: data.ownsCar || false,
+        is_self_employed: data.isSelfEmployed || false
       })
 
       if (data.members && data.members.length > 0) {

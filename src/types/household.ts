@@ -17,14 +17,11 @@ export type HouseholdMember = {
 };
 export type HouseholdRole = Database['public']['Tables']['household_members']['Row']['role'];
 
-export interface ExtendedHousehold extends Omit<Household, 'parent_household_id'> {
+export interface ExtendedHousehold extends Household {
   members?: HouseholdMember[];
   progress?: number;
   nextDeadline?: string;
   daysUntilMove?: number;
-  owns_car?: boolean;
-  is_self_employed?: boolean;
-  parent_household_id?: string | null;
   created_by_user_profile?: {
     full_name?: string;
     has_children?: boolean;

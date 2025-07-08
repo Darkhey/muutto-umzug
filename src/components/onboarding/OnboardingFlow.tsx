@@ -24,6 +24,8 @@ interface HomeDetails {
   floor: number;
   hasElevator: boolean;
   specialFeatures: string[];
+  state?: string;
+  municipality?: string;
 }
 
 export interface OnboardingData {
@@ -48,6 +50,8 @@ export interface OnboardingData {
 
   members: Array<{ name: string; email: string; role: string; }>;
   adUrl?: string | null;
+  ownsCar?: boolean;
+  isSelfEmployed?: boolean;
 }
 
 interface OnboardingFlowProps {

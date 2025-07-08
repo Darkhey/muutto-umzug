@@ -545,11 +545,13 @@ export type Database = {
           id: string
           important_notes: string | null
           invitation_code: string
+          is_self_employed: boolean | null
           living_space: number | null
           move_date: string
           name: string
           new_address: string | null
           old_address: string | null
+          owns_car: boolean | null
           parent_household_id: string | null
           pet_types: string | null
           pets_count: number
@@ -567,11 +569,13 @@ export type Database = {
           id?: string
           important_notes?: string | null
           invitation_code: string
+          is_self_employed?: boolean | null
           living_space?: number | null
           move_date: string
           name: string
           new_address?: string | null
           old_address?: string | null
+          owns_car?: boolean | null
           parent_household_id?: string | null
           pet_types?: string | null
           pets_count?: number
@@ -589,11 +593,13 @@ export type Database = {
           id?: string
           important_notes?: string | null
           invitation_code?: string
+          is_self_employed?: boolean | null
           living_space?: number | null
           move_date?: string
           name?: string
           new_address?: string | null
           old_address?: string | null
+          owns_car?: boolean | null
           parent_household_id?: string | null
           pet_types?: string | null
           pets_count?: number

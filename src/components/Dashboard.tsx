@@ -151,14 +151,14 @@ export const Dashboard = () => {
         children_count: data.children.length,
         pets_count: data.pets.length,
         property_type: (data.newHome.propertyType || data.oldHome.propertyType || 'miete') as 'miete' | 'eigentum',
-        postal_code: undefined,
-        old_address: undefined,
-        new_address: undefined,
-        living_space: data.newHome.livingSpace || data.oldHome.livingSpace,
-        rooms: data.newHome.rooms || data.oldHome.rooms,
-        furniture_volume: undefined,
-        owns_car: undefined,
-        is_self_employed: undefined,
+        postal_code: data.newHome.municipality || data.oldHome.municipality || null,
+        old_address: data.oldHome.municipality || null,
+        new_address: data.newHome.municipality || null,
+        living_space: data.newHome.livingSpace || data.oldHome.livingSpace || null,
+        rooms: data.newHome.rooms || data.oldHome.rooms || null,
+        furniture_volume: null,
+        owns_car: data.ownsCar || false,
+        is_self_employed: data.isSelfEmployed || false,
         ad_url: data.adUrl || null
       })
 
@@ -168,13 +168,13 @@ export const Dashboard = () => {
       if (user?.id) {
         const { data: generatedTasks, error: rpcError } = await supabase.rpc('generate_personalized_tasks', {
           p_user_id: user.id,
-          p_move_from_state: '',
-          p_move_to_state: '',
-          p_move_to_municipality: '',
+          p_move_from_state: data.oldHome.state || '',
+          p_move_to_state: data.newHome.state || '',
+          p_move_to_municipality: data.newHome.municipality || '',
           p_has_children: data.children.length > 0,
           p_has_pets: data.pets.length > 0,
-          p_owns_car: false,
-          p_is_self_employed: false
+          p_owns_car: data.ownsCar || false,
+          p_is_self_employed: data.isSelfEmployed || false
         })
 
         if (rpcError) {
