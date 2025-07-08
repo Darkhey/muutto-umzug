@@ -121,6 +121,12 @@ export const Dashboard = () => {
     fetchAllHouseholdProgress()
   }, [households, toast])
 
+  useEffect(() => {
+    if (!loading && !authLoading && households.length === 0 && viewMode === 'dashboard') {
+      setViewMode('onboarding');
+    }
+  }, [loading, authLoading, households.length, viewMode]);
+
   // Show auth page if not logged in
   if (!authLoading && !user) {
     return <AuthPage />

@@ -21,6 +21,8 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [initialData, setInitialData] = useState<Partial<OnboardingData> | null>(null);
   const [initialStep, setInitialStep] = useState(1);
+  // Hilfs-Ref, um zu verhindern, dass initialData/initialStep nach dem ersten Rendern überschrieben werden
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   useEffect(() => {
     // Wenn keine Entwürfe vorhanden sind, gehe direkt zum Onboarding
@@ -28,6 +30,13 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
       setShowDraftList(false);
     }
   }, [loading, drafts]);
+
+  // Initialisiere initialData/initialStep nur beim ersten Draft-Laden oder beim Start eines neuen Drafts
+  useEffect(() => {
+    if (!hasInitialized && (initialData || initialStep !== 1)) {
+      setHasInitialized(true);
+    }
+  }, [initialData, initialStep, hasInitialized]);
 
   const handleNewDraft = () => {
     setShowDraftList(false);
@@ -142,15 +151,13 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
         hobbies: data.hobbies,
         moveStyle: data.moveStyle
       };
-      
-      const draftId = await saveDraft(draftData, currentDraftId || undefined, step);
+      // Beim Zwischenspeichern KEIN refreshDrafts
+      const draftId = await saveDraft(draftData, currentDraftId || undefined, step, false);
       setCurrentDraftId(draftId);
-      
       toast({
         title: 'Entwurf gespeichert',
         description: 'Dein Fortschritt wurde gespeichert und kann später fortgesetzt werden'
       });
-      
       return true;
     } catch (error) {
       console.error('Error saving draft:', error);
@@ -187,8 +194,8 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
 
   return (
     <OnboardingFlow
-      initialData={initialData}
-      initialStep={initialStep}
+      initialData={hasInitialized ? undefined : initialData}
+      initialStep={hasInitialized ? undefined : initialStep}
       onComplete={handleOnboardingComplete}
       onSkip={onSkip}
       onSaveDraft={handleSaveDraft}

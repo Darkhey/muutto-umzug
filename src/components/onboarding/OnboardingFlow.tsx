@@ -85,11 +85,11 @@ const STEPS = [
   { id: 9, title: 'Fast geschafft!', description: 'Überprüfung & Start', icon: CheckCircle },
 ];
 
-const householdTypeOptions = [
-    { value: 'single', label: 'Alleine', icon: <User className="h-5 w-5" />, size: 1 },
-    { value: 'couple', label: 'Als Paar', icon: <Users className="h-5 w-5" />, size: 2 },
-    { value: 'family', label: 'Mit Familie', icon: <Baby className="h-5 w-5" />, size: 3 },
-    { value: 'wg', label: 'Als WG', icon: <Home className="h-5 w-5" />, size: 4 },
+const householdTypeOptions: { value: 'single' | 'couple' | 'family' | 'wg', label: string, icon: JSX.Element }[] = [
+    { value: 'single', label: 'Alleine', icon: <User className="h-5 w-5" /> },
+    { value: 'couple', label: 'Als Paar', icon: <Users className="h-5 w-5" /> },
+    { value: 'family', label: 'Mit Familie', icon: <Baby className="h-5 w-5" /> },
+    { value: 'wg', label: 'Als WG', icon: <Home className="h-5 w-5" /> },
 ];
 
 const inventoryStyles = [
@@ -286,65 +286,49 @@ export const OnboardingFlow = ({
     switch (currentStep) {
       case 1:
         return (
-            <StepCard title="Dein Umzugsabenteuer beginnt!" description="Erzähl uns ein bisschen was, damit wir dir perfekt helfen können.">
-                <div>
-                    <Label className="font-bold text-lg">Wie ziehst du um?</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                        {householdTypeOptions.map(opt => (
+            <StepCard title="Was ist dein aktueller Haushaltsstand?" description="Bitte gib an, wie du aktuell wohnst.">
+                <div className="space-y-4">
+                    {/* Haushaltstyp Auswahl */}
+                    <Label className="block mb-2">Haushaltsform</Label>
+                    <div className="flex gap-4">
+                        {householdTypeOptions.map(option => (
                             <Button
-                                key={opt.value}
-                                variant={data.householdType === opt.value ? 'default' : 'outline'}
-                                className="h-24 flex flex-col gap-2"
-                                onClick={() => {
-                                    updateData({ 
-                                        householdType: opt.value as any,
-                                        household_size: opt.size 
-                                    });
-                                }}
+                                key={option.value}
+                                variant={data.householdType === option.value ? 'default' : 'outline'}
+                                onClick={() => updateData({ householdType: option.value as 'single' | 'couple' | 'family' | 'wg' })}
+                                className="flex items-center gap-2"
                             >
-                                {opt.icon}
-                                <span>{opt.label}</span>
+                                {option.icon}
+                                {option.label}
                             </Button>
                         ))}
                     </div>
-                </div>
-                <div>
-                    <Label htmlFor="name" className="font-bold text-lg">Wie nennst du deinen neuen Haushalt?</Label>
-                    <Input 
-                        id="name" 
-                        value={data.name} 
-                        onChange={(e) => updateData({ name: e.target.value })} 
-                        placeholder="z.B. Müllers Hafen, WG Ahoi, Villa Kunterbunt" 
-                        className="mt-2" 
-                    />
-                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                </div>
-                <div>
-                    <Label htmlFor="move_date" className="font-bold text-lg">Wann wird umgezogen?</Label>
-                    <Input 
-                        id="move_date" 
-                        type="date" 
-                        value={data.move_date} 
-                        onChange={(e) => updateData({ move_date: e.target.value })} 
-                        className="mt-2" 
-                    />
-                    {errors.move_date && <p className="text-red-500 text-sm mt-1">{errors.move_date}</p>}
-                </div>
-                <div>
-                    <Label htmlFor="property_type" className="font-bold text-lg">Wohnform</Label>
-                    <Select value={data.property_type} onValueChange={(v) => updateData({ property_type: v as 'miete' | 'eigentum' })}>
-                        <SelectTrigger className="mt-2">
-                            <SelectValue placeholder="Wähle eine Wohnform" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {PROPERTY_TYPES.map(t => (
-                                <SelectItem key={t.key} value={t.key}>
-                                    {t.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    {errors.property_type && <p className="text-red-500 text-sm mt-1">{errors.property_type}</p>}
+                    {/* Hinweis nur für Paar, WG, Familie */}
+                    {(data.householdType === 'couple' || data.householdType === 'wg' || data.householdType === 'family') && (
+                        <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-900 rounded">
+                            Hinweis: Wenn ihr aus verschiedenen Haushalten zusammenzieht, stellt jede Person einen eigenen Haushalt dar.
+                        </div>
+                    )}
+                    <div className="mt-6">
+                        <Label htmlFor="householdName">Haushaltsname</Label>
+                        <Input
+                            id="householdName"
+                            value={data.name}
+                            onChange={e => updateData({ name: e.target.value })}
+                            className="mt-1"
+                            placeholder="z.B. Familie Müller, WG Sonnenschein..."
+                        />
+                    </div>
+                    <div className="mt-6">
+                        <Label htmlFor="moveDate">Wann musst du spätestens ausziehen?</Label>
+                        <Input
+                            id="moveDate"
+                            type="date"
+                            value={data.move_date}
+                            onChange={e => updateData({ move_date: e.target.value })}
+                            className="mt-1"
+                        />
+                    </div>
                 </div>
             </StepCard>
         );

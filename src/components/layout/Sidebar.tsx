@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { APP_CONFIG } from '@/config/app'
+import { useAuth } from '@/contexts/AuthContext'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -24,6 +25,7 @@ const navigation = [
 export const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
+  const { signOut } = useAuth()
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
@@ -31,6 +33,11 @@ export const Sidebar = () => {
   }, [location.pathname])
 
   const toggleSidebar = () => setIsOpen(!isOpen)
+
+  const handleLogout = async () => {
+    await signOut();
+    window.location.reload();
+  };
 
   return (
     <>
@@ -110,6 +117,13 @@ export const Sidebar = () => {
 
           {/* Footer */}
           <div className="p-4 text-center">
+            <Button
+              variant="outline"
+              className="w-full mb-2"
+              onClick={handleLogout}
+            >
+              Abmelden
+            </Button>
             <p className="text-xs text-gray-500">
               Version {APP_CONFIG.version}
             </p>

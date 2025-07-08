@@ -87,7 +87,8 @@ export function useHouseholdDrafts() {
   const saveDraft = async (
     data: Partial<CreateHouseholdFormData>, 
     draftId?: string, 
-    lastStep: number = 1
+    lastStep: number = 1,
+    refreshDrafts: boolean = false
   ): Promise<string> => {
     if (!user) throw new Error('Benutzer ist nicht angemeldet');
     
@@ -162,7 +163,9 @@ export function useHouseholdDrafts() {
         });
       }
       
-      await fetchDrafts();
+      if (refreshDrafts) {
+        await fetchDrafts();
+      }
       return draftId;
     } catch (err) {
       console.error('Fehler beim Speichern des Entwurfs:', err);
