@@ -53,12 +53,21 @@ export const DraftList = ({ onNewDraft, onContinueDraft }: DraftListProps) => {
 
   const formatDate = (dateString: string) => {
     try {
-      return formatDistanceToNow(new Date(dateString), { 
+      return formatDistanceToNow(new Date(dateString), {
         addSuffix: true,
         locale: de
       });
     } catch (error) {
       return 'Ungültiges Datum';
+    }
+  };
+
+  const formatMoveDate = (date: string | undefined) => {
+    if (!date) return null;
+    try {
+      return new Date(date).toLocaleDateString('de-DE');
+    } catch (error) {
+      return null;
     }
   };
 
@@ -147,6 +156,17 @@ export const DraftList = ({ onNewDraft, onContinueDraft }: DraftListProps) => {
                         {getStatusBadge(draft.status)}
                       </div>
 
+                      {draft.data && (
+                        <div className="text-sm text-gray-700 mb-2">
+                          {draft.data.move_date && (
+                            <p>Umzugsdatum: {formatMoveDate(draft.data.move_date)}</p>
+                          )}
+                          {draft.data.household_size && (
+                            <p>Personen: {draft.data.household_size}</p>
+                          )}
+                        </div>
+                      )}
+
                       <div className="mb-4">
                         <div className="flex justify-between text-sm mb-1">
                           <span>Fortschritt</span>
@@ -222,6 +242,14 @@ export const DraftList = ({ onNewDraft, onContinueDraft }: DraftListProps) => {
                         </div>
                         {getStatusBadge(draft.status)}
                       </div>
+
+                      {draft.data && (
+                        <div className="text-sm text-gray-700 mb-2">
+                          {draft.data.move_date && (
+                            <p>Umzugsdatum: {formatMoveDate(draft.data.move_date)}</p>
+                          )}
+                        </div>
+                      )}
 
                       <div className="flex justify-end">
                         <AlertDialog>

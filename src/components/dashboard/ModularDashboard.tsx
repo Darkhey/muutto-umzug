@@ -372,6 +372,10 @@ export const ModularDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button onClick={() => setViewMode('onboarding')} size="sm" className="bg-blue-600 text-white">
+              <Plus className="h-4 w-4 mr-1" />
+              Neuer Haushalt
+            </Button>
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Abmelden

@@ -35,4 +35,5 @@ export interface DraftSummary {
   updatedAt: string;
   completionPercentage: number;
   status: 'draft' | 'completed' | 'abandoned';
+  data?: Partial<CreateHouseholdFormData>;
 }
