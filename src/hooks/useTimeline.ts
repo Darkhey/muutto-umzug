@@ -17,6 +17,7 @@ export const useTimeline = (householdId: string) => {
     show_modules: ['all']
   })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const updateTaskDueDate = async (taskId: string, newDate: Date | null) => {
     try {
@@ -122,6 +123,7 @@ export const useTimeline = (householdId: string) => {
     timelineItems,
     preferences,
     loading,
+    error,
     updateTaskDueDate,
     updateTask,
     addTask,

@@ -20,7 +20,7 @@ const InsightsPage = () => {
         }
       })()
     : null;
-  const progress = typeof activeMove?.progress === 'number' ? activeMove.progress : 0;
+  const progress = 0; // Simplified for now
 
   return (
     <div className="container mx-auto p-4 md:p-8">

@@ -202,8 +202,10 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
                   key={task.id}
                   task={{
                     ...task,
+                    start: task.start || task.due_date || '',
                     description: task.description || '',
-                    assignee_name: task.assignee_name || null
+                    assignee_name: task.assignee_name || null,
+                    module_color: task.module_color || 'blue'
                   }}
                   isDragged={draggedTask?.id === task.id}
                   colors={COLORS}

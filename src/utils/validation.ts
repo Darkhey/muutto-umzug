@@ -139,8 +139,10 @@ export const validateRange = (
   }
 }
 
+import { CreateHouseholdFormData } from '@/hooks/useHouseholds';
+
 export const validateHouseholdData = (
-  data: Partial<CreateHouseholdData>,
+  data: Partial<CreateHouseholdFormData>,
   isDraft: boolean = false
 ): ValidationResult => {
   const errors: Record<string, string> = {}

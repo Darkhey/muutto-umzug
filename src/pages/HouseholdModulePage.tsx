@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 interface HouseholdFormData {
   name: string;
   household_size: number;
-  property_type: string;
+  property_type: 'miete' | 'eigentum';
   pets_count: number;
   children_count: number;
   owns_car: boolean;
@@ -34,7 +34,7 @@ const HouseholdModulePage = () => {
   const [formData, setFormData] = useState<HouseholdFormData>({
     name: '',
     household_size: 1,
-    property_type: '',
+    property_type: 'miete',
     pets_count: 0,
     children_count: 0,
     owns_car: false,
@@ -49,21 +49,21 @@ const HouseholdModulePage = () => {
       setFormData({
         name: currentHousehold.name || '',
         household_size: currentHousehold.household_size || 1,
-        property_type: currentHousehold.property_type || '',
+        property_type: currentHousehold.property_type || 'miete',
         pets_count: currentHousehold.pets_count || 0,
         children_count: currentHousehold.children_count || 0,
         owns_car: currentHousehold.owns_car || false,
         is_self_employed: currentHousehold.is_self_employed || false,
-        // QoL fields - assuming they exist in your DB, add them to household type
-        needs_care: currentHousehold.needs_care || false,
-        main_language: currentHousehold.main_language || '',
-        special_needs: currentHousehold.special_needs || '',
+        // QoL fields - these are example fields, remove if not in your schema
+        needs_care: false,
+        main_language: '',
+        special_needs: '',
       });
     }
   }, [currentHousehold]);
 
-  type HouseholdFormData = typeof formData;
-  const handleInputChange = <K extends keyof HouseholdFormData>(field: K, value: HouseholdFormData[K]) => {
+  type HouseholdFormDataType = typeof formData;
+  const handleInputChange = <K extends keyof HouseholdFormDataType>(field: K, value: HouseholdFormDataType[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -92,14 +92,14 @@ const HouseholdModulePage = () => {
         setFormData({
             name: currentHousehold.name || '',
             household_size: currentHousehold.household_size || 1,
-            property_type: currentHousehold.property_type || '',
+            property_type: currentHousehold.property_type || 'miete',
             pets_count: currentHousehold.pets_count || 0,
             children_count: currentHousehold.children_count || 0,
             owns_car: currentHousehold.owns_car || false,
             is_self_employed: currentHousehold.is_self_employed || false,
-            needs_care: currentHousehold.needs_care || false,
-            main_language: currentHousehold.main_language || '',
-            special_needs: currentHousehold.special_needs || '',
+            needs_care: false,
+            main_language: '',
+            special_needs: '',
         });
     }
     setIsEditing(false);
@@ -151,11 +151,11 @@ const HouseholdModulePage = () => {
                     </div>
                     <div>
                         <Label htmlFor="householdSize">Haushaltsgröße</Label>
-                        <Input id="householdSize" type="number" value={formData.household_size} onChange={(e) => handleInputChange('household_size', e.target.value)} />
+                        <Input id="householdSize" type="number" value={formData.household_size} onChange={(e) => handleInputChange('household_size', Number(e.target.value))} />
                     </div>
                     <div>
                         <Label htmlFor="propertyType">Wohnform</Label>
-                        <Select value={formData.property_type} onValueChange={(v) => handleInputChange('property_type', v)}>
+                        <Select value={formData.property_type} onValueChange={(v) => handleInputChange('property_type', v as 'miete' | 'eigentum')}>
                             <SelectTrigger><SelectValue placeholder="Wähle..." /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="miete">Miete</SelectItem>
@@ -208,30 +208,30 @@ const HouseholdModulePage = () => {
                         <div className="flex items-center gap-2">
                             <Baby className="h-4 w-4 text-muted-foreground"/>
                             <Label htmlFor="childrenCount" className="flex-1">Anzahl Kinder</Label>
-                            <Input id="childrenCount" type="number" value={formData.children_count} onChange={(e) => handleInputChange('children_count', e.target.value)} className="w-20" />
+                            <Input id="childrenCount" type="number" value={formData.children_count} onChange={(e) => handleInputChange('children_count', Number(e.target.value))} className="w-20" />
                         </div>
                         <div className="flex items-center gap-2">
                             <PawPrint className="h-4 w-4 text-muted-foreground"/>
                             <Label htmlFor="petsCount" className="flex-1">Anzahl Haustiere</Label>
-                            <Input id="petsCount" type="number" value={formData.pets_count} onChange={(e) => handleInputChange('pets_count', e.target.value)} className="w-20" />
+                            <Input id="petsCount" type="number" value={formData.pets_count} onChange={(e) => handleInputChange('pets_count', Number(e.target.value))} className="w-20" />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <Label>Beruf & Mobilität</Label>
                         <div className="flex items-center justify-between rounded-lg border p-3">
                             <Label htmlFor="isSelfEmployed" className="flex items-center gap-2"><Briefcase className="h-4 w-4"/> Selbstständig</Label>
-                            <Checkbox id="isSelfEmployed" checked={formData.is_self_employed} onCheckedChange={(c) => handleInputChange('is_self_employed', c)} />
+                            <Checkbox id="isSelfEmployed" checked={formData.is_self_employed} onCheckedChange={(c) => handleInputChange('is_self_employed', !!c)} />
                         </div>
                         <div className="flex items-center justify-between rounded-lg border p-3">
                             <Label htmlFor="ownsCar" className="flex items-center gap-2"><Car className="h-4 w-4"/> Auto vorhanden</Label>
-                            <Checkbox id="ownsCar" checked={formData.owns_car} onCheckedChange={(c) => handleInputChange('owns_car', c)} />
+                            <Checkbox id="ownsCar" checked={formData.owns_car} onCheckedChange={(c) => handleInputChange('owns_car', !!c)} />
                         </div>
                     </div>
                     <div className="md:col-span-2 space-y-2">
                         <Label>Zusätzliche Bedürfnisse</Label>
                         <div className="flex items-center justify-between rounded-lg border p-3">
                             <Label htmlFor="needsCare" className="flex items-center gap-2"><HeartPulse className="h-4 w-4"/> Pflegebedürftige Personen</Label>
-                            <Checkbox id="needsCare" checked={formData.needs_care} onCheckedChange={(c) => handleInputChange('needs_care', c)} />
+                            <Checkbox id="needsCare" checked={formData.needs_care} onCheckedChange={(c) => handleInputChange('needs_care', !!c)} />
                         </div>
                         <div>
                             <Label htmlFor="main_language">Hauptsprache im Haushalt</Label>

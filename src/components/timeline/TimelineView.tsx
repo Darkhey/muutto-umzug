@@ -162,21 +162,20 @@ export const TimelineView = ({ household, onBack }: TimelineViewProps) => {
       max: viewOptions.end,
       zoomMin: 1000 * 60 * 60 * 24 * 7, // One week
       zoomMax: 1000 * 60 * 60 * 24 * 365, // One year
-      snap: preferences.snap_to_grid ? (item: VisItem) => {
-        const date = new Date(item.start)
+      snap: preferences.snap_to_grid ? (date: Date) => {
         date.setHours(0, 0, 0, 0)
         return date
       } : null,
-      onMove: (item: VisItem, callback: (item?: VisItem) => void) => {
+      onMove: (item: any, callback: (item?: any) => void) => {
         // Store the old date for undo functionality
-        const oldItem = filteredItems.find(i => i.id === item.id)
+        const oldItem = filteredItems.find(i => i.id === String(item.id))
         if (oldItem) {
           setUndoStack(prev => [...prev, { taskId: oldItem.id, oldDate: oldItem.start }])
         }
         
         // Update the task due date
         const newDate = new Date(item.start)
-        updateTaskDueDate(item.id, newDate)
+        updateTaskDueDate(String(item.id), newDate)
         callback(item) // confirm the change
       }
     }

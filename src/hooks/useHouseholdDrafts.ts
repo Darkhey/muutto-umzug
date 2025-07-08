@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { HouseholdDraft, DraftSummary } from '@/types/draft';
-import { CreateHouseholdData } from '@/hooks/useHouseholds';
+import { CreateHouseholdFormData } from '@/hooks/useHouseholds';
 import { validateHouseholdData } from '@/utils/validation';
 
 export function useHouseholdDrafts() {
@@ -15,7 +15,7 @@ export function useHouseholdDrafts() {
   const [error, setError] = useState<Error | null>(null);
 
   // Berechnet den Prozentsatz der Vollständigkeit eines Entwurfs
-  const calculateCompletionPercentage = (data: Partial<CreateHouseholdData>): number => {
+  const calculateCompletionPercentage = (data: Partial<CreateHouseholdFormData>): number => {
     const requiredFields = ['name', 'move_date', 'property_type', 'household_size'];
     const optionalFields = [
       'children_count', 'pets_count', 'postal_code', 'old_address', 
@@ -84,7 +84,7 @@ export function useHouseholdDrafts() {
 
   // Erstellt oder aktualisiert einen Entwurf
   const saveDraft = async (
-    data: Partial<CreateHouseholdData>, 
+    data: Partial<CreateHouseholdFormData>, 
     draftId?: string, 
     lastStep: number = 1
   ): Promise<string> => {
@@ -93,7 +93,7 @@ export function useHouseholdDrafts() {
     try {
       const now = new Date().toISOString();
       const completionPercentage = calculateCompletionPercentage(data);
-      const validationResult = validateHouseholdData(data as CreateHouseholdData, true);
+      const validationResult = validateHouseholdData(data as CreateHouseholdFormData, true);
       
       // Wenn kein draftId vorhanden ist, erstelle einen neuen Entwurf
       if (!draftId) {
@@ -356,7 +356,7 @@ export function useHouseholdDrafts() {
       const draft = await getDraft(draftId);
       if (!draft) throw new Error('Entwurf nicht gefunden');
       
-      const validationResult = validateHouseholdData(draft.data as CreateHouseholdData, false);
+      const validationResult = validateHouseholdData(draft.data as CreateHouseholdFormData, false);
       
       // Aktualisiere die Validierungsfehler im Entwurf
       await supabase

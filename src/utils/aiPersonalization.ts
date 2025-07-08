@@ -98,6 +98,6 @@ export const buildHouseholdContext = (household: ExtendedHousehold) => {
     hasPets: household.created_by_user_profile?.has_pets,
     ownsCar: household.created_by_user_profile?.owns_car,
     isSelfEmployed: household.created_by_user_profile?.is_self_employed,
-    wantsNotifications: household.created_by_user_profile?.wants_notifications,
+    // wantsNotifications: household.created_by_user_profile?.wants_notifications,
   }
 }

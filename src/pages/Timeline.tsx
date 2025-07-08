@@ -35,7 +35,7 @@ const Timeline = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center text-red-500">
           <p>Fehler beim Laden der Timeline:</p>
-          <p className="text-sm">{error.message}</p>
+          <p className="text-sm">{error}</p>
         </div>
       </div>
     )

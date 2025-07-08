@@ -10,3 +10,17 @@ export const funFacts: string[] = [
     "Die meisten Menschen packen ihre Bücher als letztes ein.",
     "Der längste dokumentierte Umzug auf der Erde war die Übersiedlung einer Kirche in den USA über mehr als 5.000 Kilometer."
 ];
+
+export const getDistanceFunFact = (distanceKm: number): string => {
+  if (distanceKm < 10) {
+    return "Kurze Umzüge in der Nähe sind oft stressfreier, aber auch teurer pro Kilometer."
+  } else if (distanceKm < 50) {
+    return "Regionale Umzüge bieten eine gute Balance zwischen Aufwand und neuen Möglichkeiten."
+  } else if (distanceKm < 200) {
+    return "Fernumzüge eröffnen neue Lebensbereiche und Karrierechancen."
+  } else if (distanceKm < 500) {
+    return "Bei solchen Entfernungen lohnt sich oft eine professionelle Umzugsfirma."
+  } else {
+    return "Internationale oder sehr weite Umzüge sind echte Lebenswenden!"
+  }
+};

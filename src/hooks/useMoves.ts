@@ -200,6 +200,7 @@ export function useMoves() {
     moves,
     loading,
     error,
+    activeMove: moves[0] || null,
     fetchMoves,
     createMove,
     addMoveMemberRole,

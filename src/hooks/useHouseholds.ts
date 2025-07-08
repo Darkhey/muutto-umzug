@@ -25,6 +25,11 @@ export interface CreateHouseholdFormData {
   owns_car?: boolean | null
   is_self_employed?: boolean | null
   ad_url?: string | null
+  members?: Array<{
+    name: string;
+    email: string;
+    role?: string;
+  }>;
 }
 
 export interface HouseholdMember {

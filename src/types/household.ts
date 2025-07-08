@@ -17,7 +17,7 @@ export type HouseholdMember = {
 };
 export type HouseholdRole = Database['public']['Tables']['household_members']['Row']['role'];
 
-export interface ExtendedHousehold extends Household {
+export interface ExtendedHousehold extends Omit<Household, 'parent_household_id'> {
   members?: HouseholdMember[];
   progress?: number;
   nextDeadline?: string;

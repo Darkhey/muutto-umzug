@@ -2,9 +2,9 @@
  * Test helpers and utilities for muutto application
  */
 
-import { CreateHouseholdData, HouseholdMember } from '@/hooks/useHouseholds'
+import { CreateHouseholdFormData, HouseholdMember } from '@/hooks/useHouseholds'
 
-export const createMockHouseholdData = (overrides: Partial<CreateHouseholdData> = {}): CreateHouseholdData => {
+export const createMockHouseholdData = (overrides: Partial<CreateHouseholdFormData> = {}): CreateHouseholdFormData => {
   const futureDate = new Date()
   futureDate.setDate(futureDate.getDate() + 30) // 30 days from now
   
@@ -52,7 +52,7 @@ export const generateTestName = (prefix: string = 'Test'): string => {
   return `${prefix} ${timestamp}`
 }
 
-export const createInvalidHouseholdData = (): CreateHouseholdData => {
+export const createInvalidHouseholdData = (): CreateHouseholdFormData => {
   return {
     name: '', // Invalid: empty name
     move_date: '2020-01-01', // Invalid: past date

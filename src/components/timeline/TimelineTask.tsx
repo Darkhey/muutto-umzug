@@ -18,7 +18,7 @@ interface TimelineTaskData {
   description: string;
   assignee_name: string | null;
   phase: string;
-  start: string | null;
+  start: string;
   completed: boolean;
   is_overdue: boolean;
   priority: string;
@@ -30,6 +30,7 @@ interface TimelineTaskData {
   link_url?: string | null;
   comment_count?: number;
   is_sticky?: boolean;
+  module_color: string;
 }
 
 interface TimelineTaskProps {
@@ -64,7 +65,7 @@ export const TimelineTask = ({
   };
 
   const handleSave = (newTitle: string) => {
-    onUpdateTask(task as TimelineItem, newTitle);
+    onUpdateTask(task as unknown as TimelineItem, newTitle);
     setIsEditing(false);
   };
 
@@ -83,7 +84,7 @@ export const TimelineTask = ({
           height: 'auto',
         }}
       >
-        <InlineTaskEditor task={task as TimelineItem} onSave={handleSave} onCancel={handleCancel} />
+        <InlineTaskEditor task={task as unknown as TimelineItem} onSave={handleSave} onCancel={handleCancel} />
       </div>
     );
   }

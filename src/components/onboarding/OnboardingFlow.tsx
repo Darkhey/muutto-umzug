@@ -26,7 +26,7 @@ interface HomeDetails {
   specialFeatures: string[];
 }
 
-interface OnboardingData {
+export interface OnboardingData {
   householdType: 'single' | 'couple' | 'family' | 'wg' | '';
   householdName: string;
   moveDate: string;
