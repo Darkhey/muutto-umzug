@@ -23,7 +23,7 @@ import { AuthPage } from './auth/AuthPage'
 import { HouseholdCard } from './households/HouseholdCard'
 import { useToast } from '@/hooks/use-toast'
 import { ExtendedHousehold, CreateHouseholdData } from '@/types/household'
-import { OnboardingData as OnboardingFlowData } from './onboarding/OnboardingFlow'
+import { CreateHouseholdFormData } from '@/hooks/useHouseholds'
 import { APP_CONFIG, getRandomTip } from '@/config/app'
 import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
 import { getDaysUntilMove, getUrgencyColor, getUrgencyIcon } from '@/utils/moveDate'
@@ -138,56 +138,15 @@ export const Dashboard = () => {
     )
   }
 
-  const handleOnboardingComplete = async (data: OnboardingFlowData) => {
+  const handleOnboardingComplete = async (data: CreateHouseholdFormData) => {
     try {
-      setOnboardingData({ householdName: data.householdName, moveDate: data.moveDate })
+      setOnboardingData({ householdName: data.name, moveDate: data.move_date })
 
       console.log("Onboarding data received:", data)
 
-      const household = await createHousehold({
-        name: data.householdName,
-        move_date: data.moveDate,
-        household_size: data.adultsCount + data.children.length,
-        children_count: data.children.length,
-        pets_count: data.pets.length,
-        property_type: (data.newHome.propertyType || data.oldHome.propertyType || 'miete') as 'miete' | 'eigentum',
-        postal_code: data.newHome.municipality || data.oldHome.municipality || null,
-        old_address: data.oldHome.municipality || null,
-        new_address: data.newHome.municipality || null,
-        living_space: data.newHome.livingSpace || data.oldHome.livingSpace || null,
-        rooms: data.newHome.rooms || data.oldHome.rooms || null,
-        furniture_volume: null,
-        owns_car: data.ownsCar || false,
-        is_self_employed: data.isSelfEmployed || false,
-        ad_url: data.adUrl || null
-      })
+      const household = await createHousehold(data)
 
       console.log("Household created:", household);
-
-      // Generate personalized tasks
-      if (user?.id) {
-        const { data: generatedTasks, error: rpcError } = await supabase.rpc('generate_personalized_tasks', {
-          p_user_id: user.id,
-          p_move_from_state: data.oldHome.state || '',
-          p_move_to_state: data.newHome.state || '',
-          p_move_to_municipality: data.newHome.municipality || '',
-          p_has_children: data.children.length > 0,
-          p_has_pets: data.pets.length > 0,
-          p_owns_car: data.ownsCar || false,
-          p_is_self_employed: data.isSelfEmployed || false
-        })
-
-        if (rpcError) {
-          console.error("Error generating personalized tasks:", rpcError);
-          toast({
-            title: "Fehler bei der Aufgabengenerierung",
-            description: rpcError.message,
-            variant: "destructive"
-          })
-        } else {
-          console.log("Personalized tasks generated:", generatedTasks);
-        }
-      }
 
       // Set the newly created household as active so we can show its tasks
       setActiveHousehold(household)

@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useHouseholds } from '@/hooks/useHouseholds'
 import { useToast } from '@/hooks/use-toast'
 import { ExtendedHousehold, CreateHouseholdData } from '@/types/household'
-import { OnboardingData as OnboardingFlowData } from '@/components/onboarding/OnboardingFlow'
+import { CreateHouseholdFormData } from '@/hooks/useHouseholds'
 import { APP_CONFIG } from '@/config/app'
 import MapModule from '@/components/maps/MapModule'
 import { DashboardStats } from './DashboardStats'
@@ -179,26 +179,11 @@ export const ModularDashboard = () => {
     }
   }, [households])
 
-  const handleOnboardingComplete = async (data: OnboardingFlowData) => {
+  const handleOnboardingComplete = async (data: CreateHouseholdFormData) => {
     try {
-      setOnboardingData({ householdName: data.householdName, moveDate: data.moveDate })
+      setOnboardingData({ householdName: data.name, moveDate: data.move_date })
 
-      const household = await createHousehold({
-        name: data.householdName,
-        move_date: data.moveDate,
-        household_size: data.adultsCount + data.children.length,
-        children_count: data.children.length,
-        pets_count: data.pets.length,
-        property_type: (data.newHome.propertyType || data.oldHome.propertyType || 'miete') as 'miete' | 'eigentum',
-        postal_code: data.newHome.municipality || data.oldHome.municipality || null,
-        old_address: data.oldHome.municipality || null,
-        new_address: data.newHome.municipality || null,
-        living_space: data.newHome.livingSpace || data.oldHome.livingSpace || null,
-        rooms: data.newHome.rooms || data.oldHome.rooms || null,
-        furniture_volume: null,
-        owns_car: data.ownsCar || false,
-        is_self_employed: data.isSelfEmployed || false
-      })
+      const household = await createHousehold(data)
 
       if (data.members && data.members.length > 0) {
         const validMembers = data.members.filter((m: { name: string; email: string }) => m.name.trim() && m.email.trim())
