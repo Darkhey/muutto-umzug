@@ -14,11 +14,17 @@ interface OnboardingFlowWithDraftsProps {
 
 export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowWithDraftsProps) => {
   const { toast } = useToast();
-  const { getDraft, saveDraft, completeDraft } = useHouseholdDrafts();
+  const { drafts, loading, getDraft, saveDraft, completeDraft } = useHouseholdDrafts();
   const [showDraftList, setShowDraftList] = useState(true);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [initialData, setInitialData] = useState<Partial<OnboardingDataFromOnboardingFlow> | null>(null);
   const [initialStep, setInitialStep] = useState(1);
+
+  useEffect(() => {
+    if (!loading && drafts && drafts.length === 0) {
+      setShowDraftList(false);
+    }
+  }, [loading, drafts]);
 
   const handleNewDraft = () => {
     setShowDraftList(false);

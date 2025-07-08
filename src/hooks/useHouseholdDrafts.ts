@@ -65,7 +65,8 @@ export function useHouseholdDrafts() {
         name: draft.data?.name || 'Unbenannter Entwurf',
         updatedAt: draft.updated_at,
         completionPercentage: draft.data ? calculateCompletionPercentage(draft.data) : 0,
-        status: draft.status
+        status: draft.status,
+        data: draft.data || {}
       }));
       
       setDrafts(summaries);

@@ -66,14 +66,13 @@ interface OnboardingFlowProps {
 const STEPS = [
   { id: 1, title: 'Willkommen an Bord!', description: 'Wie ziehst du um?', icon: Star },
   { id: 2, title: 'Die Mannschaft', description: 'Wer ist alles dabei?', icon: Users },
-  { id: 3, title: 'Tierische Begleiter', description: 'Deine flauschigen Freunde', icon: PawPrint },
-  { id: 4, 'title': 'Dein altes Nest', 'description': 'Wo startest du?', 'icon': Home },
-  { id: 5, 'title': 'Dein neues Reich', 'description': 'Wo geht die Reise hin?', 'icon': MapPin },
-  { id: 6, 'title': 'Dein Hab & Gut', 'description': 'Schätze und Besitztümer', 'icon': Package2 },
-  { id: 7, 'title': 'Dein Lebensstil', 'description': 'Gewohnheiten & Hobbies', 'icon': Coffee },
-  { id: 8, 'title': 'Dein Umzugs-Stil', 'description': 'Wie packst du es an?', 'icon': Truck },
-  { id: 9, 'title': 'Crew einladen', 'description': 'Hol deine Leute an Bord', 'icon': Mail },
-  { id: 10, 'title': 'Fast geschafft!', 'description': 'Überprüfung & Start', 'icon': CheckCircle },
+  { id: 3, title: 'Tierische Begleiter (optional)', description: 'Deine flauschigen Freunde', icon: PawPrint },
+  { id: 4, title: 'Dein Zuhause', description: 'Wo startest du und wohin geht es?', icon: Home },
+  { id: 5, title: 'Dein Hab & Gut', description: 'Schätze und Besitztümer', icon: Package2 },
+  { id: 6, title: 'Dein Lebensstil (optional)', description: 'Gewohnheiten & Hobbies', icon: Coffee },
+  { id: 7, title: 'Dein Umzugs-Stil', description: 'Wie packst du es an?', icon: Truck },
+  { id: 8, title: 'Crew einladen (optional)', description: 'Hol deine Leute an Bord', icon: Mail },
+  { id: 9, title: 'Fast geschafft!', description: 'Überprüfung & Start', icon: CheckCircle },
 ];
 
 const householdTypeOptions = [
@@ -145,6 +144,14 @@ export const OnboardingFlow = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (!onSaveDraft) return;
+    const interval = setInterval(() => {
+      onSaveDraft(data, currentStep);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [data, currentStep, onSaveDraft]);
+
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
     switch (step) {
@@ -162,31 +169,22 @@ export const OnboardingFlow = ({
         if (data.pets.some(pet => !pet.type)) newErrors.pets = 'Bitte gib die Tierart für jedes Haustier an.';
         break;
       case 4: {
-        const homeKey = 'oldHome';
-        const homeData = data[homeKey] as HomeDetails;
-        if (!homeData.propertyType) newErrors.oldHome_propertyType = 'Bitte gib die Wohnform deines alten Zuhauses an.';
-        if (!homeData.livingSpace || homeData.livingSpace <= 0) newErrors.oldHome_livingSpace = 'Bitte gib die Wohnfläche deines alten Zuhauses an.';
-        if (!homeData.rooms || homeData.rooms <= 0) newErrors.oldHome_rooms = 'Bitte gib die Zimmeranzahl deines alten Zuhauses an.';
+        const oldHome = data.oldHome as HomeDetails;
+        const newHome = data.newHome as HomeDetails;
+        if (!oldHome.propertyType) newErrors.oldHome_propertyType = 'Bitte gib die Wohnform deines alten Zuhauses an.';
+        if (!newHome.propertyType) newErrors.newHome_propertyType = 'Bitte gib die Wohnform deines neuen Zuhauses an.';
         break;
       }
-      case 5: {
-        const homeKey = 'newHome';
-        const homeData = data[homeKey] as HomeDetails;
-        if (!homeData.propertyType) newErrors.newHome_propertyType = 'Bitte gib die Wohnform deines neuen Zuhauses an.';
-        if (!homeData.livingSpace || homeData.livingSpace <= 0) newErrors.newHome_livingSpace = 'Bitte gib die Wohnfläche deines neuen Zuhauses an.';
-        if (!homeData.rooms || homeData.rooms <= 0) newErrors.newHome_rooms = 'Bitte gib die Zimmeranzahl deines neuen Zuhauses an.';
-        break;
-      }
-      case 6:
+      case 5:
         if (!data.inventoryStyle) newErrors.inventoryStyle = 'Bitte wähle deinen Inventar-Stil.';
         break;
-      case 7:
+      case 6:
         // No validation for lifestyle step
         break;
-      case 8:
+      case 7:
         if (!data.moveStyle) newErrors.moveStyle = 'Bitte wähle, wie du umziehen möchtest.';
         break;
-      case 9:
+      case 8:
         // Member invitation is optional, so no validation needed
         break;
       default:
@@ -363,96 +361,56 @@ export const OnboardingFlow = ({
         );
 
       case 4: {
-        const homeKey = 'oldHome';
-        const homeData = data[homeKey] as HomeDetails;
-        const title = "Dein altes Nest";
-        const description = "Beschreibe dein jetziges Zuhause.";
+        const oldHome = data.oldHome as HomeDetails;
+        const newHome = data.newHome as HomeDetails;
         return (
-            <StepCard title={title} description={description}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <StepCard title="Dein Zuhause" description="Beschreibe alte und neue Wohnung.">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <Label>Wohnform</Label>
-                        <Select value={homeData.propertyType} onValueChange={(v) => updateHomeData(homeKey, { propertyType: v as PropertyType })}>
-                            <SelectTrigger><SelectValue placeholder="Wähle eine Wohnform" /></SelectTrigger>
-                            <SelectContent>{PROPERTY_TYPES.map(t => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}</SelectContent>
-                        </Select>
+                        <h3 className="font-semibold mb-2">Alte Wohnung</h3>
+                        <div className="grid grid-cols-1 gap-4">
+                            <div>
+                                <Label>Wohnform</Label>
+                                <Select value={oldHome.propertyType} onValueChange={(v) => updateHomeData('oldHome', { propertyType: v as PropertyType })}>
+                                    <SelectTrigger><SelectValue placeholder="Wähle eine Wohnform" /></SelectTrigger>
+                                    <SelectContent>{PROPERTY_TYPES.map(t => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label>Wohnfläche (m², optional)</Label>
+                                <Input type="number" value={oldHome.livingSpace} onChange={e => updateHomeData('oldHome', { livingSpace: parseInt(e.target.value) || 0 })} />
+                            </div>
+                            <div>
+                                <Label>Anzahl Zimmer (optional)</Label>
+                                <Input type="number" value={oldHome.rooms} onChange={e => updateHomeData('oldHome', { rooms: parseInt(e.target.value) || 0 })} />
+                            </div>
+                        </div>
                     </div>
                     <div>
-                        <Label>Wohnfläche (m², optional)</Label>
-                        <Input type="number" value={homeData.livingSpace} onChange={e => updateHomeData(homeKey, { livingSpace: parseInt(e.target.value) || 0 })} />
-                    </div>
-                    <div>
-                        <Label>Anzahl Zimmer (optional)</Label>
-                        <Input type="number" value={homeData.rooms} onChange={e => updateHomeData(homeKey, { rooms: parseInt(e.target.value) || 0 })} />
-                    </div>
-                    <div>
-                        <Label>Etage (optional)</Label>
-                        <Input type="number" value={homeData.floor} onChange={e => updateHomeData(homeKey, { floor: parseInt(e.target.value) || 0 })} />
-                    </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Switch id={`elevator-${homeKey}`} checked={homeData.hasElevator} onCheckedChange={c => updateHomeData(homeKey, { hasElevator: c })} />
-                    <Label htmlFor={`elevator-${homeKey}`}>Gibt es einen Aufzug?</Label>
-                </div>
-                <div>
-                    <Label>Besonderheiten (optional)</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                        {specialHomeFeatures.map(feat => (
-                            <Button key={feat.id} variant={homeData.specialFeatures?.includes(feat.id) ? 'default' : 'outline'} onClick={() => toggleSelection('specialFeatures', feat.id, homeKey)}>
-                                {feat.label}
-                            </Button>
-                        ))}
+                        <h3 className="font-semibold mb-2">Neue Wohnung</h3>
+                        <div className="grid grid-cols-1 gap-4">
+                            <div>
+                                <Label>Wohnform</Label>
+                                <Select value={newHome.propertyType} onValueChange={(v) => updateHomeData('newHome', { propertyType: v as PropertyType })}>
+                                    <SelectTrigger><SelectValue placeholder="Wähle eine Wohnform" /></SelectTrigger>
+                                    <SelectContent>{PROPERTY_TYPES.map(t => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label>Wohnfläche (m², optional)</Label>
+                                <Input type="number" value={newHome.livingSpace} onChange={e => updateHomeData('newHome', { livingSpace: parseInt(e.target.value) || 0 })} />
+                            </div>
+                            <div>
+                                <Label>Anzahl Zimmer (optional)</Label>
+                                <Input type="number" value={newHome.rooms} onChange={e => updateHomeData('newHome', { rooms: parseInt(e.target.value) || 0 })} />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </StepCard>
         );
       }
-      case 5: {
-        const homeKey = 'newHome';
-        const homeData = data[homeKey] as HomeDetails;
-        const title = "Dein neues Reich";
-        const description = "Wie wird dein neues Zuhause aussehen?";
-        return (
-            <StepCard title={title} description={description}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <Label>Wohnform</Label>
-                        <Select value={homeData.propertyType} onValueChange={(v) => updateHomeData(homeKey, { propertyType: v as PropertyType })}>
-                            <SelectTrigger><SelectValue placeholder="Wähle eine Wohnform" /></SelectTrigger>
-                            <SelectContent>{PROPERTY_TYPES.map(t => <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>)}</SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label>Wohnfläche (m², optional)</Label>
-                        <Input type="number" value={homeData.livingSpace} onChange={e => updateHomeData(homeKey, { livingSpace: parseInt(e.target.value) || 0 })} />
-                    </div>
-                    <div>
-                        <Label>Anzahl Zimmer (optional)</Label>
-                        <Input type="number" value={homeData.rooms} onChange={e => updateHomeData(homeKey, { rooms: parseInt(e.target.value) || 0 })} />
-                    </div>
-                    <div>
-                        <Label>Etage (optional)</Label>
-                        <Input type="number" value={homeData.floor} onChange={e => updateHomeData(homeKey, { floor: parseInt(e.target.value) || 0 })} />
-                    </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Switch id={`elevator-${homeKey}`} checked={homeData.hasElevator} onCheckedChange={c => updateHomeData(homeKey, { hasElevator: c })} />
-                    <Label htmlFor={`elevator-${homeKey}`}>Gibt es einen Aufzug?</Label>
-                </div>
-                <div>
-                    <Label>Besonderheiten (optional)</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                        {specialHomeFeatures.map(feat => (
-                            <Button key={feat.id} variant={homeData.specialFeatures?.includes(feat.id) ? 'default' : 'outline'} onClick={() => toggleSelection('specialFeatures', feat.id, homeKey)}>
-                                {feat.label}
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-            </StepCard>
-        );
-      }
-      case 6:
+      case 5:
         return (
             <StepCard title="Dein Hab und Gut" description="Ein paar Details helfen uns, den Umfang deines Umzugs besser einzuschätzen.">
                 <div>
@@ -479,7 +437,7 @@ export const OnboardingFlow = ({
             </StepCard>
         );
 
-      case 7:
+      case 6:
         return (
             <StepCard title="Dein Lebensstil" description="Wie lebst und arbeitest du? Das hilft uns bei der Detailplanung.">
                 <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -493,7 +451,7 @@ export const OnboardingFlow = ({
             </StepCard>
         );
 
-      case 8:
+      case 7:
         return (
             <StepCard title="Dein Umzugs-Stil" description="Wie möchtest du deinen Umzug organisieren?">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
@@ -507,7 +465,7 @@ export const OnboardingFlow = ({
             </StepCard>
         );
 
-      case 9:
+      case 8:
         return (
             <StepCard title="Crew einladen" description="Möchtest du andere Personen zu deinem Haushalt einladen? (Optional)">
                 <div className="text-center p-8">
@@ -522,7 +480,7 @@ export const OnboardingFlow = ({
             </StepCard>
         );
 
-      case 10:
+      case 9:
         return (
             <StepCard title="Fast am Ziel!" description="Ein letzter Blick auf deine Angaben. Passt alles?">
                 <div className="space-y-4 text-sm">
@@ -580,6 +538,16 @@ export const OnboardingFlow = ({
             </span>
           </div>
           <Progress value={(currentStep / STEPS.length) * 100} className="h-2 bg-blue-200" />
+          <div className="flex justify-between mt-2">
+            {STEPS.map((s, idx) => (
+              <button
+                key={s.id}
+                onClick={() => setCurrentStep(idx + 1)}
+                className={`h-2 flex-1 mx-0.5 rounded-full ${idx + 1 <= currentStep ? 'bg-blue-600' : 'bg-blue-100'}`}
+                aria-label={`Gehe zu Schritt ${idx + 1}`}
+              />
+            ))}
+          </div>
         </div>
 
         <div className="mb-8 min-h-[400px]">
