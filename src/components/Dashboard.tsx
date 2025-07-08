@@ -22,7 +22,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AuthPage } from './auth/AuthPage'
 import { HouseholdCard } from './households/HouseholdCard'
 import { useToast } from '@/hooks/use-toast'
-import { ExtendedHousehold, CreateHouseholdData, OnboardingData } from '@/types/household'
+import { ExtendedHousehold, CreateHouseholdData } from '@/types/household'
+import { OnboardingData as OnboardingFlowData } from './onboarding/OnboardingFlow'
 import { APP_CONFIG, getRandomTip } from '@/config/app'
 import { calculateHouseholdProgress, getProgressColor } from '@/utils/progressCalculator'
 import { getDaysUntilMove, getUrgencyColor, getUrgencyIcon } from '@/utils/moveDate'
@@ -50,7 +51,7 @@ export const Dashboard = () => {
   const [activeHousehold, setActiveHousehold] = useState<ExtendedHousehold | null>(null)
   const [dailyTip] = useState(getRandomTip())
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null)
+  const [onboardingData, setOnboardingData] = useState<{ householdName: string; moveDate: string } | null>(null)
   const [householdProgress, setHouseholdProgress] = useState<Record<string, number>>({})
   const { invitations, loading: inviteLoading, error: inviteError, refetch: refetchInvites } = usePendingInvitations()
 
@@ -137,27 +138,27 @@ export const Dashboard = () => {
     )
   }
 
-  const handleOnboardingComplete = async (data: OnboardingData) => {
+  const handleOnboardingComplete = async (data: OnboardingFlowData) => {
     try {
-      setOnboardingData(data)
-      
-      console.log("Onboarding data received:", data);
-      
+      setOnboardingData({ householdName: data.householdName, moveDate: data.moveDate })
+
+      console.log("Onboarding data received:", data)
+
       const household = await createHousehold({
         name: data.householdName,
         move_date: data.moveDate,
-        household_size: data.householdSize,
-        children_count: data.childrenCount,
-        pets_count: data.petsCount,
-        property_type: data.propertyType,
-        postal_code: data.postalCode,
-        old_address: data.oldAddress,
-        new_address: data.newAddress,
-        living_space: data.livingSpace,
-        rooms: data.rooms,
-        furniture_volume: data.furnitureVolume,
-        owns_car: data.ownsCar,
-        is_self_employed: data.isSelfEmployed,
+        household_size: data.adultsCount + data.children.length,
+        children_count: data.children.length,
+        pets_count: data.pets.length,
+        property_type: (data.newHome.propertyType || data.oldHome.propertyType || 'miete') as 'miete' | 'eigentum',
+        postal_code: undefined,
+        old_address: undefined,
+        new_address: undefined,
+        living_space: data.newHome.livingSpace || data.oldHome.livingSpace,
+        rooms: data.newHome.rooms || data.oldHome.rooms,
+        furniture_volume: undefined,
+        owns_car: undefined,
+        is_self_employed: undefined,
         ad_url: data.adUrl || null
       })
 
@@ -167,13 +168,13 @@ export const Dashboard = () => {
       if (user?.id) {
         const { data: generatedTasks, error: rpcError } = await supabase.rpc('generate_personalized_tasks', {
           p_user_id: user.id,
-          p_move_from_state: data.oldAddress || '', // Assuming state can be derived or is not critical for now
-          p_move_to_state: data.newAddress || '', // Assuming state can be derived or is not critical for now
-          p_move_to_municipality: data.postalCode || '', // Using postal code as municipality for now
-          p_has_children: data.childrenCount > 0,
-          p_has_pets: data.petsCount > 0,
-          p_owns_car: data.ownsCar || false,
-          p_is_self_employed: data.isSelfEmployed || false
+          p_move_from_state: '',
+          p_move_to_state: '',
+          p_move_to_municipality: '',
+          p_has_children: data.children.length > 0,
+          p_has_pets: data.pets.length > 0,
+          p_owns_car: false,
+          p_is_self_employed: false
         })
 
         if (rpcError) {
