@@ -23,7 +23,10 @@ export function useBoxes(householdId: string) {
 
   // Lade alle Kartons für einen Haushalt
   const loadBoxes = async () => {
-    if (!householdId || !user) return;
+    if (!householdId || !user) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
