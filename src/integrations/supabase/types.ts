@@ -14,6 +14,252 @@ export type Database = {
   }
   public: {
     Tables: {
+      box_comments: {
+        Row: {
+          box_id: string
+          comment_text: string
+          comment_type: string | null
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          box_id: string
+          comment_text: string
+          comment_type?: string | null
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          box_id?: string
+          comment_text?: string
+          comment_type?: string | null
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "box_comments_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      box_contents: {
+        Row: {
+          ai_detected: boolean | null
+          box_id: string
+          category: string | null
+          created_at: string | null
+          description: string | null
+          estimated_value: number | null
+          id: string
+          is_fragile: boolean | null
+          item_name: string
+          manually_added: boolean | null
+          quantity: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_detected?: boolean | null
+          box_id: string
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          estimated_value?: number | null
+          id?: string
+          is_fragile?: boolean | null
+          item_name: string
+          manually_added?: boolean | null
+          quantity?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_detected?: boolean | null
+          box_id?: string
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          estimated_value?: number | null
+          id?: string
+          is_fragile?: boolean | null
+          item_name?: string
+          manually_added?: boolean | null
+          quantity?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "box_contents_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      box_locations: {
+        Row: {
+          box_id: string
+          id: string
+          is_current: boolean | null
+          location_name: string
+          location_type: string
+          notes: string | null
+          recorded_at: string | null
+          recorded_by: string
+          room: string | null
+        }
+        Insert: {
+          box_id: string
+          id?: string
+          is_current?: boolean | null
+          location_name: string
+          location_type: string
+          notes?: string | null
+          recorded_at?: string | null
+          recorded_by: string
+          room?: string | null
+        }
+        Update: {
+          box_id?: string
+          id?: string
+          is_current?: boolean | null
+          location_name?: string
+          location_type?: string
+          notes?: string | null
+          recorded_at?: string | null
+          recorded_by?: string
+          room?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "box_locations_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      box_photos: {
+        Row: {
+          ai_analysis: Json | null
+          box_id: string
+          id: string
+          photo_type: string | null
+          photo_url: string
+          uploaded_at: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          box_id: string
+          id?: string
+          photo_type?: string | null
+          photo_url: string
+          uploaded_at?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          ai_analysis?: Json | null
+          box_id?: string
+          id?: string
+          photo_type?: string | null
+          photo_url?: string
+          uploaded_at?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "box_photos_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      boxes: {
+        Row: {
+          box_number: string
+          category: Database["public"]["Enums"]["box_category"] | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          destination_household_id: string | null
+          dimensions_cm: Json | null
+          household_id: string
+          id: string
+          name: string | null
+          room: string | null
+          source_household_id: string | null
+          status: Database["public"]["Enums"]["box_status"] | null
+          updated_at: string | null
+          weight_kg: number | null
+        }
+        Insert: {
+          box_number: string
+          category?: Database["public"]["Enums"]["box_category"] | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          destination_household_id?: string | null
+          dimensions_cm?: Json | null
+          household_id: string
+          id?: string
+          name?: string | null
+          room?: string | null
+          source_household_id?: string | null
+          status?: Database["public"]["Enums"]["box_status"] | null
+          updated_at?: string | null
+          weight_kg?: number | null
+        }
+        Update: {
+          box_number?: string
+          category?: Database["public"]["Enums"]["box_category"] | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          destination_household_id?: string | null
+          dimensions_cm?: Json | null
+          household_id?: string
+          id?: string
+          name?: string | null
+          room?: string | null
+          source_household_id?: string | null
+          status?: Database["public"]["Enums"]["box_status"] | null
+          updated_at?: string | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boxes_destination_household_id_fkey"
+            columns: ["destination_household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boxes_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boxes_source_household_id_fkey"
+            columns: ["source_household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string
@@ -862,6 +1108,18 @@ export type Database = {
         }
         Returns: string
       }
+      search_items_in_boxes: {
+        Args: { p_household_id: string; p_search_term: string }
+        Returns: {
+          box_id: string
+          box_number: string
+          box_name: string
+          item_name: string
+          item_description: string
+          box_status: Database["public"]["Enums"]["box_status"]
+          current_location: string
+        }[]
+      }
       update_task_due_date: {
         Args: { p_task_id: string; p_new_date: string }
         Returns: boolean
@@ -876,6 +1134,23 @@ export type Database = {
       }
     }
     Enums: {
+      box_category:
+        | "küche"
+        | "wohnzimmer"
+        | "schlafzimmer"
+        | "bad"
+        | "keller"
+        | "dachboden"
+        | "büro"
+        | "kinderzimmer"
+        | "garten"
+        | "sonstiges"
+      box_status:
+        | "leer"
+        | "gepackt"
+        | "versiegelt"
+        | "transportiert"
+        | "ausgepackt"
       household_role:
         | "vertragsmanager"
         | "packbeauftragte"
@@ -1012,6 +1287,25 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      box_category: [
+        "küche",
+        "wohnzimmer",
+        "schlafzimmer",
+        "bad",
+        "keller",
+        "dachboden",
+        "büro",
+        "kinderzimmer",
+        "garten",
+        "sonstiges",
+      ],
+      box_status: [
+        "leer",
+        "gepackt",
+        "versiegelt",
+        "transportiert",
+        "ausgepackt",
+      ],
       household_role: [
         "vertragsmanager",
         "packbeauftragte",

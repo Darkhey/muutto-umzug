@@ -61,6 +61,7 @@ export interface BoxWithDetails {
 export type ExtendedBox = BoxWithDetails;
 
 export interface BoxDimensionsCm {
+  [key: string]: any; // Allow arbitrary keys for JSON compatibility
   length: number;
   width: number;
   height: number;

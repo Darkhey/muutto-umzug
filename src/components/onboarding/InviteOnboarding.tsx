@@ -111,10 +111,10 @@ export const InviteOnboarding = ({ invitation, onComplete }: InviteOnboardingPro
               <SelectContent>
                 <SelectItem value="null">Keine Rolle</SelectItem>
                 {HOUSEHOLD_ROLES.map((r) => (
-                  <SelectItem key={r.key} value={r.key}>
-                    <span className="mr-1">{r.icon}</span>
-                    {r.name}
-                  </SelectItem>
+                <SelectItem key={r.key} value={r.key}>
+                  <span className="mr-1">👤</span>
+                  {r.name}
+                </SelectItem>
                 ))}
               </SelectContent>
             </Select>

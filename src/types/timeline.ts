@@ -43,13 +43,16 @@ export interface TimelineViewOptions {
 export interface TimelineTaskData {
   id: string;
   title: string;
-  description: string;
+  description?: string;
+  start?: string;
   due_date?: string | null;
   completed: boolean;
   priority: string;
   phase: string;
   category?: string;
   module_color: string;
+  assignee_name?: string | null;
+  is_overdue: boolean;
 }
 
 export interface TimelineTaskExtended extends TimelineTaskData {

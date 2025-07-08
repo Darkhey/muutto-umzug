@@ -66,6 +66,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
       priority: 'niedrig',
       due_date: null,
       is_sticky: true,
+      module_color: 'orange',
     });
   };
 
@@ -233,7 +234,7 @@ export const HorizontalTimelineView = ({ household, onBack }: HorizontalTimeline
         onOpenChange={setShowSuggestionsDialog}
         suggestions={aiSuggestions}
         onAccept={(suggestion) => {
-          addTask({ ...suggestion });
+          addTask({ ...suggestion, module_color: 'blue' });
           setShowSuggestionsDialog(false);
         }}
       />

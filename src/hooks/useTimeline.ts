@@ -65,7 +65,7 @@ export const useTimeline = (householdId: string) => {
 
       const taskData = {
         ...task,
-        household_id: task.household_id || householdId,
+        household_id: householdId,
       };
 
       const { data, error } = await supabase

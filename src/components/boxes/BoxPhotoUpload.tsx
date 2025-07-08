@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Camera, 
   Upload, 
@@ -14,7 +15,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { BoxWithDetails } from '@/types/box';
-import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
+import { CameraCapture } from './CameraCapture';
 
 // Validierungskonstanten
 const ALLOWED_MIME_TYPES = [
@@ -41,6 +43,7 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [showCamera, setShowCamera] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,7 +148,38 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
         throw new Error('Nicht authentifiziert');
       }
 
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/analyze-box-photo`, {
+      const { data, error } = await supabase.functions.invoke('analyze-box-photo', {
+        body: {
+          photo_url: photoUrl,
+          box_id: box.id
+        }
+      });
+
+      if (error) throw new Error(error.message);
+      return data;
+    } catch (error) {
+      console.error('Fehler bei der KI-Analyse:', error);
+      throw error;
+    }
+  };
+
+  const handleCameraCapture = (imageBlob: Blob) => {
+    const file = new File([imageBlob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+    setSelectedFile(file);
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    setShowCamera(false);
+    setAnalysisResult(null);
+  };
+
+  const analyzePhotoWithAI_old = async (photoUrl: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Nicht authentifiziert');
+      }
+
+      const response = await fetch(`https://vzolmllztewveszdykwq.supabase.co/functions/v1/analyze-box-photo`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -230,25 +264,38 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Foto-Typ Auswahl */}
-          <div className="space-y-2">
-            <Label>Foto-Typ</Label>
-            <Select value={photoType} onValueChange={(value: any) => setPhotoType(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="content">Inhalt (KI-Analyse)</SelectItem>
-                <SelectItem value="label">Etikett</SelectItem>
-                <SelectItem value="damage">Schaden</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {showCamera ? (
+          <CameraCapture
+            onCapture={handleCameraCapture}
+            onClose={() => setShowCamera(false)}
+            isCapturing={uploading}
+          />
+        ) : (
+          <div className="space-y-4">
+            {/* Foto-Typ Auswahl */}
+            <div className="space-y-2">
+              <Label>Foto-Typ</Label>
+              <Select value={photoType} onValueChange={(value: any) => setPhotoType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="content">Inhalt (KI-Analyse)</SelectItem>
+                  <SelectItem value="label">Etikett</SelectItem>
+                  <SelectItem value="damage">Schaden</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Datei-Upload */}
-          <div className="space-y-2">
-            <Label>Foto auswählen</Label>
+            {/* Upload-Methode Tabs */}
+            <Tabs defaultValue="file" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="file">Datei hochladen</TabsTrigger>
+                <TabsTrigger value="camera">Kamera verwenden</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="file" className="space-y-2">
+                <Label>Foto auswählen</Label>
             <div className="text-xs text-gray-500 mb-2">
               Erlaubte Formate: {ALLOWED_MIME_TYPES.map(type => 
                 type.replace('image/', '').toUpperCase()
@@ -301,10 +348,25 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
                 onChange={handleFileSelect}
                 className="hidden"
               />
-            </div>
-          </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="camera" className="space-y-2">
+                <Label>Foto mit Kamera aufnehmen</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Camera className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-600 mb-4">
+                    Verwenden Sie Ihre Kamera, um ein Foto des Kartons aufzunehmen
+                  </p>
+                  <Button onClick={() => setShowCamera(true)}>
+                    <Camera className="h-4 w-4 mr-2" />
+                    Kamera öffnen
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
 
-          {/* KI-Analyse Ergebnis */}
+            {/* KI-Analyse Ergebnis */}
           {analysisResult && (
             <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
               <h4 className="font-semibold text-blue-900">KI-Analyse Ergebnis</h4>
@@ -377,8 +439,9 @@ export function BoxPhotoUpload({ box, open, onOpenChange }: BoxPhotoUploadProps)
               <span>KI analysiert das Foto...</span>
             </div>
           )}
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
-} 
+}
