@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from 'react';
 import { OnboardingFlow } from './OnboardingFlow';
 import { DraftList } from './DraftList';
 import { useHouseholdDrafts } from '@/hooks/useHouseholdDrafts';
 import { useToast } from '@/hooks/use-toast';
-import { OnboardingData as OnboardingDataFromOnboardingFlow } from './OnboardingFlow';
+import { OnboardingData } from './OnboardingFlow';
+import { CreateHouseholdFormData } from '@/hooks/useHouseholds';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 interface OnboardingFlowWithDraftsProps {
-  onComplete: (data: OnboardingDataFromOnboardingFlow) => Promise<void>;
+  onComplete: (data: CreateHouseholdFormData) => Promise<void>;
   onSkip: () => void;
 }
 
@@ -17,10 +19,11 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
   const { drafts, loading, getDraft, saveDraft, completeDraft } = useHouseholdDrafts();
   const [showDraftList, setShowDraftList] = useState(true);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
-  const [initialData, setInitialData] = useState<Partial<OnboardingDataFromOnboardingFlow> | null>(null);
+  const [initialData, setInitialData] = useState<Partial<OnboardingData> | null>(null);
   const [initialStep, setInitialStep] = useState(1);
 
   useEffect(() => {
+    // Wenn keine Entwürfe vorhanden sind, gehe direkt zum Onboarding
     if (!loading && drafts && drafts.length === 0) {
       setShowDraftList(false);
     }
@@ -46,32 +49,40 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
       }
 
       setCurrentDraftId(draftId);
-      // Convert draft data to OnboardingData format
+      
+      // Konvertiere Draft-Daten zurück zu OnboardingData
       const draftData = draft.data as any;
-      const convertedData: Partial<OnboardingDataFromOnboardingFlow> = {
-        householdName: draftData.householdName || draftData.name || '',
-        moveDate: draftData.moveDate || draftData.move_date || '',
-        householdType: 'family',
-        adultsCount: draftData.household_size || 1,
-        children: [],
-        pets: [],
-        oldHome: {},
-        newHome: {},
-        inventoryStyle: 'normal',
-        specialItems: [],
-        worksFromHome: false,
-        hobbies: '',
-        moveStyle: 'diy',
-        members: (draftData.members || []).map((member: any) => ({
-          name: member.name || '',
-          email: member.email || '',
-          role: member.role || ''
-        }))
+      const convertedData: Partial<OnboardingData> = {
+        name: draftData.name || '',
+        move_date: draftData.move_date || '',
+        household_size: draftData.household_size || 1,
+        children_count: draftData.children_count || 0,
+        pets_count: draftData.pets_count || 0,
+        property_type: draftData.property_type || 'miete',
+        postal_code: draftData.postal_code || '',
+        old_address: draftData.old_address || '',
+        new_address: draftData.new_address || '',
+        living_space: draftData.living_space || undefined,
+        rooms: draftData.rooms || undefined,
+        furniture_volume: draftData.furniture_volume || undefined,
+        owns_car: draftData.owns_car || false,
+        is_self_employed: draftData.is_self_employed || false,
+        ad_url: draftData.ad_url || undefined,
+        members: draftData.members || [],
+        // UI-spezifische Felder
+        householdType: draftData.householdType || 'single',
+        inventoryStyle: draftData.inventoryStyle || 'normal',
+        specialItems: draftData.specialItems || [],
+        worksFromHome: draftData.worksFromHome || false,
+        hobbies: draftData.hobbies || '',
+        moveStyle: draftData.moveStyle || 'mixed'
       };
+      
       setInitialData(convertedData);
       setInitialStep(draft.lastStep || 1);
       setShowDraftList(false);
     } catch (error) {
+      console.error('Error loading draft:', error);
       toast({
         title: 'Fehler',
         description: 'Beim Laden des Entwurfs ist ein Fehler aufgetreten',
@@ -84,31 +95,17 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
     setShowDraftList(true);
   };
 
-  const handleOnboardingComplete = async (data: OnboardingDataFromOnboardingFlow) => {
-    // Fülle fehlende Felder mit Defaultwerten auf
-    const completeData: OnboardingDataFromOnboardingFlow = {
-      ...data,
-      householdType: data.householdType || 'family',
-      householdName: data.householdName || '',
-      moveDate: data.moveDate || '',
-      adultsCount: data.adultsCount || 1,
-      children: data.children || [],
-      pets: data.pets || [],
-      oldHome: data.oldHome || {},
-      newHome: data.newHome || {},
-      inventoryStyle: data.inventoryStyle || 'normal',
-      specialItems: data.specialItems || [],
-      worksFromHome: data.worksFromHome || false,
-      hobbies: data.hobbies || '',
-      moveStyle: data.moveStyle || 'diy',
-      members: data.members || []
-    };
+  const handleOnboardingComplete = async (data: CreateHouseholdFormData) => {
     try {
+      console.log('OnboardingFlowWithDrafts: Completing with data:', data);
+      
       if (currentDraftId) {
         await completeDraft(currentDraftId);
       }
-      await onComplete(completeData);
+      
+      await onComplete(data);
     } catch (error) {
+      console.error('Error in onboarding completion:', error);
       toast({
         title: 'Fehler',
         description: 'Beim Abschließen des Onboardings ist ein Fehler aufgetreten',
@@ -117,9 +114,36 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
     }
   };
 
-  const handleSaveDraft = async (data: Partial<OnboardingDataFromOnboardingFlow>, step: number) => {
+  const handleSaveDraft = async (data: Partial<OnboardingData>, step: number) => {
     try {
-      const draftId = await saveDraft(data, currentDraftId || undefined, step);
+      // Konvertiere OnboardingData zu Draft-kompatiblem Format
+      const draftData = {
+        name: data.name,
+        move_date: data.move_date,
+        household_size: data.household_size,
+        children_count: data.children_count,
+        pets_count: data.pets_count,
+        property_type: data.property_type,
+        postal_code: data.postal_code,
+        old_address: data.old_address,
+        new_address: data.new_address,
+        living_space: data.living_space,
+        rooms: data.rooms,
+        furniture_volume: data.furniture_volume,
+        owns_car: data.owns_car,
+        is_self_employed: data.is_self_employed,
+        ad_url: data.ad_url,
+        members: data.members,
+        // UI-spezifische Felder für Wiederherstellung
+        householdType: data.householdType,
+        inventoryStyle: data.inventoryStyle,
+        specialItems: data.specialItems,
+        worksFromHome: data.worksFromHome,
+        hobbies: data.hobbies,
+        moveStyle: data.moveStyle
+      };
+      
+      const draftId = await saveDraft(draftData, currentDraftId || undefined, step);
       setCurrentDraftId(draftId);
       
       toast({
@@ -129,6 +153,7 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
       
       return true;
     } catch (error) {
+      console.error('Error saving draft:', error);
       toast({
         title: 'Fehler',
         description: 'Beim Speichern des Entwurfs ist ein Fehler aufgetreten',
