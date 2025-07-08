@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, ReactNode, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +46,8 @@ export interface OnboardingData {
   living_space?: number;
   rooms?: number;
   furniture_volume?: number;
+  has_garden?: boolean;
+  has_cellar_or_garage?: boolean;
   
   // Zusätzliche Informationen
   owns_car?: boolean;
@@ -74,15 +76,15 @@ interface OnboardingFlowProps {
 }
 
 const STEPS = [
-  { id: 1, title: 'Willkommen an Bord!', description: 'Wie ziehst du um?', icon: Star },
-  { id: 2, title: 'Die Mannschaft', description: 'Wer ist alles dabei?', icon: Users },
-  { id: 3, title: 'Tierische Begleiter (optional)', description: 'Deine flauschigen Freunde', icon: PawPrint },
-  { id: 4, title: 'Dein Zuhause', description: 'Wo startest du und wohin geht es?', icon: Home },
-  { id: 5, title: 'Dein Hab & Gut', description: 'Schätze und Besitztümer', icon: Package2 },
-  { id: 6, title: 'Dein Lebensstil (optional)', description: 'Gewohnheiten & Hobbies', icon: Coffee },
-  { id: 7, title: 'Dein Umzugs-Stil', description: 'Wie packst du es an?', icon: Truck },
-  { id: 8, title: 'Crew einladen (optional)', description: 'Hol deine Leute an Bord', icon: Mail },
-  { id: 9, title: 'Fast geschafft!', description: 'Überprüfung & Start', icon: CheckCircle },
+  { id: 1, title: 'Willkommen an Bord!', description: 'Wie ziehst du um?', icon: Star, component: Step1Welcome },
+  { id: 2, title: 'Die Mannschaft', description: 'Wer ist alles dabei?', icon: Users, component: Step2Crew },
+  { id: 3, title: 'Tierische Begleiter (optional)', description: 'Deine flauschigen Freunde', icon: PawPrint, component: Step3Pets },
+  { id: 4, title: 'Dein aktuelles Zuhause', description: 'Beschreibe deine jetzige Wohnsituation.', icon: Home, component: Step4Home },
+  { id: 5, title: 'Dein Hab & Gut', description: 'Schätze und Besitztümer', icon: Package2, component: Step5Goods },
+  { id: 6, title: 'Dein Lebensstil (optional)', description: 'Gewohnheiten & Hobbies', icon: Coffee, component: Step6Lifestyle },
+  { id: 7, title: 'Dein Umzugs-Stil', description: 'Wie packst du es an?', icon: Truck, component: Step7MoveStyle },
+  { id: 8, title: 'Crew einladen (optional)', description: 'Hol deine Leute an Bord', icon: Mail, component: Step8Invite },
+  { id: 9, title: 'Fast geschafft!', description: 'Überprüfung & Start', icon: CheckCircle, component: Step9Review },
 ];
 
 const householdTypeOptions: { value: 'single' | 'couple' | 'family' | 'wg', label: string, icon: JSX.Element }[] = [
@@ -113,6 +115,348 @@ const specialInventoryItems = [
     { id: 'many_plants', label: 'Viele Pflanzen' },
 ];
 
+interface StepProps {
+  data: OnboardingData;
+  updateData: (updates: Partial<OnboardingData>) => void;
+  toggleSelection: (field: 'specialItems', value: string) => void;
+  errors: Record<string, string>;
+}
+
+const StepCard = ({ title, description, children, currentStep }: { title: string, description: string, children: ReactNode, currentStep: number }) => {
+    const Icon = STEPS.find(s => s.id === currentStep)?.icon;
+    return (
+        <Card className="shadow-lg border-blue-100">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-2xl text-blue-900">
+                    {Icon && <Icon className="h-8 w-8 text-blue-500" />}
+                    {title}
+                </CardTitle>
+                <CardDescription className="text-lg">{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">{children}</CardContent>
+        </Card>
+    );
+};
+
+function Step1Welcome({ data, updateData }: StepProps) {
+    return (
+        <StepCard title="Was ist dein aktueller Haushaltsstand?" description="Bitte gib an, wie du aktuell wohnst." currentStep={1}>
+            <div className="space-y-4">
+                <Label className="block mb-2">Haushaltsform</Label>
+                <div className="flex gap-4">
+                    {householdTypeOptions.map(option => (
+                        <Button
+                            key={option.value}
+                            variant={data.householdType === option.value ? 'default' : 'outline'}
+                            onClick={() => updateData({ householdType: option.value as 'single' | 'couple' | 'family' | 'wg' })}
+                            className="flex items-center gap-2"
+                        >
+                            {option.icon}
+                            {option.label}
+                        </Button>
+                    ))}
+                </div>
+                {(data.householdType === 'couple' || data.householdType === 'wg' || data.householdType === 'family') && (
+                    <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-900 rounded">
+                        Hinweis: Wenn ihr aus verschiedenen Haushalten zusammenzieht, stellt jede Person einen eigenen Haushalt dar.
+                    </div>
+                )}
+                <div className="mt-6">
+                    <Label htmlFor="householdName">Haushaltsname</Label>
+                    <Input
+                        id="householdName"
+                        value={data.name}
+                        onChange={e => updateData({ name: e.target.value })}
+                        className="mt-1"
+                        placeholder="z.B. Familie Müller, WG Sonnenschein..."
+                    />
+                </div>
+                <div className="mt-6">
+                    <Label htmlFor="moveDate">Wann musst du spätestens ausziehen?</Label>
+                    <Input
+                        id="moveDate"
+                        type="date"
+                        value={data.move_date}
+                        onChange={e => updateData({ move_date: e.target.value })}
+                        className="mt-1"
+                    />
+                </div>
+            </div>
+        </StepCard>
+    );
+}
+
+function Step2Crew({ data, updateData, errors }: StepProps) {
+    return (
+        <StepCard title="Die Mannschaft" description="Wer ist alles beim Umzug dabei?" currentStep={2}>
+            <div>
+                <Label htmlFor="household_size" className="font-bold text-lg">Anzahl der Erwachsenen</Label>
+                <Input 
+                    id="household_size" 
+                    type="number" 
+                    min="1" 
+                    value={data.household_size} 
+                    onChange={(e) => updateData({ household_size: parseInt(e.target.value) || 1 })} 
+                    className="mt-2 w-32" 
+                />
+                {errors.household_size && <p className="text-red-500 text-sm mt-1">{errors.household_size}</p>}
+            </div>
+            <div>
+                <Label htmlFor="children_count" className="font-bold text-lg">Anzahl der Kinder</Label>
+                <Input 
+                    id="children_count" 
+                    type="number" 
+                    min="0" 
+                    value={data.children_count} 
+                    onChange={(e) => updateData({ children_count: parseInt(e.target.value) || 0 })} 
+                    className="mt-2 w-32" 
+                />
+            </div>
+        </StepCard>
+    );
+}
+
+function Step3Pets({ data, updateData }: StepProps) {
+    return (
+        <StepCard title="Tierische Begleiter" description="Gibt es Haustiere, die mit umziehen?" currentStep={3}>
+            <div>
+                <Label htmlFor="pets_count" className="font-bold text-lg">Anzahl der Haustiere</Label>
+                <Input 
+                    id="pets_count" 
+                    type="number" 
+                    min="0" 
+                    value={data.pets_count} 
+                    onChange={(e) => updateData({ pets_count: parseInt(e.target.value) || 0 })} 
+                    className="mt-2 w-32" 
+                />
+            </div>
+        </StepCard>
+    );
+}
+
+function Step4Home({ data, updateData }: StepProps) {
+    const propertyTypes = [
+        { key: 'miete', label: 'Miete' },
+        { key: 'eigentum', label: 'Eigentum' },
+    ];
+
+    return (
+        <StepCard title="Dein aktuelles Zuhause" description="Beschreibe deine jetzige Wohnsituation." currentStep={4}>
+            <div className="space-y-8">
+                <div>
+                    <Label className="font-bold text-lg">Wohnverhältnis</Label>
+                    <div className="flex gap-4 mt-2">
+                        {propertyTypes.map(pt => (
+                            <Button
+                                key={pt.key}
+                                variant={data.property_type === pt.key ? 'default' : 'outline'}
+                                onClick={() => updateData({ property_type: pt.key as 'miete' | 'eigentum' })}
+                                className="flex-grow"
+                            >
+                                {pt.label}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+
+                <div>
+                    <Label htmlFor="current-address" className="font-bold text-lg">Aktuelle Adresse</Label>
+                    <AddressAutocomplete
+                        value={data.old_address || ''}
+                        onChange={value => updateData({ old_address: value })}
+                        placeholder="Straße, PLZ, Ort..."
+                        className="mt-2"
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <Label htmlFor="living_space" className="font-bold text-lg">Wohnfläche (m²)</Label>
+                        <Input 
+                            id="living_space"
+                            type="number" 
+                            value={data.living_space || ''} 
+                            onChange={e => updateData({ living_space: parseInt(e.target.value) || undefined })}
+                            placeholder="z.B. 75"
+                            className="mt-2"
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="rooms" className="font-bold text-lg">Anzahl Zimmer</Label>
+                        <Input 
+                            id="rooms"
+                            type="number" 
+                            value={data.rooms || ''} 
+                            onChange={e => updateData({ rooms: parseInt(e.target.value) || undefined })}
+                            placeholder="z.B. 3"
+                            className="mt-2"
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <Label htmlFor="has_garden" className="font-bold text-lg">Garten vorhanden?</Label>
+                        <Switch 
+                            id="has_garden" 
+                            checked={data.has_garden || false} 
+                            onCheckedChange={c => updateData({ has_garden: c })} 
+                        />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <Label htmlFor="has_cellar_or_garage" className="font-bold text-lg">Keller oder Garage vorhanden?</Label>
+                        <Switch 
+                            id="has_cellar_or_garage" 
+                            checked={data.has_cellar_or_garage || false} 
+                            onCheckedChange={c => updateData({ has_cellar_or_garage: c })} 
+                        />
+                    </div>
+                </div>
+            </div>
+        </StepCard>
+    );
+}
+
+function Step5Goods({ data, updateData, toggleSelection }: StepProps) {
+    return (
+        <StepCard title="Dein Hab und Gut" description="Ein paar Details helfen uns, den Umfang deines Umzugs besser einzuschätzen." currentStep={5}>
+            <div>
+                <Label className="font-bold text-lg">Welcher Sammel-Typ bist du?</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                    {inventoryStyles.map(style => (
+                          <Button
+                            key={style.value}
+                            variant={data.inventoryStyle === style.value ? 'default' : 'outline'}
+                            className="h-24 flex flex-col text-center"
+                            onClick={() => {
+                                updateData({ 
+                                    inventoryStyle: style.value as any,
+                                    furniture_volume: style.volume 
+                                });
+                            }}
+                          >
+                            <span className="font-bold">{style.label}</span>
+                            <span className="text-xs font-normal">{style.description}</span>
+                        </Button>
+                    ))}
+                </div>
+            </div>
+            <div>
+                <Label className="font-bold text-lg">Gibt es besondere Gegenstände?</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                    {specialInventoryItems.map(item => (
+                        <Button 
+                            key={item.id} 
+                            variant={data.specialItems?.includes(item.id) ? 'default' : 'outline'} 
+                            onClick={() => toggleSelection('specialItems', item.id)}
+                        >
+                            {item.label}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+        </StepCard>
+    );
+}
+
+function Step6Lifestyle({ data, updateData }: StepProps) {
+    return (
+        <StepCard title="Dein Lebensstil" description="Wie lebst und arbeitest du? Das hilft uns bei der Detailplanung." currentStep={6}>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+                <Label htmlFor="worksFromHome" className="font-bold text-lg">Arbeitest du (oft) im Home Office?</Label>
+                <Switch 
+                    id="worksFromHome" 
+                    checked={data.worksFromHome || false} 
+                    onCheckedChange={c => updateData({ worksFromHome: c })} 
+                />
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+                <Label htmlFor="owns_car" className="font-bold text-lg">Besitzt du ein Auto?</Label>
+                <Switch 
+                    id="owns_car" 
+                    checked={data.owns_car || false} 
+                    onCheckedChange={c => updateData({ owns_car: c })} 
+                />
+            </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+                <Label htmlFor="is_self_employed" className="font-bold text-lg">Bist du selbstständig?</Label>
+                <Switch 
+                    id="is_self_employed" 
+                    checked={data.is_self_employed || false} 
+                    onCheckedChange={c => updateData({ is_self_employed: c })} 
+                />
+            </div>
+            <div>
+                <Label htmlFor="hobbies" className="font-bold text-lg">Gibt es Hobbies mit sperriger Ausrüstung?</Label>
+                <Textarea 
+                    id="hobbies" 
+                    value={data.hobbies || ''} 
+                    onChange={e => updateData({ hobbies: e.target.value })} 
+                    placeholder="z.B. Musikinstrumente, Staffelei, Surfbrett, Angelausrüstung..." 
+                    className="mt-2" 
+                />
+            </div>
+        </StepCard>
+    );
+}
+
+function Step7MoveStyle({ data, updateData }: StepProps) {
+    return (
+        <StepCard title="Dein Umzugs-Stil" description="Wie möchtest du deinen Umzug organisieren?" currentStep={7}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                {moveStyles.map(style => (
+                    <Button
+                      key={style.value}
+                      variant={data.moveStyle === style.value ? 'default' : 'outline'}
+                      className="h-24 flex flex-col text-center"
+                      onClick={() => updateData({ moveStyle: style.value as any })}
+                    >
+                        <span className="font-bold">{style.label}</span>
+                        <span className="text-xs font-normal">{style.description}</span>
+                    </Button>
+                ))}
+            </div>
+        </StepCard>
+    );
+}
+
+function Step8Invite() {
+    return (
+        <StepCard title="Crew einladen" description="Möchtest du andere Personen zu deinem Haushalt einladen? (Optional)" currentStep={8}>
+            <div className="text-center p-8">
+                <Mail className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-4">
+                    Du kannst nach der Erstellung deines Haushalts jederzeit Mitglieder einladen.
+                </p>
+                <p className="text-sm text-gray-500">
+                    Für jetzt überspringen wir diesen Schritt.
+                </p>
+            </div>
+        </StepCard>
+    );
+}
+
+function Step9Review({ data }: StepProps) {
+    return (
+        <StepCard title="Fast am Ziel!" description="Ein letzter Blick auf deine Angaben. Passt alles?" currentStep={9}>
+            <div className="space-y-4 text-sm">
+                <p><strong>Haushalt:</strong> {data.name}</p>
+                <p><strong>Umzug am:</strong> {new Date(data.move_date).toLocaleDateString('de-DE')}</p>
+                <p><strong>Mannschaft:</strong> {data.household_size} Erwachsene, {data.children_count} Kinder</p>
+                {data.pets_count > 0 && <p><strong>Haustiere:</strong> {data.pets_count}</p>}
+                <p><strong>Wohnform:</strong> {PROPERTY_TYPES.find(t => t.key === data.property_type)?.label}</p>
+                {data.new_address && <p><strong>Neue Adresse:</strong> {data.new_address}</p>}
+                {data.living_space && <p><strong>Wohnfläche:</strong> {data.living_space} m²</p>}
+            </div>
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg text-center">
+                <Sparkles className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+                <p className="font-semibold">Super! Mit diesen Infos erstellen wir dir einen maßgeschneiderten Umzugsplan.</p>
+            </div>
+        </StepCard>
+    );
+}
+
+
 export const OnboardingFlow = ({ 
   initialData, 
   initialStep = 1, 
@@ -138,6 +482,8 @@ export const OnboardingFlow = ({
     living_space: 50,
     rooms: 2,
     furniture_volume: 30,
+    has_garden: false,
+    has_cellar_or_garage: false,
     owns_car: false,
     is_self_employed: false,
     members: [],
@@ -170,29 +516,14 @@ export const OnboardingFlow = ({
         if (!data.name?.trim()) newErrors.name = 'Gib deinem Haushalt einen Namen.';
         if (!data.move_date) newErrors.move_date = 'Ein Umzugsdatum ist erforderlich.';
         else if (!validateFutureDate(data.move_date)) newErrors.move_date = 'Das Datum muss in der Zukunft liegen.';
-        if (!data.property_type) newErrors.property_type = 'Bitte wähle eine Wohnform.';
         break;
       case 2:
         if (data.household_size < 1) newErrors.household_size = 'Es muss mindestens ein Erwachsener umziehen.';
         break;
-      case 3:
-        // Pets sind optional
-        break;
       case 4:
-        // Adressen sind optional
+        if (!data.property_type) newErrors.property_type = 'Bitte wähle eine Wohnform.';
         break;
-      case 5:
-        // Inventar ist optional
-        break;
-      case 6:
-        // Lebensstil ist optional
-        break;
-      case 7:
-        // Umzugsstil ist optional
-        break;
-      case 8:
-        // Mitglieder sind optional
-        break;
+      // Weitere Validierungen können hier hinzugefügt werden
       default:
         break;
     }
@@ -219,7 +550,6 @@ export const OnboardingFlow = ({
     
     setIsSubmitting(true);
     try {
-      // Konvertiere OnboardingData zu CreateHouseholdFormData
       const householdData: CreateHouseholdFormData = {
         name: data.name,
         move_date: data.move_date,
@@ -233,6 +563,8 @@ export const OnboardingFlow = ({
         living_space: data.living_space || null,
         rooms: data.rooms || null,
         furniture_volume: data.furniture_volume || null,
+        has_garden: data.has_garden || null,
+        has_cellar_or_garage: data.has_cellar_or_garage || null,
         owns_car: data.owns_car || null,
         is_self_employed: data.is_self_employed || null,
         ad_url: data.ad_url || null,
@@ -254,340 +586,19 @@ export const OnboardingFlow = ({
     }
   };
 
-  const updateData = (updates: Partial<OnboardingData>) => {
+  const updateData = useCallback((updates: Partial<OnboardingData>) => {
     setData(prev => ({ ...prev, ...updates }));
-  };
+  }, []);
 
-  const toggleSelection = (field: 'specialItems', value: string) => {
+  const toggleSelection = useCallback((field: 'specialItems', value: string) => {
     const currentItems = data.specialItems || [];
     const newItems = currentItems.includes(value)
       ? currentItems.filter(item => item !== value)
       : [...currentItems, value];
     updateData({ specialItems: newItems });
-  };
+  }, [data.specialItems, updateData]);
 
-  const renderStep = () => {
-    const StepCard = ({ title, description, children }: { title: string, description: string, children: ReactNode }) => {
-        const Icon = STEPS.find(s => s.id === currentStep)?.icon;
-        return (
-            <Card className="shadow-lg border-blue-100">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3 text-2xl text-blue-900">
-                        {Icon && <Icon className="h-8 w-8 text-blue-500" />}
-                        {title}
-                    </CardTitle>
-                    <CardDescription className="text-lg">{description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">{children}</CardContent>
-            </Card>
-        );
-    };
-    
-    switch (currentStep) {
-      case 1:
-        return (
-            <StepCard title="Was ist dein aktueller Haushaltsstand?" description="Bitte gib an, wie du aktuell wohnst.">
-                <div className="space-y-4">
-                    {/* Haushaltstyp Auswahl */}
-                    <Label className="block mb-2">Haushaltsform</Label>
-                    <div className="flex gap-4">
-                        {householdTypeOptions.map(option => (
-                            <Button
-                                key={option.value}
-                                variant={data.householdType === option.value ? 'default' : 'outline'}
-                                onClick={() => updateData({ householdType: option.value as 'single' | 'couple' | 'family' | 'wg' })}
-                                className="flex items-center gap-2"
-                            >
-                                {option.icon}
-                                {option.label}
-                            </Button>
-                        ))}
-                    </div>
-                    {/* Hinweis nur für Paar, WG, Familie */}
-                    {(data.householdType === 'couple' || data.householdType === 'wg' || data.householdType === 'family') && (
-                        <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-900 rounded">
-                            Hinweis: Wenn ihr aus verschiedenen Haushalten zusammenzieht, stellt jede Person einen eigenen Haushalt dar.
-                        </div>
-                    )}
-                    <div className="mt-6">
-                        <Label htmlFor="householdName">Haushaltsname</Label>
-                        <Input
-                            id="householdName"
-                            value={data.name}
-                            onChange={e => updateData({ name: e.target.value })}
-                            className="mt-1"
-                            placeholder="z.B. Familie Müller, WG Sonnenschein..."
-                        />
-                    </div>
-                    <div className="mt-6">
-                        <Label htmlFor="moveDate">Wann musst du spätestens ausziehen?</Label>
-                        <Input
-                            id="moveDate"
-                            type="date"
-                            value={data.move_date}
-                            onChange={e => updateData({ move_date: e.target.value })}
-                            className="mt-1"
-                        />
-                    </div>
-                </div>
-            </StepCard>
-        );
-
-      case 2:
-        return (
-            <StepCard title="Die Mannschaft" description="Wer ist alles beim Umzug dabei?">
-                <div>
-                    <Label htmlFor="household_size" className="font-bold text-lg">Anzahl der Erwachsenen</Label>
-                    <Input 
-                        id="household_size" 
-                        type="number" 
-                        min="1" 
-                        value={data.household_size} 
-                        onChange={(e) => updateData({ household_size: parseInt(e.target.value) || 1 })} 
-                        className="mt-2 w-32" 
-                    />
-                    {errors.household_size && <p className="text-red-500 text-sm mt-1">{errors.household_size}</p>}
-                </div>
-                <div>
-                    <Label htmlFor="children_count" className="font-bold text-lg">Anzahl der Kinder</Label>
-                    <Input 
-                        id="children_count" 
-                        type="number" 
-                        min="0" 
-                        value={data.children_count} 
-                        onChange={(e) => updateData({ children_count: parseInt(e.target.value) || 0 })} 
-                        className="mt-2 w-32" 
-                    />
-                </div>
-            </StepCard>
-        );
-        
-      case 3:
-        return (
-            <StepCard title="Tierische Begleiter" description="Gibt es Haustiere, die mit umziehen?">
-                <div>
-                    <Label htmlFor="pets_count" className="font-bold text-lg">Anzahl der Haustiere</Label>
-                    <Input 
-                        id="pets_count" 
-                        type="number" 
-                        min="0" 
-                        value={data.pets_count} 
-                        onChange={(e) => updateData({ pets_count: parseInt(e.target.value) || 0 })} 
-                        className="mt-2 w-32" 
-                    />
-                </div>
-            </StepCard>
-        );
-
-      case 4:
-        return (
-            <StepCard title="Dein Zuhause" description="Beschreibe alte und neue Wohnung.">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <h3 className="font-semibold mb-2">Alte Wohnung</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <Label>Adresse (optional)</Label>
-                                <Input 
-                                    value={data.old_address || ''} 
-                                    onChange={e => updateData({ old_address: e.target.value })}
-                                    placeholder="Straße, PLZ Ort"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 className="font-semibold mb-2">Neue Wohnung</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <Label>Adresse (optional)</Label>
-                                <Input 
-                                    value={data.new_address || ''} 
-                                    onChange={e => updateData({ new_address: e.target.value })}
-                                    placeholder="Straße, PLZ Ort"
-                                />
-                            </div>
-                            <div>
-                                <Label>Postleitzahl</Label>
-                                <Input 
-                                    value={data.postal_code || ''} 
-                                    onChange={e => updateData({ postal_code: e.target.value })}
-                                    placeholder="12345"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <Label>Wohnfläche (m²)</Label>
-                        <Input 
-                            type="number" 
-                            value={data.living_space || ''} 
-                            onChange={e => updateData({ living_space: parseInt(e.target.value) || undefined })}
-                            placeholder="75"
-                        />
-                    </div>
-                    <div>
-                        <Label>Anzahl Zimmer</Label>
-                        <Input 
-                            type="number" 
-                            value={data.rooms || ''} 
-                            onChange={e => updateData({ rooms: parseInt(e.target.value) || undefined })}
-                            placeholder="3"
-                        />
-                    </div>
-                    <div>
-                        <Label>Möbelvolumen (m³)</Label>
-                        <Input 
-                            type="number" 
-                            value={data.furniture_volume || ''} 
-                            onChange={e => updateData({ furniture_volume: parseInt(e.target.value) || undefined })}
-                            placeholder="25"
-                        />
-                    </div>
-                </div>
-            </StepCard>
-        );
-
-      case 5:
-        return (
-            <StepCard title="Dein Hab und Gut" description="Ein paar Details helfen uns, den Umfang deines Umzugs besser einzuschätzen.">
-                <div>
-                    <Label className="font-bold text-lg">Welcher Sammel-Typ bist du?</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                        {inventoryStyles.map(style => (
-                              <Button
-                                key={style.value}
-                                variant={data.inventoryStyle === style.value ? 'default' : 'outline'}
-                                className="h-24 flex flex-col text-center"
-                                onClick={() => {
-                                    updateData({ 
-                                        inventoryStyle: style.value as any,
-                                        furniture_volume: style.volume 
-                                    });
-                                }}
-                              >
-                                <span className="font-bold">{style.label}</span>
-                                <span className="text-xs font-normal">{style.description}</span>
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-                <div>
-                    <Label className="font-bold text-lg">Gibt es besondere Gegenstände?</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                        {specialInventoryItems.map(item => (
-                            <Button 
-                                key={item.id} 
-                                variant={data.specialItems?.includes(item.id) ? 'default' : 'outline'} 
-                                onClick={() => toggleSelection('specialItems', item.id)}
-                            >
-                                {item.label}
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-            </StepCard>
-        );
-
-      case 6:
-        return (
-            <StepCard title="Dein Lebensstil" description="Wie lebst und arbeitest du? Das hilft uns bei der Detailplanung.">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <Label htmlFor="worksFromHome" className="font-bold text-lg">Arbeitest du (oft) im Home Office?</Label>
-                    <Switch 
-                        id="worksFromHome" 
-                        checked={data.worksFromHome || false} 
-                        onCheckedChange={c => updateData({ worksFromHome: c })} 
-                    />
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <Label htmlFor="owns_car" className="font-bold text-lg">Besitzt du ein Auto?</Label>
-                    <Switch 
-                        id="owns_car" 
-                        checked={data.owns_car || false} 
-                        onCheckedChange={c => updateData({ owns_car: c })} 
-                    />
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <Label htmlFor="is_self_employed" className="font-bold text-lg">Bist du selbstständig?</Label>
-                    <Switch 
-                        id="is_self_employed" 
-                        checked={data.is_self_employed || false} 
-                        onCheckedChange={c => updateData({ is_self_employed: c })} 
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="hobbies" className="font-bold text-lg">Gibt es Hobbies mit sperriger Ausrüstung?</Label>
-                    <Textarea 
-                        id="hobbies" 
-                        value={data.hobbies || ''} 
-                        onChange={e => updateData({ hobbies: e.target.value })} 
-                        placeholder="z.B. Musikinstrumente, Staffelei, Surfbrett, Angelausrüstung..." 
-                        className="mt-2" 
-                    />
-                </div>
-            </StepCard>
-        );
-
-      case 7:
-        return (
-            <StepCard title="Dein Umzugs-Stil" description="Wie möchtest du deinen Umzug organisieren?">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                    {moveStyles.map(style => (
-                        <Button
-                          key={style.value}
-                          variant={data.moveStyle === style.value ? 'default' : 'outline'}
-                          className="h-24 flex flex-col text-center"
-                          onClick={() => updateData({ moveStyle: style.value as any })}
-                        >
-                            <span className="font-bold">{style.label}</span>
-                            <span className="text-xs font-normal">{style.description}</span>
-                        </Button>
-                    ))}
-                </div>
-            </StepCard>
-        );
-
-      case 8:
-        return (
-            <StepCard title="Crew einladen" description="Möchtest du andere Personen zu deinem Haushalt einladen? (Optional)">
-                <div className="text-center p-8">
-                    <Mail className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-4">
-                        Du kannst nach der Erstellung deines Haushalts jederzeit Mitglieder einladen.
-                    </p>
-                    <p className="text-sm text-gray-500">
-                        Für jetzt überspringen wir diesen Schritt.
-                    </p>
-                </div>
-            </StepCard>
-        );
-
-      case 9:
-        return (
-            <StepCard title="Fast am Ziel!" description="Ein letzter Blick auf deine Angaben. Passt alles?">
-                <div className="space-y-4 text-sm">
-                    <p><strong>Haushalt:</strong> {data.name}</p>
-                    <p><strong>Umzug am:</strong> {new Date(data.move_date).toLocaleDateString('de-DE')}</p>
-                    <p><strong>Mannschaft:</strong> {data.household_size} Erwachsene, {data.children_count} Kinder</p>
-                    {data.pets_count > 0 && <p><strong>Haustiere:</strong> {data.pets_count}</p>}
-                    <p><strong>Wohnform:</strong> {PROPERTY_TYPES.find(t => t.key === data.property_type)?.label}</p>
-                    {data.new_address && <p><strong>Neue Adresse:</strong> {data.new_address}</p>}
-                    {data.living_space && <p><strong>Wohnfläche:</strong> {data.living_space} m²</p>}
-                </div>
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg text-center">
-                    <Sparkles className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-                    <p className="font-semibold">Super! Mit diesen Infos erstellen wir dir einen maßgeschneiderten Umzugsplan.</p>
-                </div>
-            </StepCard>
-        );
-
-      default:
-        return null;
-    }
-  };
+  const CurrentStepComponent = STEPS[currentStep - 1].component;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 font-sans">
@@ -657,7 +668,7 @@ export const OnboardingFlow = ({
         </div>
 
         <div className="mb-8 min-h-[400px]">
-          {renderStep()}
+          <CurrentStepComponent data={data} updateData={updateData} toggleSelection={toggleSelection} errors={errors} />
         </div>
 
         <div className="flex justify-between items-center">

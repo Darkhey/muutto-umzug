@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Loader2, MapPin, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Loader2, MapPin, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react'
 
 interface Suggestion {
   display_name: string
@@ -41,13 +42,18 @@ export const AddressAutocomplete = ({
   const [isValid, setIsValid] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const lastFetchRef = useRef(0)
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     setQuery(value)
   }, [value])
 
-  useEffect(() => {
+  const triggerFetch = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    
     if (query.length < 3) {
       setSuggestions([])
       setInternalError(null)
@@ -55,66 +61,78 @@ export const AddressAutocomplete = ({
       return
     }
 
-    const now = Date.now()
-    if (now - lastFetchRef.current < 300) {
-      return
-    }
-    lastFetchRef.current = now
-
+    setLoading(true)
+    setInternalError(null)
+    
     const controller = new AbortController()
-    const timeout = setTimeout(() => {
-      setLoading(true)
-      setInternalError(null)
-      const requestTimeout = setTimeout(() => controller.abort(), 5000)
-      fetch(
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(
-          query
-        )}&countrycodes=de,at,ch&limit=5`,
-        {
-          signal: controller.signal,
-          headers: {
-            'Accept-Language': 'de',
-            'User-Agent': 'muutto-umzug/1.0 (+https://www.muutto.xyz)'
-          }
+    abortControllerRef.current = controller
+
+    const requestTimeout = setTimeout(() => controller.abort(), 10000)
+
+    fetch(
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(
+        query
+      )}&countrycodes=de,at,ch&limit=5`,
+      {
+        signal: controller.signal,
+        headers: {
+          'Accept-Language': 'de',
+          'User-Agent': 'muutto-umzug/1.0 (+https://www.muutto.xyz)'
         }
-      )
-        .then(res => res.json())
-        .then((data: unknown) => {
-          if (!Array.isArray(data)) {
-            throw new Error('Ungültige Antwort vom Server')
-          }
-          const valid = data.filter(
-            (d): d is Suggestion =>
-              d &&
-              typeof d.display_name === 'string' &&
-              typeof d.lat === 'string' &&
-              typeof d.lon === 'string'
-          )
-          setSuggestions(valid.slice(0, 5))
-          setIsValid(valid.length > 0)
-        })
-        .catch(err => {
-          if (err.name === 'AbortError') {
-            console.warn('Address lookup timed out')
-            setInternalError('Adresssuche hat zu lange gedauert')
-          } else {
-            console.error('Address lookup failed', err)
-            setInternalError('Adressen konnten nicht geladen werden')
-          }
-          setSuggestions([])
-          setIsValid(false)
-        })
-        .finally(() => {
-          clearTimeout(requestTimeout)
+      }
+    )
+      .then(res => res.json())
+      .then((data: unknown) => {
+        if (controller.signal.aborted) return;
+        if (!Array.isArray(data)) {
+          throw new Error('Ungültige Antwort vom Server')
+        }
+        const valid = data.filter(
+          (d): d is Suggestion =>
+            d &&
+            typeof d.display_name === 'string' &&
+            typeof d.lat === 'string' &&
+            typeof d.lon === 'string'
+        )
+        setSuggestions(valid.slice(0, 5))
+        setIsValid(valid.length > 0)
+      })
+      .catch(err => {
+        if (err.name === 'AbortError') {
+          console.warn('Address lookup timed out or was aborted')
+          setInternalError('Adresssuche hat zu lange gedauert')
+        } else {
+          console.error('Address lookup failed', err)
+          setInternalError('Adressen konnten nicht geladen werden')
+        }
+        setSuggestions([])
+        setIsValid(false)
+      })
+      .finally(() => {
+        clearTimeout(requestTimeout)
+        if (abortControllerRef.current === controller) {
           setLoading(false)
-        })
-    }, 300)
+        }
+      })
+  }, [query])
+
+  useEffect(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      triggerFetch()
+    }, 500) // Wait 500ms after user stops typing
 
     return () => {
-      clearTimeout(timeout)
-      controller.abort()
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
     }
-  }, [query])
+  }, [query, triggerFetch])
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -154,7 +172,7 @@ export const AddressAutocomplete = ({
           value={value}
           onChange={e => {
             onChange(e.target.value)
-            setQuery(e.target.value)
+            // setQuery is handled by useEffect
             setShow(true)
           }}
           placeholder={placeholder}
@@ -211,10 +229,16 @@ export const AddressAutocomplete = ({
       </div>
       
       {displayError && (
-        <p id="address-error" className="text-sm text-red-600 mt-1 flex items-center gap-1" role="alert">
-          <AlertTriangle className="h-3 w-3" />
-          {displayError}
-        </p>
+        <div className="text-sm text-red-600 mt-1 flex items-center justify-between" role="alert">
+          <span className="flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            {displayError}
+          </span>
+          <Button variant="link" size="sm" onClick={triggerFetch} className="p-0 h-auto text-sm text-red-600 hover:text-red-700">
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Erneut versuchen
+          </Button>
+        </div>
       )}
       
       {helpText && !displayError && (
@@ -228,7 +252,7 @@ export const AddressAutocomplete = ({
           role="listbox"
           className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-white shadow-lg"
         >
-          {loading && (
+          {loading && !internalError && (
             <li className="px-3 py-2 text-sm text-gray-500 flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
               Suche Adressen...

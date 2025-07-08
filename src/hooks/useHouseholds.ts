@@ -22,6 +22,8 @@ export interface CreateHouseholdFormData {
   living_space?: number | null
   rooms?: number | null
   furniture_volume?: number | null
+  has_garden?: boolean | null
+  has_cellar_or_garage?: boolean | null
   owns_car?: boolean | null
   is_self_employed?: boolean | null
   ad_url?: string | null
@@ -171,6 +173,8 @@ export function useHouseholds() {
           living_space: householdData.living_space || null,
           rooms: householdData.rooms || null,
           furniture_volume: householdData.furniture_volume || null,
+          has_garden: householdData.has_garden ?? null,
+          has_cellar_or_garage: householdData.has_cellar_or_garage ?? null,
           owns_car: householdData.owns_car ?? null,
           is_self_employed: householdData.is_self_employed ?? null,
           ad_url: householdData.ad_url || null,
