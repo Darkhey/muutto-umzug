@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+  BreadcrumbLink,
+} from '@/components/ui/breadcrumb';
 import { Calendar, Users, Home, MapPin, ArrowRight, ArrowLeft, CheckCircle, Star, Mail, User, Building, Ruler, DoorOpen, Package2, Save, Crown, PawPrint, Coffee, Truck, PlusCircle, XCircle, Sparkles, Baby, School, PersonStanding } from 'lucide-react';
 import { PropertyType } from '@/types/database';
 import { HOUSEHOLD_ROLES } from '@/config/roles';
@@ -248,6 +256,7 @@ export const OnboardingFlow = ({
           const newItems = currentItems.includes(value)
               ? currentItems.filter(item => item !== value)
               : [...currentItems, value];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           updateData({ [field]: newItems } as any);
       }
   };
@@ -274,7 +283,13 @@ export const OnboardingFlow = ({
                     <Label className="font-bold text-lg">Wie ziehst du um?</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                         {householdTypeOptions.map(opt => (
-                            <Button key={opt.value} variant={data.householdType === opt.value ? 'default' : 'outline'} className="h-24 flex flex-col gap-2" onClick={() => updateData({ householdType: opt.value as any })}>
+                            <Button
+                                key={opt.value}
+                                variant={data.householdType === opt.value ? 'default' : 'outline'}
+                                className="h-24 flex flex-col gap-2"
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                onClick={() => updateData({ householdType: opt.value as any })}
+                            >
                                 {opt.icon}
                                 <span>{opt.label}</span>
                             </Button>
@@ -417,7 +432,13 @@ export const OnboardingFlow = ({
                     <Label className="font-bold text-lg">Welcher Sammel-Typ bist du?</Label>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
                         {inventoryStyles.map(style => (
-                            <Button key={style.value} variant={data.inventoryStyle === style.value ? 'default' : 'outline'} className="h-24 flex flex-col text-center" onClick={() => updateData({ inventoryStyle: style.value as any })}>
+                              <Button
+                                key={style.value}
+                                variant={data.inventoryStyle === style.value ? 'default' : 'outline'}
+                                className="h-24 flex flex-col text-center"
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                onClick={() => updateData({ inventoryStyle: style.value as any })}
+                              >
                                 <span className="font-bold">{style.label}</span>
                                 <span className="text-xs font-normal">{style.description}</span>
                             </Button>
@@ -456,7 +477,13 @@ export const OnboardingFlow = ({
             <StepCard title="Dein Umzugs-Stil" description="Wie möchtest du deinen Umzug organisieren?">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
                     {moveStyles.map(style => (
-                        <Button key={style.value} variant={data.moveStyle === style.value ? 'default' : 'outline'} className="h-24 flex flex-col text-center" onClick={() => updateData({ moveStyle: style.value as any })}>
+                        <Button
+                          key={style.value}
+                          variant={data.moveStyle === style.value ? 'default' : 'outline'}
+                          className="h-24 flex flex-col text-center"
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          onClick={() => updateData({ moveStyle: style.value as any })}
+                        >
                             <span className="font-bold">{style.label}</span>
                             <span className="text-xs font-normal">{style.description}</span>
                         </Button>
@@ -537,6 +564,26 @@ export const OnboardingFlow = ({
               Schritt {currentStep} von {STEPS.length}
             </span>
           </div>
+          <Breadcrumb className="my-2 hidden md:block">
+            <BreadcrumbList>
+              {STEPS.map((step, idx) => (
+                <React.Fragment key={step.id}>
+                  <BreadcrumbItem>
+                    {idx === currentStep - 1 ? (
+                      <BreadcrumbPage>{step.title}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink asChild>
+                        <button onClick={() => setCurrentStep(idx + 1)} className="text-xs md:text-sm">
+                          {step.title}
+                        </button>
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                  {idx < STEPS.length - 1 && <BreadcrumbSeparator />}
+                </React.Fragment>
+              ))}
+            </BreadcrumbList>
+          </Breadcrumb>
           <Progress value={(currentStep / STEPS.length) * 100} className="h-2 bg-blue-200" />
           <div className="flex justify-between mt-2">
             {STEPS.map((s, idx) => (
@@ -572,7 +619,13 @@ export const OnboardingFlow = ({
                 Speichern & Schließen
               </Button>
             )}
-            
+
+            {[3, 6, 8].includes(currentStep) && (
+              <Button variant="ghost" onClick={() => setCurrentStep(currentStep + 1)}>
+                Schritt überspringen
+              </Button>
+            )}
+
             <Button
               onClick={handleNext}
               disabled={isSubmitting}
