@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Home, CheckCircle, Bell, TrendingUp, MapPin, Map as DashboardMap, Truck, Plus, LogOut } from 'lucide-react'
@@ -19,6 +19,7 @@ import { HouseholdOverview } from '../household/HouseholdOverview'
 import { MemberManagement } from '../household/MemberManagement'
 import { ChecklistView } from '../checklist/ChecklistView'
 import SimpleModuleCard from './SimpleModuleCard'
+import { UpgradeCTA } from '../premium/UpgradeCTA'
 import type { DashboardModule } from '@/hooks/useEnhancedDashboardModules'
 
 export const ModularDashboard = () => {
@@ -359,13 +360,16 @@ export const ModularDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <div className="text-center flex-1">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              {APP_CONFIG.name}<span className="text-blue-600"> Dashboard</span>
-            </h1>
-            <p className="text-gray-600 text-lg">
-              Willkommen zurück, {user?.user_metadata?.full_name || user?.email}!
-            </p>
+          <div className="flex items-center gap-3">
+            <Home className="h-8 w-8 text-blue-600" />
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">
+                {APP_CONFIG.name}<span className="text-blue-600"> Dashboard</span>
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Willkommen zurück, {user?.user_metadata?.full_name || user?.email}!
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={signOut}>
@@ -377,10 +381,48 @@ export const ModularDashboard = () => {
 
         <DashboardStats households={households} totalTasks={0} completedTasks={0} averageProgress={0} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-          {modules.map(m => (
-            <SimpleModuleCard key={m.id} module={m} />
-          ))}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              {modules.map(m => (
+                <SimpleModuleCard key={m.id} module={m} />
+              ))}
+            </div>
+          </div>
+          
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="bg-white shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-orange-600" />
+                  Schnellzugriff
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button variant="outline" className="w-full justify-start" onClick={() => setViewMode('onboarding')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Neuer Haushalt
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Aufgaben hinzufügen
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Adressen verwalten
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg">Premium Features</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <UpgradeCTA />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
