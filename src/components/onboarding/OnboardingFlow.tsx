@@ -261,18 +261,21 @@ export const OnboardingFlow = ({
   };
 
   const renderStep = () => {
-    const StepCard = ({ title, description, children }: { title: string, description: string, children: ReactNode }) => (
-        <Card className="shadow-lg border-blue-100">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-2xl text-blue-900">
-                    {STEPS.find(s => s.id === currentStep)?.icon({ className: "h-8 w-8 text-blue-500" })}
-                    {title}
-                </CardTitle>
-                <CardDescription className="text-lg">{description}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">{children}</CardContent>
-        </Card>
-    );
+    const StepCard = ({ title, description, children }: { title: string, description: string, children: ReactNode }) => {
+        const Icon = STEPS.find(s => s.id === currentStep)?.icon;
+        return (
+            <Card className="shadow-lg border-blue-100">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-2xl text-blue-900">
+                        {Icon && <Icon className="h-8 w-8 text-blue-500" />}
+                        {title}
+                    </CardTitle>
+                    <CardDescription className="text-lg">{description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">{children}</CardContent>
+            </Card>
+        );
+    };
     
     switch (currentStep) {
       case 1:
