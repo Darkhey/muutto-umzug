@@ -535,19 +535,64 @@ export type Database = {
           },
         ]
       }
+      household_pets: {
+        Row: {
+          count: number
+          created_at: string | null
+          household_id: string
+          id: string
+          notes: string | null
+          pet_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          count?: number
+          created_at?: string | null
+          household_id: string
+          id?: string
+          notes?: string | null
+          pet_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          count?: number
+          created_at?: string | null
+          household_id?: string
+          id?: string
+          notes?: string | null
+          pet_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_pets_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       households: {
         Row: {
+          ad_url: string | null
           children_count: number
           created_at: string
           created_by: string
           furniture_volume: number | null
+          has_cellar_or_garage: boolean | null
+          has_garden: boolean | null
+          hobbies: string | null
           household_size: number
+          household_type: string | null
           id: string
           important_notes: string | null
+          inventory_style: string | null
           invitation_code: string
           is_self_employed: boolean | null
           living_space: number | null
           move_date: string
+          move_style: string | null
           name: string
           new_address: string | null
           old_address: string | null
@@ -558,20 +603,29 @@ export type Database = {
           postal_code: string | null
           property_type: Database["public"]["Enums"]["property_type"]
           rooms: number | null
+          special_items: Json | null
           updated_at: string
+          works_from_home: boolean | null
         }
         Insert: {
+          ad_url?: string | null
           children_count?: number
           created_at?: string
           created_by: string
           furniture_volume?: number | null
+          has_cellar_or_garage?: boolean | null
+          has_garden?: boolean | null
+          hobbies?: string | null
           household_size?: number
+          household_type?: string | null
           id?: string
           important_notes?: string | null
+          inventory_style?: string | null
           invitation_code: string
           is_self_employed?: boolean | null
           living_space?: number | null
           move_date: string
+          move_style?: string | null
           name: string
           new_address?: string | null
           old_address?: string | null
@@ -582,20 +636,29 @@ export type Database = {
           postal_code?: string | null
           property_type: Database["public"]["Enums"]["property_type"]
           rooms?: number | null
+          special_items?: Json | null
           updated_at?: string
+          works_from_home?: boolean | null
         }
         Update: {
+          ad_url?: string | null
           children_count?: number
           created_at?: string
           created_by?: string
           furniture_volume?: number | null
+          has_cellar_or_garage?: boolean | null
+          has_garden?: boolean | null
+          hobbies?: string | null
           household_size?: number
+          household_type?: string | null
           id?: string
           important_notes?: string | null
+          inventory_style?: string | null
           invitation_code?: string
           is_self_employed?: boolean | null
           living_space?: number | null
           move_date?: string
+          move_style?: string | null
           name?: string
           new_address?: string | null
           old_address?: string | null
@@ -606,7 +669,9 @@ export type Database = {
           postal_code?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
           rooms?: number | null
+          special_items?: Json | null
           updated_at?: string
+          works_from_home?: boolean | null
         }
         Relationships: [
           {
@@ -1017,6 +1082,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      waitlist_entries: {
+        Row: {
+          created_at: string
+          email: string
+          email_sent: boolean | null
+          email_sent_at: string | null
+          id: string
+          message: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          id?: string
+          message?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          id?: string
+          message?: string | null
+          name?: string
+        }
+        Relationships: []
       }
     }
     Views: {
