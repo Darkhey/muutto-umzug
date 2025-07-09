@@ -585,8 +585,21 @@ function Step9Review({ data }: StepProps) {
                 <p><strong>Haushalt:</strong> {data.name}</p>
                 <p><strong>Umzug am:</strong> {new Date(data.move_date).toLocaleDateString('de-DE')}</p>
                 <p><strong>Mannschaft:</strong> {data.household_size} Erwachsene, {data.children_count} Kinder</p>
-                {(data.pets?.length || 0) > 0 && <p><strong>Haustiere:</strong> {data.pets?.length}</p>}
+                {(data.pets?.length || 0) > 0 && (
+                    <div>
+                        <strong>Haustiere:</strong>
+                        <ul className="mt-1 ml-4 list-disc">
+                            {data.pets?.map(pet => (
+                                <li key={pet.id}>
+                                    {pet.count}x {pet.type === 'dog' ? 'Hund' : pet.type === 'cat' ? 'Katze' : pet.type === 'bird' ? 'Vogel' : pet.type === 'small_animal' ? 'Kleintier' : pet.type === 'fish' ? 'Fisch' : pet.type === 'reptile' ? 'Reptil' : 'Andere'}
+                                    {pet.notes && <span className="text-gray-600"> ({pet.notes})</span>}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
                 <p><strong>Wohnform:</strong> {PROPERTY_TYPES.find(t => t.key === data.property_type)?.label}</p>
+                {data.old_address && <p><strong>Aktuelle Adresse:</strong> {data.old_address}</p>}
                 {data.new_address && <p><strong>Neue Adresse:</strong> {data.new_address}</p>}
                 {data.living_space && <p><strong>Wohnfläche:</strong> {data.living_space} m²</p>}
             </div>

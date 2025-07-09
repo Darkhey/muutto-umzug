@@ -675,13 +675,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "households_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "households_parent_household_id_fkey"
             columns: ["parent_household_id"]
             isOneToOne: false
