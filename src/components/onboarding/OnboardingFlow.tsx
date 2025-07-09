@@ -64,6 +64,7 @@ export interface OnboardingData {
   worksFromHome?: boolean;
   hobbies?: string;
   moveStyle?: 'diy' | 'company' | 'mixed';
+  invitationCode?: string; // Für die Einladung
 }
 
 interface OnboardingFlowProps {
@@ -497,84 +498,36 @@ function Step7MoveStyle({ data, updateData }: StepProps) {
 }
 
 function Step8Invite({ data, updateData }: StepProps) {
-    const [newMember, setNewMember] = useState({ name: '', email: '' });
     const [invitationCode, setInvitationCode] = useState('');
-
-    const handleAddMember = () => {
-        if (newMember.email && newMember.name) {
-            const memberWithRole = { ...newMember, role: 'member' };
-            updateData({ members: [...(data.members || []), memberWithRole] });
-            setNewMember({ name: '', email: '' });
-        }
-    };
-
-    const handleRemoveMember = (email: string) => {
-        updateData({ members: data.members?.filter(m => m.email !== email) });
-    };
 
     const generateInviteCode = () => {
         // Simple code generation for display purposes
         const code = 'MUUTTO-' + Math.random().toString(36).substr(2, 6).toUpperCase();
         setInvitationCode(code);
+        updateData({ invitationCode: code });
     };
 
     return (
         <StepCard title="Crew einladen" description="Hol deine Leute an Bord. Du kannst das auch später im Dashboard erledigen." currentStep={8}>
             <div className="space-y-8">
 
-                {/* Option 1: Per E-Mail einladen */}
-                <Card className="bg-gray-50">
+                {/* Option 1: Per E-Mail einladen - Deaktiviert */}
+                <Card className="bg-gray-100 opacity-75">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Mail className="h-5 w-5 text-blue-600" />
+                        <CardTitle className="flex items-center gap-2 text-lg text-gray-500">
+                            <Mail className="h-5 w-5 text-gray-400" />
                             Direkt per E-Mail einladen
                         </CardTitle>
-                        <CardDescription>
-                            Füge Name und E-Mail hinzu. Wir schicken eine Einladung, sobald dein Haushalt startklar ist.
+                        <CardDescription className="text-gray-600">
+                            Bald verfügbar - Diese Funktion wird in Kürze implementiert.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Input
-                                placeholder="Name"
-                                value={newMember.name}
-                                onChange={e => setNewMember({ ...newMember, name: e.target.value })}
-                                className="md:col-span-1"
-                            />
-                            <Input
-                                placeholder="E-Mail-Adresse"
-                                type="email"
-                                value={newMember.email}
-                                onChange={e => setNewMember({ ...newMember, email: e.target.value })}
-                                className="md:col-span-2"
-                            />
+                    <CardContent>
+                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <p className="text-yellow-800 text-sm font-medium">
+                                🚧 In Entwicklung - Nutze vorerst den Einladungscode
+                            </p>
                         </div>
-                        <Button onClick={handleAddMember} disabled={!newMember.name || !newMember.email}>
-                            <PlusCircle className="h-4 w-4 mr-2" />
-                            Mitglied hinzufügen
-                        </Button>
-
-                        {data.members && data.members.length > 0 && (
-                            <div className="space-y-2 pt-4">
-                                <h4 className="font-semibold">Deine Crew:</h4>
-                                <ul className="space-y-2">
-                                    {data.members.map(member => (
-                                        <li key={member.email} className="flex items-center justify-between p-2 bg-white rounded-md border">
-                                            <div className="flex items-center gap-2">
-                                                <User className="h-4 w-4 text-gray-500" />
-                                                <div>
-                                                    <p className="font-medium">{member.name}</p>
-                                                    <p className="text-sm text-gray-500">{member.email}</p>
-                                                </div>
-                                            </div>
-                                            <Button variant="ghost" size="sm" onClick={() => handleRemoveMember(member.email)}>
-                                                <XCircle className="h-4 w-4 text-red-500" />
-                                            </Button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
 
@@ -586,14 +539,25 @@ function Step8Invite({ data, updateData }: StepProps) {
                             Mit Einladungscode beitreten lassen
                         </CardTitle>
                          <CardDescription>
-                            Erstelle einen Code, den andere bei der Registrierung oder in ihrem Dashboard eingeben können.
+                            Erstelle einen Code, den andere nutzen können, um deinem Haushalt beizutreten.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="flex items-center gap-4">
-                        <Button onClick={generateInviteCode} disabled={!!invitationCode}>Code erstellen</Button>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <Button onClick={generateInviteCode} disabled={!!invitationCode}>
+                                Code erstellen
+                            </Button>
+                            {invitationCode && (
+                                <div className="p-3 bg-purple-100 border-2 border-dashed border-purple-300 rounded-md">
+                                    <p className="font-mono text-lg font-bold text-purple-800">{invitationCode}</p>
+                                </div>
+                            )}
+                        </div>
                         {invitationCode && (
-                            <div className="p-2 bg-purple-100 border-2 border-dashed border-purple-300 rounded-md">
-                                <p className="font-mono text-lg font-bold text-purple-800">{invitationCode}</p>
+                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                                <p className="text-blue-800 text-sm">
+                                    <strong>Tipp:</strong> Teile diesen Code mit deinen Mitbewohnern. Sie können ihn beim Registrieren eingeben oder später im Dashboard verwenden.
+                                </p>
                             </div>
                         )}
                     </CardContent>

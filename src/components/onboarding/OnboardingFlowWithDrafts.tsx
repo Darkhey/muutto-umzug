@@ -66,7 +66,7 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
         move_date: draftData.move_date || '',
         household_size: draftData.household_size || 1,
         children_count: draftData.children_count || 0,
-        pets_count: draftData.pets_count || 0,
+        pets: [], // Konvertiere von pets_count zu pets array
         property_type: draftData.property_type || 'miete',
         postal_code: draftData.postal_code || '',
         old_address: draftData.old_address || '',
@@ -131,7 +131,7 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
         move_date: data.move_date,
         household_size: data.household_size,
         children_count: data.children_count,
-        pets_count: data.pets_count,
+        pets_count: data.pets?.length || 0, // Konvertiere pets array zu pets_count
         property_type: data.property_type,
         postal_code: data.postal_code,
         old_address: data.old_address,
@@ -149,7 +149,8 @@ export const OnboardingFlowWithDrafts = ({ onComplete, onSkip }: OnboardingFlowW
         specialItems: data.specialItems,
         worksFromHome: data.worksFromHome,
         hobbies: data.hobbies,
-        moveStyle: data.moveStyle
+        moveStyle: data.moveStyle,
+        invitationCode: data.invitationCode
       };
       // Beim Zwischenspeichern KEIN refreshDrafts
       const draftId = await saveDraft(draftData, currentDraftId || undefined, step, false);
