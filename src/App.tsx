@@ -43,7 +43,7 @@ const App = () => {
 }
 
 const AppContent = () => {
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
 
   if (loading) {
     return <LoadingScreen />;
@@ -54,23 +54,29 @@ const AppContent = () => {
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppShell>
+        {!user ? (
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/timeline" element={<Timeline />} />
-            <Route path="/premium" element={<Premium />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/moves" element={<Moves />} />
-            <Route path="/impressum" element={<Impressum />} />
-            <Route path="/datenschutz" element={<Datenschutz />} />
-            <Route path="/agb" element={<AGB />} />
-            <Route path="/kontakt" element={<Kontakt />} />
-            <Route path="/household-module" element={<HouseholdModulePage />} />
-            <Route path="/box-management" element={<BoxManagement />} />
-            <Route path="/insights" element={<InsightsPage />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<Index />} />
           </Routes>
-        </AppShell>
+        ) : (
+          <AppShell>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/timeline" element={<Timeline />} />
+              <Route path="/premium" element={<Premium />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/moves" element={<Moves />} />
+              <Route path="/impressum" element={<Impressum />} />
+              <Route path="/datenschutz" element={<Datenschutz />} />
+              <Route path="/agb" element={<AGB />} />
+              <Route path="/kontakt" element={<Kontakt />} />
+              <Route path="/household-module" element={<HouseholdModulePage />} />
+              <Route path="/box-management" element={<BoxManagement />} />
+              <Route path="/insights" element={<InsightsPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AppShell>
+        )}
       </BrowserRouter>
     </>
   );
