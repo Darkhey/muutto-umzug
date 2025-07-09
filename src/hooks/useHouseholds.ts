@@ -59,7 +59,7 @@ export function useHouseholds() {
       
       const { data, error } = await supabase
         .from('households')
-        .select('*, created_by_user_profile:profiles(*), parent_household_id')
+        .select('*')
         .order('created_at', { ascending: false })
 
       if (error) throw error
