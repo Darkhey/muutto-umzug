@@ -108,21 +108,21 @@ export function useTasks(householdId?: string) {
     if (!householdId) return
 
     try {
-      const { data, error } = await supabase.rpc('create_initial_tasks', {
+      const { data, error } = await supabase.rpc('create_personalized_tasks', {
         p_household_id: householdId
       })
 
       if (error) throw error
 
       toast({
-        title: "Aufgaben erstellt",
-        description: `${data} Aufgaben wurden aus Vorlagen erstellt.`
+        title: "Personalisierte Checkliste erstellt",
+        description: `${data} Aufgaben wurden basierend auf deinen Angaben erstellt.`
       })
 
       await fetchTasks()
       return data
     } catch (error) {
-      console.error('Error creating initial tasks:', error)
+      console.error('Error creating personalized tasks:', error)
       throw error
     }
   }

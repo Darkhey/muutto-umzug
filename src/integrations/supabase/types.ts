@@ -1123,6 +1123,14 @@ export type Database = {
         Args: { p_household_id: string }
         Returns: number
       }
+      create_personalized_tasks: {
+        Args: { p_household_id: string }
+        Returns: number
+      }
+      evaluate_task_conditions: {
+        Args: { conditions: Json; household_data: Record<string, unknown> }
+        Returns: boolean
+      }
       generate_invitation_code: {
         Args: Record<PropertyKey, never>
         Returns: string

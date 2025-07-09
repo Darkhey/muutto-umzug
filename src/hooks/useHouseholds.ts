@@ -210,20 +210,20 @@ export function useHouseholds() {
         throw memberError
       }
 
-      // Create initial tasks from templates using the simplified function
+      // Create personalized tasks from templates
       try {
-        const { data: taskCount, error: taskError } = await supabase.rpc('create_initial_tasks', {
+        const { data: taskCount, error: taskError } = await supabase.rpc('create_personalized_tasks', {
           p_household_id: household.id
         })
 
         if (taskError) {
-          console.warn('Error creating initial tasks:', taskError)
+          console.warn('Error creating personalized tasks:', taskError)
           // Don't throw here, household creation should still succeed
         } else {
-          console.log(`Created ${taskCount} initial tasks`)
+          console.log(`Created ${taskCount} personalized tasks`)
         }
       } catch (taskErr) {
-        console.warn('Error creating initial tasks:', taskErr)
+        console.warn('Error creating personalized tasks:', taskErr)
         // Don't throw here, household creation should still succeed
       }
 
