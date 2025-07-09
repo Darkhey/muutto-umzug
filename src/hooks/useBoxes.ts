@@ -34,13 +34,7 @@ export function useBoxes(householdId: string) {
 
       let query = supabase
         .from('boxes')
-        .select(`
-          *,
-          photos:box_photos(*),
-          contents:box_contents(*),
-          comments:box_comments(*),
-          current_location:box_locations(*)
-        `)
+        .select(`*`)
         .eq('household_id', householdId);
 
       // Filter anwenden

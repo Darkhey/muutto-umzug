@@ -34,7 +34,7 @@ export interface OnboardingData {
   move_date: string;
   household_size: number;
   children_count: number;
-  pets_count: number;
+  pets: Array<{ id: string; type: string; count: number; notes?: string }>;
   property_type: 'miete' | 'eigentum';
   
   // Optionale Adressinformationen
@@ -217,18 +217,94 @@ function Step2Crew({ data, updateData, errors }: StepProps) {
 }
 
 function Step3Pets({ data, updateData }: StepProps) {
+    const petTypes = [
+        { id: 'dog', label: 'Hund', icon: '🐶' },
+        { id: 'cat', label: 'Katze', icon: '🐱' },
+        { id: 'bird', label: 'Vogel', icon: '🐦' },
+        { id: 'small_animal', label: 'Kleintier', icon: '🐹' },
+        { id: 'fish', label: 'Fisch', icon: '🐠' },
+        { id: 'reptile', label: 'Reptil', icon: '🐍' },
+        { id: 'other', label: 'Andere', icon: '🐾' },
+    ];
+
+    const handleAddPet = (type: string) => {
+        const newPet = { id: `pet_${Date.now()}`, type, count: 1, notes: '' };
+        updateData({ pets: [...(data.pets || []), newPet] });
+    };
+
+    const handleRemovePet = (id: string) => {
+        updateData({ pets: data.pets?.filter(p => p.id !== id) });
+    };
+
+    const handlePetUpdate = (id: string, field: 'count' | 'notes', value: string | number) => {
+        const updatedPets = data.pets?.map(p => 
+            p.id === id ? { ...p, [field]: value } : p
+        );
+        updateData({ pets: updatedPets });
+    };
+
+    const selectedTypes = new Set(data.pets?.map(p => p.type));
+
     return (
-        <StepCard title="Tierische Begleiter" description="Gibt es Haustiere, die mit umziehen?" currentStep={3}>
-            <div>
-                <Label htmlFor="pets_count" className="font-bold text-lg">Anzahl der Haustiere</Label>
-                <Input 
-                    id="pets_count" 
-                    type="number" 
-                    min="0" 
-                    value={data.pets_count} 
-                    onChange={(e) => updateData({ pets_count: parseInt(e.target.value) || 0 })} 
-                    className="mt-2 w-32" 
-                />
+        <StepCard title="Tierische Begleiter" description="Gib uns ein paar Infos zu deinen Haustieren. Das hilft, den Umzug tierfreundlich zu planen." currentStep={3}>
+            <div className="space-y-6">
+                <div>
+                    <Label className="font-bold text-lg mb-3 block">Welche Art von Haustieren zieht mit um?</Label>
+                    <div className="flex flex-wrap gap-3">
+                        {petTypes.map(pet => (
+                            <Button 
+                                key={pet.id}
+                                variant={selectedTypes.has(pet.id) ? 'default' : 'outline'}
+                                onClick={() => handleAddPet(pet.id)}
+                                className="flex items-center gap-2"
+                            >
+                                <span className="text-xl">{pet.icon}</span>
+                                {pet.label}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+
+                {data.pets && data.pets.length > 0 && (
+                    <div className="space-y-4 pt-4 border-t">
+                        {data.pets.map(pet => (
+                            <div key={pet.id} className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <Label className="font-bold text-md flex items-center gap-2">
+                                        {petTypes.find(p => p.id === pet.type)?.icon}
+                                        {petTypes.find(p => p.id === pet.type)?.label || 'Haustier'}
+                                    </Label>
+                                    <Button variant="ghost" size="sm" onClick={() => handleRemovePet(pet.id)}>
+                                        <XCircle className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="md:col-span-1">
+                                        <Label htmlFor={`count-${pet.id}`}>Anzahl</Label>
+                                        <Input
+                                            id={`count-${pet.id}`}
+                                            type="number"
+                                            min="1"
+                                            value={pet.count}
+                                            onChange={e => handlePetUpdate(pet.id, 'count', parseInt(e.target.value) || 1)}
+                                            className="mt-1"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <Label htmlFor={`notes-${pet.id}`}>Besonderheiten (optional)</Label>
+                                        <Input
+                                            id={`notes-${pet.id}`}
+                                            value={pet.notes || ''}
+                                            onChange={e => handlePetUpdate(pet.id, 'notes', e.target.value)}
+                                            placeholder="z.B. braucht spezielles Futter, hat Angst vor lauten Geräuschen"
+                                            className="mt-1"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </StepCard>
     );
@@ -420,17 +496,119 @@ function Step7MoveStyle({ data, updateData }: StepProps) {
     );
 }
 
-function Step8Invite() {
+function Step8Invite({ data, updateData }: StepProps) {
+    const [newMember, setNewMember] = useState({ name: '', email: '' });
+    const [invitationCode, setInvitationCode] = useState('');
+
+    const handleAddMember = () => {
+        if (newMember.email && newMember.name) {
+            const memberWithRole = { ...newMember, role: 'member' };
+            updateData({ members: [...(data.members || []), memberWithRole] });
+            setNewMember({ name: '', email: '' });
+        }
+    };
+
+    const handleRemoveMember = (email: string) => {
+        updateData({ members: data.members?.filter(m => m.email !== email) });
+    };
+
+    const generateInviteCode = () => {
+        // Simple code generation for display purposes
+        const code = 'MUUTTO-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        setInvitationCode(code);
+    };
+
     return (
-        <StepCard title="Crew einladen" description="Möchtest du andere Personen zu deinem Haushalt einladen? (Optional)" currentStep={8}>
-            <div className="text-center p-8">
-                <Mail className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">
-                    Du kannst nach der Erstellung deines Haushalts jederzeit Mitglieder einladen.
-                </p>
-                <p className="text-sm text-gray-500">
-                    Für jetzt überspringen wir diesen Schritt.
-                </p>
+        <StepCard title="Crew einladen" description="Hol deine Leute an Bord. Du kannst das auch später im Dashboard erledigen." currentStep={8}>
+            <div className="space-y-8">
+
+                {/* Option 1: Per E-Mail einladen */}
+                <Card className="bg-gray-50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Mail className="h-5 w-5 text-blue-600" />
+                            Direkt per E-Mail einladen
+                        </CardTitle>
+                        <CardDescription>
+                            Füge Name und E-Mail hinzu. Wir schicken eine Einladung, sobald dein Haushalt startklar ist.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Input
+                                placeholder="Name"
+                                value={newMember.name}
+                                onChange={e => setNewMember({ ...newMember, name: e.target.value })}
+                                className="md:col-span-1"
+                            />
+                            <Input
+                                placeholder="E-Mail-Adresse"
+                                type="email"
+                                value={newMember.email}
+                                onChange={e => setNewMember({ ...newMember, email: e.target.value })}
+                                className="md:col-span-2"
+                            />
+                        </div>
+                        <Button onClick={handleAddMember} disabled={!newMember.name || !newMember.email}>
+                            <PlusCircle className="h-4 w-4 mr-2" />
+                            Mitglied hinzufügen
+                        </Button>
+
+                        {data.members && data.members.length > 0 && (
+                            <div className="space-y-2 pt-4">
+                                <h4 className="font-semibold">Deine Crew:</h4>
+                                <ul className="space-y-2">
+                                    {data.members.map(member => (
+                                        <li key={member.email} className="flex items-center justify-between p-2 bg-white rounded-md border">
+                                            <div className="flex items-center gap-2">
+                                                <User className="h-4 w-4 text-gray-500" />
+                                                <div>
+                                                    <p className="font-medium">{member.name}</p>
+                                                    <p className="text-sm text-gray-500">{member.email}</p>
+                                                </div>
+                                            </div>
+                                            <Button variant="ghost" size="sm" onClick={() => handleRemoveMember(member.email)}>
+                                                <XCircle className="h-4 w-4 text-red-500" />
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Option 2: Per Code einladen */}
+                <Card className="bg-gray-50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Sparkles className="h-5 w-5 text-purple-600" />
+                            Mit Einladungscode beitreten lassen
+                        </CardTitle>
+                         <CardDescription>
+                            Erstelle einen Code, den andere bei der Registrierung oder in ihrem Dashboard eingeben können.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex items-center gap-4">
+                        <Button onClick={generateInviteCode} disabled={!!invitationCode}>Code erstellen</Button>
+                        {invitationCode && (
+                            <div className="p-2 bg-purple-100 border-2 border-dashed border-purple-300 rounded-md">
+                                <p className="font-mono text-lg font-bold text-purple-800">{invitationCode}</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Option 3: Haushalte zusammenführen */}
+                <div className="p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-900 rounded-lg">
+                    <h4 className="font-bold flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Ziehst du mit jemandem aus einem anderen Haushalt zusammen?
+                    </h4>
+                    <p className="mt-2">
+                        Kein Problem! Die andere Person kann einfach ihren eigenen Haushalt bei muutto anlegen. Nach der Erstellung könnt ihr eure Haushalte für den Umzug digital zusammenführen ("mergen"). So behält jeder die Kontrolle über seine Daten.
+                    </p>
+                </div>
             </div>
         </StepCard>
     );
@@ -443,7 +621,7 @@ function Step9Review({ data }: StepProps) {
                 <p><strong>Haushalt:</strong> {data.name}</p>
                 <p><strong>Umzug am:</strong> {new Date(data.move_date).toLocaleDateString('de-DE')}</p>
                 <p><strong>Mannschaft:</strong> {data.household_size} Erwachsene, {data.children_count} Kinder</p>
-                {data.pets_count > 0 && <p><strong>Haustiere:</strong> {data.pets_count}</p>}
+                {(data.pets?.length || 0) > 0 && <p><strong>Haustiere:</strong> {data.pets?.length}</p>}
                 <p><strong>Wohnform:</strong> {PROPERTY_TYPES.find(t => t.key === data.property_type)?.label}</p>
                 {data.new_address && <p><strong>Neue Adresse:</strong> {data.new_address}</p>}
                 {data.living_space && <p><strong>Wohnfläche:</strong> {data.living_space} m²</p>}
@@ -474,7 +652,7 @@ export const OnboardingFlow = ({
     move_date: '',
     household_size: 1,
     children_count: 0,
-    pets_count: 0,
+    pets: [],
     property_type: 'miete',
     postal_code: '',
     old_address: '',
@@ -555,7 +733,7 @@ export const OnboardingFlow = ({
         move_date: data.move_date,
         household_size: data.household_size,
         children_count: data.children_count,
-        pets_count: data.pets_count,
+        pets_count: data.pets?.length || 0,
         property_type: data.property_type,
         postal_code: data.postal_code || null,
         old_address: data.old_address || null,
