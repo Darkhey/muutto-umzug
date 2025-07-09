@@ -6,8 +6,8 @@ import LoadingScreen from '@/components/LoadingScreen'
 import { useLocation } from 'react-router-dom'
 import JoinHousehold from './JoinHousehold'
 
-const ModularDashboard = lazy(() =>
-  import('@/components/dashboard/ModularDashboard')
+const ImprovedDashboard = lazy(() =>
+  import('@/components/dashboard/ImprovedDashboard').then(module => ({ default: module.ImprovedDashboard }))
 );
 
 const Index = () => {
@@ -31,7 +31,7 @@ const Index = () => {
   return (
     <div>
       <Suspense fallback={<DashboardSkeleton />}>
-        <ModularDashboard />
+        <ImprovedDashboard />
       </Suspense>
     </div>
   );
