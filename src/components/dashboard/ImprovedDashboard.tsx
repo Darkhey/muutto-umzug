@@ -20,7 +20,7 @@ import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog'
 import { TaskList } from '@/components/TaskList'
 import { TimelineView } from '@/components/timeline/TimelineView'
 import { MemberManagement } from '@/components/household/MemberManagement'
-import { AIAssistant } from '@/components/ai/AIAssistant'
+import { FloatingChatButton } from '@/components/ai/FloatingChatButton'
 
 // UI Components
 import { Button } from '@/components/ui/button'
@@ -323,12 +323,8 @@ export const ImprovedDashboard = () => {
           }}
         />
 
-        {/* AI Assistant Float */}
-        {activeHousehold && (
-          <div className="fixed bottom-6 right-6">
-            <AIAssistant household={activeHousehold} />
-          </div>
-        )}
+        {/* Floating Chat Button */}
+        <FloatingChatButton household={activeHousehold} />
       </div>
     </div>
   )
