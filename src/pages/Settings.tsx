@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { usePremiumStatus } from '@/hooks/usePremiumStatus'
+import { SentryTestButton } from '@/components/testing/SentryTestButton'
 import { Crown, ChevronDown } from 'lucide-react'
 
 const Settings = () => {
@@ -126,10 +127,11 @@ const Settings = () => {
       <h1 className="text-3xl font-bold mb-6">Einstellungen</h1>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">Profil</TabsTrigger>
           <TabsTrigger value="account">Konto</TabsTrigger>
           <TabsTrigger value="billing">Zahlung & Abos</TabsTrigger>
+          <TabsTrigger value="testing">Testing</TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
@@ -277,6 +279,19 @@ const Settings = () => {
                   </div>
                 )
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Testing Tab */}
+        <TabsContent value="testing">
+          <Card>
+            <CardHeader>
+              <CardTitle>Development Testing</CardTitle>
+              <CardDescription>Tools for testing error tracking and debugging.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <SentryTestButton />
             </CardContent>
           </Card>
         </TabsContent>
